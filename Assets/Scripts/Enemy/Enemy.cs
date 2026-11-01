@@ -597,7 +597,12 @@ public abstract class Enemy : MonoBehaviour, IDamageable
 
     // a little faster or slower than its whole-number speed
     protected virtual float SpeedFactor => 1f;
-    protected float MoveSpeed => speed * SpeedFactor * Tuning.EnemySpeed.Value * (ArenaBounds.Active ? ArenaDifficulty.SpeedFactor(Small) * ArenaDirector.SpeedRamp * (1f + BloodSpeed * BloodMoon) : 1f);
+    protected float MoveSpeed => speed * SpeedFactor * NetSpeed * Tuning.EnemySpeed.Value * (ArenaBounds.Active ? ArenaDifficulty.SpeedFactor(Small) * ArenaDirector.SpeedRamp * (1f + BloodSpeed * BloodMoon) : 1f);
+
+    // ---- Freny's Rede (NetTrap): a caught enemy starts no attack (NetTrap pins it in place); the
+    // Ciclope is only slowed down ----
+    public bool Netted { get; set; }
+    public float NetSpeed { get; set; } = 1f;
 
     // ---- the Lua de Sangue (ArenaDayNight.Blood): faster, +1 heart a hit, heals, red eyes ----
     public static float BloodMoon => ArenaBounds.Active ? ArenaDayNight.Blood : 0f;
@@ -704,7 +709,7 @@ public abstract class Enemy : MonoBehaviour, IDamageable
 
         if (InAttackReach(LungeDistance)) {
             // close enough: wind up, then hit; the cooldown starts after the hit, so the rhythm is steady
-            if (Time.time >= nextAttackTime && CanStartAttack) {
+            if (Time.time >= nextAttackTime && !Netted && CanStartAttack) {
                 attackRoutine = StartCoroutine(AttackRoutine());
             }
             return;

@@ -168,9 +168,10 @@ public class Player : MonoBehaviour, IDamageable {
     public bool RevolverDry => RevolverBullets <= 0 && RevolverReserve <= 0 && !Reloading;
     // the gun can fire: not on its own cooldown and, for the revolver, loaded and not reloading
     public bool GunReady => GunReadyFor(UsingShotgun);
-    public bool GunReadyFor(bool shotgun) => Time.time >= gunReadyAt && (shotgun
+    // with the Cajado do Mago (MageStaff) the shots are spells: no ammo needed
+    public bool GunReadyFor(bool shotgun) => Time.time >= gunReadyAt && (MageStaff.Held(this) || (shotgun
         ? ShotgunOwned && ShotgunShells > 0
-        : !Reloading && RevolverBullets > 0);
+        : !Reloading && RevolverBullets > 0));
     // a dropped potion only heals: at full health it stays on the floor until needed or it expires
     public bool WantsPotion => !isDead && Health < MaxHealth;
     public bool WantsBullets => RevolverReserve < revolverReserveMax;
@@ -203,8 +204,8 @@ public class Player : MonoBehaviour, IDamageable {
     public float Rage { get; private set; }
     public bool Raging => Time.time < rageUntil;
     public float RageLeft => Raging ? (rageUntil - Time.time) / RageSeconds : 0f;
-    public int MeleeDamage => Raging ? RageMeleeDamage : 1;
-    public float ReloadProgress => Reloading ? Mathf.Clamp01(1f - (reloadReadyAt - Time.time) / revolverReloadTime) : 1f;
+    public int MeleeDamage => (Raging ? RageMeleeDamage : 1) + WeaponLevels.GreatSwordBonus;
+    public float ReloadProgress => Reloading ? Mathf.Clamp01(1f - (reloadReadyAt - Time.time) / (revolverReloadTime * WeaponLevels.ReloadTime)) : 1f;
     // body and jump, for the autopilot's platform map (the same numbers the physics uses)
     public float JumpHeight => jumpHeight;
     public float MaxSpeed => _speed * runMultiplier;
@@ -289,6 +290,7 @@ public class Player : MonoBehaviour, IDamageable {
         ApplyUpgrades();
         FrenyProgress.Changed += ApplyUpgrades;
         Enemy.Killed += OnEnemyKilled;
+        NetThrower.Attach(this);   // the Rede, when bought (its own component, so the prefab stays as it is)
 
         Health = MaxHealth;
         if (UIManager.Instance) {
@@ -391,11 +393,11 @@ public class Player : MonoBehaviour, IDamageable {
         if (FrenyProgress.HasShotgun && !shotgunGranted) {
             shotgunGranted = true;
             ShotgunOwned = true;
-            ShotgunShells = Mathf.Max(ShotgunShells, shellsPerRun);
+            ShotgunShells = Mathf.Max(ShotgunShells, shellsPerRun + WeaponLevels.ExtraShells);
         }
         if (FrenyProgress.HasGrenade && !grenadesGranted) {
             grenadesGranted = true;
-            Grenades = Mathf.Min(grenadesMax, Grenades + grenadesFromUpgrade);
+            Grenades = Mathf.Min(grenadesMax, Grenades + grenadesFromUpgrade + WeaponLevels.ExtraGrenades);
         }
     }
 
@@ -701,7 +703,7 @@ public class Player : MonoBehaviour, IDamageable {
                 Sfx.Play("pistol_reload", transform.position);
             }
         } else if (RevolverBullets <= 0 && RevolverReserve > 0) {
-            reloadReadyAt = Time.time + revolverReloadTime;
+            reloadReadyAt = Time.time + revolverReloadTime * WeaponLevels.ReloadTime;
             Sfx.Play("pistol_empty", transform.position);
         }
     }
@@ -725,6 +727,12 @@ public class Player : MonoBehaviour, IDamageable {
         } else if (IsCrouching) {
             muzzle += Vector3.down * CrouchMuzzleDrop;
         }
+        if (MageStaff.Held(this)) {
+            // the Cajado do Mago: a spell ball instead of a bullet, no ammo used
+            MageStaff.Current.Cast(muzzle, forward);
+            gunReadyAt = Time.time + MageStaff.Cooldown * FrenyProgress.AttackCooldownMultiplier;
+            return;
+        }
         Fx.Spray(muzzle, forward, new Color(1f, 0.9f, 0.5f), 6, 5f, 0.3f);
 
         // the shotgun fires three bullets in a fan, one shell per shot; only its pellets shove enemies back
@@ -732,15 +740,16 @@ public class Player : MonoBehaviour, IDamageable {
         Sfx.Play(shotgun ? "shotgun_shot" : "pistol_shot", muzzle);
         if (shotgun) {
             ShotgunShells--;
-            int shot = Achievements.NextShot();   // the three pellets' kills add up for "Doze é Demais"
-            FireBullet(muzzle, Quaternion.Euler(0f, 0f, 10f) * forward, 1f, shot);
-            FireBullet(muzzle, forward, 1f, shot);
-            FireBullet(muzzle, Quaternion.Euler(0f, 0f, -10f) * forward, 1f, shot);
+            int shot = Achievements.NextShot();   // the pellets' kills add up for "Doze é Demais"
+            foreach (float angle in WeaponLevels.ShotgunAngles) {   // 3, or 5 from the Armeiro's level 2
+                FireBullet(muzzle, Quaternion.Euler(0f, 0f, angle) * forward, 1f, shot);
+            }
         } else {
             RevolverBullets--;
             FireBullet(muzzle, forward, RevolverPush);
         }
-        gunReadyAt = Time.time + (shotgun ? shotgunCooldown : pistolCooldown) * FrenyProgress.AttackCooldownMultiplier;
+        gunReadyAt = Time.time + (shotgun ? shotgunCooldown * WeaponLevels.ShotgunCooldown : pistolCooldown * WeaponLevels.PistolCooldown)
+            * FrenyProgress.AttackCooldownMultiplier;
     }
 
     private const float CrouchMuzzleDrop = 0.32f; // the crouched gun sits 8 art pixels lower
@@ -840,7 +849,9 @@ public class Player : MonoBehaviour, IDamageable {
         CircleCollider2D trigger = grenade.AddComponent<CircleCollider2D>();
         trigger.isTrigger = true;
         trigger.radius = 0.4f;
-        grenade.AddComponent<Grenade>();
+        Grenade blast = grenade.AddComponent<Grenade>();
+        blast.radius = WeaponLevels.GrenadeRadius;
+        blast.damage = WeaponLevels.GrenadeDamage;
         Fx.Spray(from, velocity, new Color(1f, 0.9f, 0.6f), 4, 2f, 0.4f);
         Sfx.Play("grenade_throw", from);
     }

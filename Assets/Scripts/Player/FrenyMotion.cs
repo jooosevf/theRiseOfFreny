@@ -49,7 +49,8 @@ public class FrenyMotion : MonoBehaviour {
     // the cut: a crescent in front of the blade, swept from above his shoulder to below his hips
     private const float ArcAhead = 0.42f, ArcRadius = 0.5f, ArcLift = 0.1f;
     private const float ArcFrom = 80f, ArcTo = -80f;
-    private const float GreatSwordScale = 1.8f;  // the great sword's cut and hitbox, "bem maior"
+    // the great sword's cut and hitbox, "bem maior": 1.8x, 2.2x from the Armeiro's level 2 (WeaponLevels)
+    private static float GreatSwordScale => WeaponLevels.GreatSwordCut;
     private const float FinisherScale = 1.35f;   // the combo's third hit: a bigger cut and reach
 
     // the great sword in hand: bought at the shop, or dropped for a few swings (Player.GreatSwordActive)

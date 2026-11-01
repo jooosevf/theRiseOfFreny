@@ -35,6 +35,7 @@ public class Sorcerer : Enemy {
     public override void Init() {
         base.Init();
         SorcererCastPosition = FindCastPosition();
+        MageStaff.Remember(hexballEffectPrefab);   // the Cajado do Mago casts the same ball
     }
 
     protected override Color DeathColor => predictive ? new Color(1f, 0.3f, 0.3f) : new Color(0.45f, 0.3f, 0.7f);
@@ -62,7 +63,7 @@ public class Sorcerer : Enemy {
         // sprites face left by default, so scale.x = -1 means looking right
         transform.localScale = new Vector3(offset.x > 0 ? -1 : 1, 1, 1);
 
-        if (Time.time >= nextCastTime) {
+        if (Time.time >= nextCastTime && !Netted) {   // caught in Freny's net: no casting
             anim.SetTrigger("Attack");
             PlaySound("cast");
             if (predictive && !laughed) {

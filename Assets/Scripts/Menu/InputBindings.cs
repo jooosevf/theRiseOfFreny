@@ -13,6 +13,7 @@ public enum GameAction {
     Shotgun,
     Interact,
     Pause,
+    Net,       // the Rede (NetThrower), 2026-11-01: last, so the saved bindings keep their names and order
 }
 
 // Which key and which gamepad button do each action, editable in Settings > Controls and saved
@@ -56,6 +57,7 @@ public static class InputBindings {
             case GameAction.Shotgun: return KeyCode.Alpha2;
             case GameAction.Interact: return KeyCode.W;
             case GameAction.Pause: return KeyCode.Escape;
+            case GameAction.Net: return KeyCode.F;
             default: return KeyCode.None;
         }
     }
@@ -73,6 +75,7 @@ public static class InputBindings {
             case GameAction.Shotgun: return KeyCode.JoystickButton9;  // right stick click
             case GameAction.Interact: return KeyCode.None;            // stick or d-pad up
             case GameAction.Pause: return KeyCode.JoystickButton7;    // Start
+            case GameAction.Net: return KeyCode.None;                 // every button is taken: set it in Controles
             default: return KeyCode.None;
         }
     }
@@ -179,6 +182,7 @@ public static class InputBindings {
             case GameAction.Shotgun: return "Escopeta";
             case GameAction.Interact: return "Porta";
             case GameAction.Pause: return "Pausar";
+            case GameAction.Net: return "Rede";
             default: return action.ToString();
         }
     }

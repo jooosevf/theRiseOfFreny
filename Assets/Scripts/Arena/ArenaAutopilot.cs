@@ -163,6 +163,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
             frame.dashPressed = false;
             frame.potionPressed = false;
             frame.grenadePressed = false;
+            frame.netPressed = false;
             if (planTurnsOnly) {
                 // turning around takes one frame; keeping the stick held walked him past the enemy
                 frame.move = 0f;
@@ -217,7 +218,11 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         }
 
         projectiles.Clear();
-        projectiles.AddRange(HexballEffect.Active);
+        foreach (HexballEffect ball in HexballEffect.Active) {
+            if (ball && !ball.fromFreny) {   // his own, from the Cajado do Mago
+                projectiles.Add(ball);
+            }
+        }
     }
 
     private const float MaxMeleeReach = 1.8f;  // centre to centre, the normal sword
@@ -267,6 +272,19 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
 
         // 1b. the red Golem's mines, the Ciclope's shockwave and acid: get away or jump over
         if (AvoidHazards(ref frame, me, myFeet)) {
+            return frame;
+        }
+
+        // 1b'. the potion when it is needed: at the last heart, or one hit from it with a heavy
+        // hitter around (before, it waited for a quiet moment, often after the killing blow)
+        if (PotionNow(me)) {
+            frame.potionPressed = true;
+            action = "Bebendo poção na hora certa";
+            return frame;
+        }
+
+        // 1b''. the Mina-aranha: shoot it from afar, never let it walk up to him
+        if (SpiderMines(ref frame, me, myFeet)) {
             return frame;
         }
 
@@ -435,6 +453,11 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
             }
         }
 
+        // 3b. the Rede: a group, a red Golem or an Escudeiro coming, held still for the sword
+        if (ThrowNet(ref frame, me, target)) {
+            return frame;
+        }
+
         // 4. gun (only from the ground): the shotgun up close while it has shells, the revolver
         // farther away; with no ammo at all it is the sword only
         if (sameFloor && player.IsGrounded && Mathf.Abs(dx) <= Tuning.AutoShootRange.Value
@@ -517,6 +540,19 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
 
     private const float HexReactTime = 0.25f;   // a hexball this close in time: jump it now
 
+    private const float DuckTime = 0.45f;       // crouch this long before a level hexball arrives
+
+    // where a straight hexball crosses his x: over his crouched head but into his standing body
+    private bool DucksUnder(HexballEffect ball, Vector2 pos, Vector2 dir, float myFeet) {
+        if (ball.homingTarget != null || Mathf.Abs(dir.x) < 0.85f) {
+            return false;
+        }
+        float y = pos.y + dir.y / dir.x * (transform.position.x - pos.x);
+        float standTop = player.HeadPoint.y + 0.12f;
+        float crouchTop = myFeet + (standTop - myFeet) * 0.7f;
+        return y > crouchTop + 0.2f && y < standTop + 0.3f;
+    }
+
     private bool EyeReflex(out PlayerInputFrame frame) {
         frame = default;
         if (player.IsGrounded || !(currentTarget is Cyclops boss) || boss.IsDead || boss.RestLeft <= 0f) {
@@ -560,7 +596,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         // last moment, since the decisions come too far apart to catch them
         Vector2 body = me + Vector2.up * 0.5f;
         foreach (HexballEffect ball in HexballEffect.Active) {
-            if (!ball) {
+            if (!ball || ball.fromFreny) {
                 continue;
             }
             Vector2 pos = ball.transform.position;
@@ -568,6 +604,13 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
             Vector2 toMe = body - pos;
             float along = Vector2.Dot(toMe, dir);
             float miss = Mathf.Abs(toMe.x * dir.y - toMe.y * dir.x);
+            // a level shot at head height that passes over a crouched Freny: duck it and stay on the
+            // floor (a jump often landed him in the next one); not the Supremo's homing balls
+            if (along > 0f && along / Mathf.Max(0.1f, ball.Speed) <= DuckTime && DucksUnder(ball, pos, dir, myFeet)) {
+                frame.crouchHeld = true;
+                action = "Abaixando do feitiço";
+                return true;
+            }
             if (along > 0f && miss <= 0.8f && along / Mathf.Max(0.1f, ball.Speed) <= HexReactTime && Time.time >= nextJumpTime) {
                 if (Mathf.Abs(dir.y) < 0.5f) {
                     // a level shot: jump straight over it
@@ -709,6 +752,148 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
             }
         }
         return false;
+    }
+
+    // ---- phase 4: potion timing, the Mina-aranha and the Rede (2026-11-01) ----
+
+    private const float SpiderTargetCost = 20f;   // a spider mine is a target only when nothing else is
+    private const float SpiderShootRange = 11f;
+    private const float SpiderKeepOut = 3.4f;     // its blast (1.9) plus the step it takes while arming
+    private const float HeavyNear = 3.5f;         // a 2-heart hitter this close makes 2 hearts "low"
+    private const float NetGroup = 2.2f;
+    private const float NetMinDistance = 2f;      // not at his own feet: it would hold them on top of him
+    private const float NetMaxDistance = 7f;
+
+    private bool PotionNow(Vector2 me) {
+        if (!FrenyProgress.HasAutoPotion || !player.HasPotion || player.Health >= player.MaxHealth) {
+            return false;
+        }
+        if (player.Health <= lowHealth) {
+            return true;
+        }
+        if (player.Health > 2 || player.MaxHealth < 4) {
+            return false;   // not too early: a potion is one heart, keep it for the last ones
+        }
+        // two hearts left and something that takes two (or a lot of company) right there
+        int close = 0;
+        foreach (Enemy enemy in enemies) {
+            if (!enemy || enemy.IsDead) {
+                continue;
+            }
+            float distance = Vector2.Distance(enemy.Center, me);
+            if (distance > HeavyNear) {
+                continue;
+            }
+            close++;
+            if (enemy is Golem || enemy is Cyclops || enemy is SpiderMine || Enemy.BloodDamage > 0) {
+                return true;
+            }
+        }
+        return close >= 3;
+    }
+
+    // the nearest spider mine on his floor: shot from as far as the revolver goes; one that gets
+    // close (or starts arming) is run from, out of its blast, then shot
+    private bool SpiderMines(ref PlayerInputFrame frame, Vector2 me, float myFeet) {
+        SpiderMine nearest = null;
+        float best = float.MaxValue;
+        foreach (SpiderMine mine in SpiderMine.Alive) {
+            if (!mine || mine.IsDead) {
+                continue;
+            }
+            float gap = Mathf.Abs(mine.Center.x - me.x);
+            if (Mathf.Abs(mine.Feet.y - myFeet) > verticalTolerance) {
+                // another floor: only one arming within reach of its blast matters
+                if (mine.Arming && Vector2.Distance(mine.Center, me) < SpiderMine.Blast + 0.8f) {
+                    frame.move = Mathf.Sign(me.x - mine.Center.x);
+                    frame.runHeld = player.RunReady;
+                    action = "Fugindo da mina-aranha";
+                    return true;
+                }
+                continue;
+            }
+            if (gap < best) {
+                best = gap;
+                nearest = mine;
+            }
+        }
+        if (nearest == null || best > SpiderShootRange) {
+            return false;
+        }
+        if (best > SpiderKeepOut + 2f) {
+            // a far one waits while something else is on him: no turning his back to a Golem
+            foreach (Enemy enemy in enemies) {
+                if (enemy && !enemy.IsDead && !(enemy is SpiderMine) && Vector2.Distance(enemy.Center, me) < 2.2f) {
+                    return false;
+                }
+            }
+        }
+        float dx = nearest.Center.x - me.x;
+        float toward = Mathf.Sign(dx);
+        bool facing = (dx > 0f) == player.FacingRight;
+        bool gun = player.IsGrounded && (player.GunReadyFor(false) || player.GunReadyFor(true));
+        if (best < SpiderKeepOut || nearest.Arming) {
+            if (nearest.Arming || best < SpiderMine.Blast + 0.4f || !gun) {
+                // out of the blast first: a dash or a jump away, else run
+                if (best < SpiderMine.Blast + 0.6f && Dodge(ref frame, -toward, "a mina-aranha")) {
+                    return true;
+                }
+                frame.move = -toward;
+                frame.runHeld = player.RunReady;
+                action = "Fugindo da mina-aranha";
+                return true;
+            }
+        }
+        if (!gun) {
+            // reloading: keep the distance meanwhile
+            if (best < SpiderKeepOut + 2f) {
+                frame.move = -toward;
+                action = "Recuando da mina-aranha";
+                return true;
+            }
+            return false;
+        }
+        if (!facing) {
+            Turn(ref frame, toward);
+            return true;
+        }
+        bool pistol = player.GunReadyFor(false);
+        frame.selectPistol = pistol;   // the pellets' fan misses a small target far away
+        frame.selectShotgun = !pistol;
+        frame.rangedPressed = true;
+        action = "Tiro na mina-aranha de longe";
+        return true;
+    }
+
+    // the Rede at whoever deserves it: a group, or a red Golem / Escudeiro / Ciclope coming at him
+    private bool ThrowNet(ref PlayerInputFrame frame, Vector2 me, Enemy target) {
+        NetThrower nets = player.GetComponent<NetThrower>();
+        if (nets == null || !nets.CanThrow || !player.IsGrounded || target == null || target.Netted || target.NetSpeed < 1f) {
+            return false;
+        }
+        float dx = target.transform.position.x - me.x;
+        if (Mathf.Abs(dx) < NetMinDistance || Mathf.Abs(dx) > NetMaxDistance) {
+            return false;
+        }
+        bool worth = CountEnemiesNear(target.transform.position, NetGroup) >= 3
+                     || (target is Golem golem && golem.Armored)
+                     || (target is Shielded shield && shield.Guards(player.Feet))
+                     || target is Cyclops;
+        if (!worth) {
+            return false;
+        }
+        float charge = NetThrower.ChargeFor(dx, target.Center.y - (me.y + 0.6f));
+        if (charge < 0f) {
+            return false;
+        }
+        if ((dx > 0f) != player.FacingRight) {
+            Turn(ref frame, Mathf.Sign(dx));
+        } else {
+            frame.netPressed = true;
+            frame.netCharge = charge;
+            action = "Rede em " + target.GetType().Name;
+        }
+        return true;
     }
 
     // ---- actions ----
@@ -1161,7 +1346,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
     private bool InLobRange(Vector2 me, Enemy enemy) {
         float dx = enemy.transform.position.x - me.x;
         // never so close that Freny would be caught in his own blast
-        if (Mathf.Abs(dx) < Grenade.BlastRadius + 1f || Mathf.Abs(dx) > 8f) {
+        if (Mathf.Abs(dx) < WeaponLevels.GrenadeRadius + 1f || Mathf.Abs(dx) > 8f) {
             return false;
         }
         return player.GrenadeChargeFor(dx, enemy.Center.y - (me.y + 0.6f)) >= 0f;
@@ -1196,6 +1381,9 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
                 score += hopCount == int.MaxValue ? 50f : routeHopCost * hopCount;
             }
 
+            if (enemy is SpiderMine) {
+                score += SpiderTargetCost;   // SpiderMines() shoots them; walking up to one is the worst idea
+            }
             if (FrenyProgress.HasSmartTarget && !(enemy is Cyclops)) {
                 score += 1.5f * enemy.Health; // prefers the ones that die fastest
             }

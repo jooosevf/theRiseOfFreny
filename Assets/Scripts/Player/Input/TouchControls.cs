@@ -5,7 +5,7 @@ using UnityEngine.UI;
 // Super Nintendo pad: a fixed directional pad in the bottom-left corner (walk, crouch, aim up, push
 // up at a door to enter; tap a direction twice and hold it to run, or to dash in the air) and four
 // face buttons in a diamond on the right (B jump, Y shoot, A sword, X grenade), with two small
-// shoulder buttons above them (swap weapon, potion). GameMenus shows them in gameplay scenes on
+// shoulder buttons above them (swap weapon, potion) and a third over those for the Rede. GameMenus shows them in gameplay scenes on
 // touch screens. They feed the same actions as the keyboard through InputBindings and
 // KeyboardInputSource. HelpScreen copies the labels.
 // Touches are read straight from Input.touches before anyone reads input this frame, so a tap
@@ -150,6 +150,7 @@ public class TouchControls : MonoBehaviour {
             MakeFace(root, GameAction.Grenade, "Gran.", c + new Vector2(0f, s), GrenadeColor),
             MakeShoulder(root, GameAction.Potion, "Poção", c + new Vector2(s, s * 2.25f)),
             swap = MakeShoulder(root, GameAction.Shotgun, "Arma", c + new Vector2(-s, s * 2.25f)),
+            MakeShoulder(root, GameAction.Net, "Rede", c + new Vector2(0f, s * 3.1f)),
         };
     }
 

@@ -57,6 +57,8 @@ public class KeyboardInputSource : IPlayerInputSource {
             grenadePressed = released,
             grenadeHeld = held,
             grenadeCharge = charge,
+            netPressed = InputBindings.GetDown(GameAction.Net),
+            netCharge = NetThrower.TapCharge,
         };
     }
 }

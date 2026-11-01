@@ -8,11 +8,17 @@ using UnityEngine.UI;
 // as the arena shop.
 public static class InventoryScreens {
 
-    private const float ItemRow = 38f;
+    private const float ItemRow = 34f;   // 38 before the pistol's levels and the Rede made the Armeiro longer
     private const float SideWidth = 360f;
 
     private static readonly FrenyUpgrade[] Equipment = {
-        FrenyUpgrade.GreatSword, FrenyUpgrade.Shotgun, FrenyUpgrade.Grenade, FrenyUpgrade.DoubleJump,
+        FrenyUpgrade.GreatSword, FrenyUpgrade.Shotgun, FrenyUpgrade.Grenade, FrenyUpgrade.Net, FrenyUpgrade.DoubleJump,
+    };
+
+    // the Armeiro's weapon rows: the pistol's levels 2 and 3 first (it is always carried, so it is
+    // not equipment), then the rest
+    private static readonly FrenyUpgrade[] ArmoryWeapons = {
+        FrenyUpgrade.Pistol, FrenyUpgrade.GreatSword, FrenyUpgrade.Shotgun, FrenyUpgrade.Grenade, FrenyUpgrade.Net, FrenyUpgrade.DoubleJump,
     };
 
     private static readonly FrenyUpgrade[] Attributes = {
@@ -214,7 +220,7 @@ public static class InventoryScreens {
             }
         };
 
-        foreach (FrenyUpgrade upgrade in Equipment) {
+        foreach (FrenyUpgrade upgrade in ArmoryWeapons) {
             UpgradeRow(page, upgrade, refresh, refreshAll, speech);
         }
         foreach (FrenyUpgrade upgrade in Attributes) {
@@ -306,7 +312,13 @@ public static class InventoryScreens {
         refresh.Add(() => {
             int level = FrenyProgress.GetLevel(upgrade);
             int max = FrenyProgress.MaxLevel(upgrade);
-            name.text = FrenyProgress.DisplayName(upgrade) + (max > 1 ? " (" + level + "/" + max + ")" : "");
+            if (WeaponLevels.HasTiers(upgrade)) {
+                // the weapon's next level and the one it has: "Escopeta nv. 2: 5 tiros no leque (nv. 1/3)"
+                int tier = WeaponLevels.ShopTier(upgrade);
+                name.text = FrenyProgress.DisplayName(upgrade) + (tier > 0 && !FrenyProgress.IsMaxed(upgrade) ? " (nv. " + tier + "/" + WeaponLevels.MaxTier + ")" : "");
+            } else {
+                name.text = FrenyProgress.DisplayName(upgrade) + (max > 1 ? " (" + level + "/" + max + ")" : "");
+            }
             price.text = FrenyProgress.IsMaxed(upgrade) ? (max > 1 ? "máximo" : "comprado")
                 : FrenyProgress.CostText(upgrade);
         });
@@ -421,6 +433,9 @@ public static class InventoryScreens {
     }
 
     private static Sprite Icon(FrenyUpgrade upgrade) {
+        if (upgrade == FrenyUpgrade.Net) {
+            return NetThrower.Icon;
+        }
         MenuArt art = MenuArt.Get;
         if (art == null) {
             return null;
@@ -437,6 +452,7 @@ public static class InventoryScreens {
             case FrenyUpgrade.AttackSpeed: return art.sword;
             case FrenyUpgrade.DoubleJump: return art.jump;
             case FrenyUpgrade.MoveSpeed: return art.run;
+            case FrenyUpgrade.Pistol: return art.revolver;
             default: return null;
         }
     }
@@ -450,6 +466,8 @@ public static class InventoryScreens {
             case FrenyUpgrade.Shotgun: return "Escopeta";
             case FrenyUpgrade.Grenade: return "Granadas";
             case FrenyUpgrade.DoubleJump: return "Pulo duplo";
+            case FrenyUpgrade.Net: return "Rede";
+            case FrenyUpgrade.Pistol: return "Pistola";
             default: return FrenyProgress.DisplayName(upgrade);
         }
     }
@@ -459,6 +477,7 @@ public static class InventoryScreens {
             case FrenyUpgrade.GreatSword: return "Espadão";
             case FrenyUpgrade.Shotgun: return "Escopeta";
             case FrenyUpgrade.Grenade: return "Granada";
+            case FrenyUpgrade.Net: return "Rede";
             default: return "Pulo";
         }
     }
@@ -466,6 +485,12 @@ public static class InventoryScreens {
     private const string HelmetDescription = "Capacete Berserker: começa cada fase com 3 de armadura.";
 
     private static string Description(FrenyUpgrade upgrade) {
+        // a weapon already bought: what its next level does
+        if (WeaponLevels.HasTiers(upgrade) && WeaponLevels.ShopTier(upgrade) > 0) {
+            return FrenyProgress.IsMaxed(upgrade)
+                ? ItemName(upgrade) + " no nível máximo. Não tem arma melhor na Arena."
+                : WeaponLevels.NextLevelText(upgrade) + ". Cada nível vale para sempre.";
+        }
         switch (upgrade) {
             case FrenyUpgrade.GreatSword: return "O espadão corta bem mais largo. Ninguém chega perto.";
             case FrenyUpgrade.Shotgun: return "Escopeta: três tiros de uma vez. De perto não sobra nada.";
@@ -474,11 +499,15 @@ public static class InventoryScreens {
             case FrenyUpgrade.MaxHealth: return "Mais um coração pra aguentar o tranco.";
             case FrenyUpgrade.MoveSpeed: return "Pernas mais rápidas: corre e foge melhor.";
             case FrenyUpgrade.AttackSpeed: return "Uma poção que deixa os golpes e tiros mais rápidos.";
+            case FrenyUpgrade.Net: return "Rede: " + NetThrower.NetsPerStage + " por fase. Prende os inimigos por " + NetTrap.Seconds + " s; o Ciclope só fica lento.";
             default: return FrenyProgress.DisplayName(upgrade);
         }
     }
 
     private static string Bought(FrenyUpgrade upgrade) {
+        if (WeaponLevels.HasTiers(upgrade) && WeaponLevels.ShopTier(upgrade) > 1) {
+            return "Feito! " + ItemName(upgrade) + " nível " + WeaponLevels.ShopTier(upgrade) + ". Cuidado com isso aí.";
+        }
         return FrenyProgress.IsMaxed(upgrade) || FrenyProgress.MaxLevel(upgrade) == 1
             ? "Boa escolha! " + ItemName(upgrade) + " é seu."
             : "Feito! Subiu mais um nível. Volta quando quiser o próximo.";
