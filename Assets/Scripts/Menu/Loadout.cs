@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using UnityEngine;
 
@@ -21,7 +20,7 @@ public static class Loadout {
     }
 
     public static bool IsEquipped(string gear) {
-        return Array.IndexOf(GearIds, gear) >= 0 && Owns(gear) && PlayerPrefs.GetInt(FrenyProgress.UnequippedKeyPrefix + gear, 0) == 0;
+        return System.Array.IndexOf(GearIds, gear) >= 0 && Owns(gear) && PlayerPrefs.GetInt(FrenyProgress.UnequippedKeyPrefix + gear, 0) == 0;
     }
 
     public static void SetEquipped(string gear, bool equipped) {
@@ -42,7 +41,7 @@ public static class Loadout {
     }
 
     public static bool CanBuy(string gear) {
-        return Array.IndexOf(GearIds, gear) >= 0 && !Owns(gear) && FrenyProgress.Coins >= Cost(gear);
+        return System.Array.IndexOf(GearIds, gear) >= 0 && !Owns(gear) && FrenyProgress.Coins >= Cost(gear);
     }
 
     public static bool TryBuy(string gear) {
