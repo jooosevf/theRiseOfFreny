@@ -209,18 +209,7 @@ public static class InventoryScreens {
     public static MenuPage Armory(MenuStack stack) {
         MenuPage page = new MenuPage(stack.transform, "Armeiro", 600f, new Vector2(0.5f, 0.5f), 6f);
         MenuArt art = MenuArt.Get;
-        RectTransform side = SidePanel(page, "Armeira");
-        RectTransform frame = MenuKit.MakeRect("Portrait", side);
-        MenuKit.Size(frame, 200f, 279f);
-        Image face = MenuKit.MakeImage("Face", frame, Color.white);
-        MenuKit.Stretch(face.rectTransform);
-        face.raycastTarget = false;
-        MenuPortrait merchant = face.gameObject.AddComponent<MenuPortrait>();
-        Sprite[] faces = art != null ? art.merchantFace : null;
-        bool canBlink = faces != null && faces.Length > 5;
-        merchant.Init(canBlink ? new[] { faces[4], faces[0], faces[2], faces[1], faces[3] } : faces,
-            canBlink ? faces[5] : null, 9f, 3f);
-        MenuSpeech speech = SpeechBox(side, null, merchant, 96f);
+        MenuSpeech speech = MerchantSide(page);
 
         Text coins = page.Label("", MenuKit.TextSize);
         List<Action> refresh = new List<Action>();
@@ -266,9 +255,28 @@ public static class InventoryScreens {
         return page;
     }
 
-    // Armeiro > Cosméticos: looks only (José, 2026-11-01: for now just the Berserker helmet)
-    private static MenuPage CosmeticsPage(MenuStack stack, MenuSpeech speech, Action refreshArmory) {
+    // the merchant beside a shop page, with her speech box
+    private static MenuSpeech MerchantSide(MenuPage page) {
+        MenuArt art = MenuArt.Get;
+        RectTransform side = SidePanel(page, "Armeira");
+        RectTransform frame = MenuKit.MakeRect("Portrait", side);
+        MenuKit.Size(frame, 200f, 279f);
+        Image face = MenuKit.MakeImage("Face", frame, Color.white);
+        MenuKit.Stretch(face.rectTransform);
+        face.raycastTarget = false;
+        MenuPortrait merchant = face.gameObject.AddComponent<MenuPortrait>();
+        Sprite[] faces = art != null ? art.merchantFace : null;
+        bool canBlink = faces != null && faces.Length > 5;
+        merchant.Init(canBlink ? new[] { faces[4], faces[0], faces[2], faces[1], faces[3] } : faces,
+            canBlink ? faces[5] : null, 9f, 3f);
+        return SpeechBox(side, null, merchant, 96f);
+    }
+
+    // Armeiro > Cosméticos: looks only (José, 2026-11-01: for now just the Berserker helmet), laid
+    // out like the shop, with the merchant beside it
+    private static MenuPage CosmeticsPage(MenuStack stack, MenuSpeech armorySpeech, Action refreshArmory) {
         MenuPage page = new MenuPage(stack.transform, "Cosméticos", 600f, new Vector2(0.5f, 0.5f), 6f);
+        MenuSpeech speech = MerchantSide(page);
         Text coins = page.Label("", MenuKit.TextSize);
         string look = Loadout.CosmeticHelmet;
         Sprite icon = null;
@@ -276,24 +284,24 @@ public static class InventoryScreens {
         if (icons.Length > 0) {
             icon = icons[0];
         }
-        Text message = null;
         Text price = ItemButton(page, Loadout.DisplayName(look), icon, () => {
             if (Loadout.TryBuy(look)) {
-                message.text = "Comprado! Ele já vai na cabeça do Freny (troque em Inventário > Visual).";
+                speech.Say("Ficou lindo! Já vai na cabeça. Troca em Inventário > Visual quando quiser.");
             } else {
-                Sfx.Ui("ui_error");
-                message.text = Loadout.Owns(look) ? "Esse você já tem." : "Faltam moedas: custa " + Loadout.Cost(look) + ".";
+                Refuse(speech, Loadout.Owns(look) ? "Esse capacete você já tem, querido." : NoCoins());
             }
             coins.text = "Moedas: " + FrenyProgress.Coins;
             refreshArmory();
         }, out _, out Button button);
+        Hover(button, () => speech.Say(CosmeticDescription));
         Action refresh = () => price.text = Loadout.Owns(look) ? "comprado" : Loadout.Cost(look).ToString();
         button.onClick.AddListener(() => refresh());
         page.Space(4f);
-        message = page.Label(CosmeticDescription);
+        page.Label("Cosméticos não dão força: são só para o visual.");
         page.Button("Voltar", stack.Back);
         coins.text = "Moedas: " + FrenyProgress.Coins;
         refresh();
+        speech.Say("Aqui é só estilo, Freny. Esse capacete tem um chifre quebrado, mas tem charme.");
         return page;
     }
 

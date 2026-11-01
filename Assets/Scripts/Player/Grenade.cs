@@ -75,14 +75,14 @@ public class Grenade : MonoBehaviour {
         if (exploded || cam == null || GameMenus.Paused) {
             return;
         }
-        Vector3 screen = cam.WorldToScreenPoint(transform.position + Vector3.up * 0.55f);
+        Vector3 screen = cam.WorldToScreenPoint(transform.position + Vector3.up * 0.45f);
         if (screen.z < 0f) {
             return;
         }
         if (countStyle == null) {
             countStyle = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
         }
-        countStyle.fontSize = Mathf.RoundToInt(Screen.height / 36f);
+        countStyle.fontSize = Mathf.Max(9, Mathf.RoundToInt(Screen.height / 60f));   // small, it is a lot of grenades sometimes
         Rect rect = new Rect(screen.x - 40f, Screen.height - screen.y - 20f, 80f, 40f);
         string text = Mathf.CeilToInt(SecondsLeft).ToString();
         countStyle.normal.textColor = Color.black;
