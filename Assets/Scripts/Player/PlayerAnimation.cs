@@ -9,6 +9,7 @@ public class PlayerAnimation : MonoBehaviour {
 
     private Animator _anim;
     private FrenyMotion _motion;   // procedural motion on top of the frames
+    private FrenyRig _rig;         // the skeletal prototype, only when its flag is on
 
     private void Awake() {
         _anim = GetComponentInChildren<Animator>();
@@ -16,6 +17,7 @@ public class PlayerAnimation : MonoBehaviour {
         if (_motion == null) {
             _motion = gameObject.AddComponent<FrenyMotion>();
         }
+        _rig = FrenyRig.Attach(gameObject);
     }
 
     public void Move(bool moving) {
@@ -49,6 +51,9 @@ public class PlayerAnimation : MonoBehaviour {
             Fire("Melee");
         }
         _motion.Slash(step);
+        if (_rig) {
+            _rig.Slash(step);
+        }
     }
 
     public void Ranged() {
