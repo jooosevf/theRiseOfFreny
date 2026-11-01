@@ -10,8 +10,10 @@ public class Shielded : Enemy {
     private const float BackSword = 3f;       // 6 HP: two sword hits in the back
     private const float FrontSword = 0.5f;
     private const float FrontShot = 1f / 6f;  // shots mostly bounce off the shield
-    private const float TurnSlow = 0.8f;      // seconds to turn around at the start of a run
-    private const float TurnFast = 0.3f;      // ... and at the top of the difficulty curve
+    // José, 2026-10-30: it showed its back too easily
+    private const float TurnSlow = 0.4f;      // seconds to turn around at the start of a run
+    private const float TurnFast = 0.15f;     // ... and at the top of the difficulty curve
+    private const float BackAway = 1.8f;      // Freny this close behind it: it steps away while turning
     private const string Sheets = "Shielded/Shielded ";
 
     private FrameAnimator frames;
@@ -46,9 +48,10 @@ public class Shielded : Enemy {
 
     private float TurnDelay => ArenaBounds.Active ? Mathf.Lerp(TurnSlow, TurnFast, ArenaDirector.CurrentDifficulty) : TurnSlow;
 
-    // is the shield between it and a hit from there: in front, not from above, not mid-swing
+    // is the shield between it and a hit from there: anything from its front side, high or low and
+    // mid-swing too (José, 2026-10-30: "tudo que vem da frente, pega no escudo"); only its back is open
     public bool Guards(Vector3 from) {
-        return (from.x > transform.position.x) == FacingRight && from.y <= Center.y + HalfHeight * 0.9f && !IsAttacking;
+        return (from.x > transform.position.x) == FacingRight;
     }
 
     protected override float HitScale(Vector3 from, bool shot) {
@@ -85,10 +88,15 @@ public class Shielded : Enemy {
             turnStarted = -1f;
             return;
         }
-        // still turning: keeps showing the old side and doesn't walk (a push still moves it)
+        // still turning: keeps showing the old side; with Freny right behind it, it steps away from
+        // him (so its back isn't left there to hit), otherwise it stands (a push still moves it)
         transform.localScale = new Vector3(shownFacing, 1f, 1f);
         if (!BeingPushed) {
-            transform.position = new Vector3(x0, transform.position.y, transform.position.z);
+            float x = x0;
+            if (player != null && Mathf.Abs(player.transform.position.x - x0) < BackAway) {
+                x += Mathf.Sign(x0 - player.transform.position.x) * speed * 0.6f * Time.deltaTime;
+            }
+            transform.position = new Vector3(x, transform.position.y, transform.position.z);
         }
     }
 }

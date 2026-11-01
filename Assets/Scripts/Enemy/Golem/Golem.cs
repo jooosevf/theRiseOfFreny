@@ -6,6 +6,19 @@ public class Golem : Enemy {
     // the red Golem (Golem_Red): a tank. Its health, coins and score are in the prefab and its red
     // frames come from SpriteSkin; here it only shrugs off Freny's pushes and bleeds red sparks
     [SerializeField] private bool armored = false;
+    public bool Armored => armored;
+    public const int MaxRed = 3;
+    public static int RedAlive {
+        get {
+            int count = 0;
+            foreach (Enemy enemy in Active) {
+                if (enemy is Golem golem && golem.armored && !golem.IsDead) {
+                    count++;
+                }
+            }
+            return count;
+        }
+    }
 
     protected override int HitDamage => 2;
     protected override float HitPush => armored ? 1f : 3f; // heavy: Freny's hits barely move it
@@ -23,6 +36,10 @@ public class Golem : Enemy {
     private const float ThrowAngle = 55f;
     private const float ThrowMaxSpeed = 12f;
     private float nextThrow;
+    // José, 2026-10-30: two or three of them threw at once and the mines stacked up: after any red
+    // Golem throws, none throws again for SharedThrowGap seconds
+    private const float SharedThrowGap = 3f;
+    private static float nextAnyThrow;
 
     public override void Init() {
         base.Init();
@@ -40,7 +57,7 @@ public class Golem : Enemy {
     }
 
     private void TryThrowMine() {
-        if (isDead || player == null || player.Health <= 0 || IsAttacking || Time.time < nextThrow) {
+        if (isDead || player == null || player.Health <= 0 || IsAttacking || Time.time < nextThrow || Time.time < nextAnyThrow) {
             return;
         }
         Vector3 from = Center + Vector3.up * (HalfHeight * 0.6f);
@@ -50,6 +67,7 @@ public class Golem : Enemy {
             return;
         }
         nextThrow = Time.time + ThrowCooldown * ScoreCooldown;
+        nextAnyThrow = Time.time + SharedThrowGap;
         // the speed that lands it on Freny on the fixed angle (as Player.GrenadeChargeFor)
         float rad = ThrowAngle * Mathf.Deg2Rad;
         float g = Mathf.Abs(Physics2D.gravity.y) * GolemMine.Gravity;

@@ -1,13 +1,15 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// The red Golem's mine (the Mine sprites): thrown in an arc like Freny's grenade, it sticks
-// where it lands, its eye blinks for ArmTime and then it blows up with the grenade's blast.
-// It goes off at once when it touches Freny, and a sword hit or a shot sets it off early.
+// The red Golem's mine (the Mine sprites, also the Ciclope's bomb): thrown in an arc like Freny's
+// grenade, it sticks where it lands and blows up with the grenade's blast when its fuse runs out,
+// Fuse seconds after the throw (José, 2026-10-29: it used to go off the moment it touched Freny).
+// A sword hit or a shot sets it off early.
 // Enemies caught in the blast are hurt too, blamed on the Golem (no XP for Freny).
 public class GolemMine : MonoBehaviour, IDamageable {
-    public const float ArmTime = 0.9f;
-    public const float MaxFlight = 3f;   // fell off the map, or never landed
+    // 2 s, down to 1.5 s as the arena gets harder
+    public static float Fuse => Mathf.Lerp(2f, 1.5f, ArenaDirector.CurrentDifficulty);
+    private const float WarnTime = 0.6f;   // its eye blinks fast in the last moments
     public const float Gravity = 1.5f;
 
     private static Sprite[] idleFrames, nearFrames;
@@ -68,7 +70,7 @@ public class GolemMine : MonoBehaviour, IDamageable {
         m.thrower = thrower;
         m.sprite = renderer;
         m.body = body;
-        m.explodeAt = Time.time + MaxFlight;
+        m.explodeAt = Time.time + Fuse;
         m.blast = Grenade.BlastRadius * (size > 1f ? BigBlast : 1f);
         Sfx.Play("grenade_throw", from);
     }
@@ -81,9 +83,10 @@ public class GolemMine : MonoBehaviour, IDamageable {
     }
 
     private void Update() {
-        Sprite[] frames = landed ? nearFrames : idleFrames;
+        bool warning = explodeAt - Time.time < WarnTime;
+        Sprite[] frames = warning ? nearFrames : idleFrames;
         if (frames != null && frames.Length > 0) {
-            float fps = landed ? 14f : 8f;
+            float fps = warning ? 14f : 8f;
             sprite.sprite = frames[(int)(Time.time * fps) % frames.Length];
         }
         if (Time.time >= explodeAt) {
@@ -96,18 +99,18 @@ public class GolemMine : MonoBehaviour, IDamageable {
             return;
         }
         if (other.GetComponentInParent<Player>() != null) {
-            Explode();
-        } else if (!landed && !other.isTrigger && other.GetComponentInParent<Enemy>() == null && body.Vel().y <= 0f) {
+            return;   // no blast on touch: the fuse decides
+        }
+        if (!landed && !other.isTrigger && other.GetComponentInParent<Enemy>() == null && body.Vel().y <= 0f) {
             Land();
         }
     }
 
-    // sticks to the floor (or wall) it hit and starts blinking
+    // sticks to the floor (or wall) it hit; the fuse keeps burning
     private void Land() {
         landed = true;
         body.SetVel(Vector2.zero);
         body.bodyType = RigidbodyType2D.Kinematic;
-        explodeAt = Time.time + ArmTime;
         Sfx.Play("ui_select", transform.position);
     }
 

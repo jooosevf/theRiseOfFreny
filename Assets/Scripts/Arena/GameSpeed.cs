@@ -1,28 +1,17 @@
 using UnityEngine;
 
-// Global game speed (Time.timeScale), saved in PlayerPrefs so José can tune it with the arena
-// slider and keep the value between sessions. 1 = Unity default (the slider goes down to 0.3).
+// Global game speed (Time.timeScale). José, 2026-10-30: no longer a setting; it is locked at the
+// normal speed for everyone (an old saved value, from the slider that used to be in Configurações,
+// is ignored), which also keeps every run comparable for the ranking.
 public static class GameSpeed {
 
-    public const float Min = 0.3f;
-    public const float Max = 1.5f;
     public const float Default = 1f;
 
-    private const string Key = "freny.gameSpeed";
-
-    public static float Value {
-        get => PlayerPrefs.GetFloat(Key, Default);
-        set {
-            float clamped = Mathf.Clamp(value, Min, Max);
-            PlayerPrefs.SetFloat(Key, clamped);
-            Apply();
-        }
-    }
+    public static float Value => Default;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     public static void Apply() {
         Time.timeScale = Value;
-        // keep physics steps in proportion so slow motion stays smooth
         Time.fixedDeltaTime = 0.02f * Value;
     }
 }

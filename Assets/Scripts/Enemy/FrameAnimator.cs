@@ -59,9 +59,17 @@ public class FrameAnimator : MonoBehaviour {
         Switch(name);
     }
 
+    // freezes the frame on screen for `seconds` (the forced clip lasts that much longer)
+    public void Hold(float seconds) {
+        holdUntil = Time.time + seconds;
+        forcedUntil += seconds;
+    }
+
     public float Length(string name) {
         return clips.TryGetValue(name, out Clip clip) ? clip.frames.Length / clip.fps : 0f;
     }
+
+    private float holdUntil;
 
     private void Switch(string name) {
         if (current != name) {
@@ -91,6 +99,9 @@ public class FrameAnimator : MonoBehaviour {
         Switch(want);
         if (!clips.TryGetValue(current, out Clip clip)) {
             return;
+        }
+        if (Time.time < holdUntil) {
+            clipStart += Time.deltaTime;   // the clip's clock stands still while held
         }
         int frame = (int)((Time.time - clipStart) * clip.fps);
         frame = clip.loop ? frame % clip.frames.Length : Mathf.Min(frame, clip.frames.Length - 1);

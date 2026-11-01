@@ -95,13 +95,6 @@ public class ArenaHud : MonoBehaviour {
         int level = FrenyProgress.Level;
         GUILayout.Label($"Nível {level}  XP {FrenyProgress.XpIntoLevel}/{FrenyProgress.XpToNext(level)}  Pontos {FrenyProgress.BrainPoints}  Moedas {player.coins}");
 
-        GUILayout.BeginHorizontal();
-        GUILayout.Label($"Velocidade do jogo {GameSpeed.Value:0.00}x", GUILayout.Width(170));
-        float newSpeed = GUILayout.HorizontalSlider(GameSpeed.Value, GameSpeed.Min, GameSpeed.Max);
-        if (!Mathf.Approximately(newSpeed, GameSpeed.Value)) {
-            GameSpeed.Value = newSpeed;
-        }
-        GUILayout.EndHorizontal();
 
         if (showUpgrades) {
             foreach (FrenyUpgrade upgrade in Upgrades) {

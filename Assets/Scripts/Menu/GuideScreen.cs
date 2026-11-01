@@ -140,32 +140,35 @@ public static class GuideScreen {
             "Lento e teimoso: depois que vê o Freny, não larga. O soco tira 2 corações e derruba. " +
             "2 de vida.");
         Entry(parent, null, "Golem Vermelho",
-            "Pedra vermelha e olhos acesos. Um tanque: 6 de vida (aguenta uma granada), quase não " +
+            "Pedra vermelha e olhos acesos. Um tanque: 8 de vida (aguenta duas granadas), quase não " +
             "recua com os golpes, e o soco tira 2 e derruba: ele carrega o soco e avança num dash junto. De longe, joga uma mina que gruda no chão, " +
-            "pisca e explode como uma granada (tire o Freny de perto, ou acerte a mina antes). " +
+            "pisca e explode como uma granada 2 s depois de jogada (1,5 s quando a Arena fica difícil); encostar nela não detona. " +
+            "Tire o Freny de perto, ou acerte a mina antes. " +
+            "No máximo 3 de uma vez; quando um joga a mina, nenhum joga outra por 3 s. " +
             "Vale 500 pontos e 6 moedas. Na Arena, só depois de 50 mil pontos.");
         Entry(parent, null, "Escudeiro",
             "Anda atrás de um escudo de espinhos virado para o Freny. No escudo o dano é pequeno (12 espadadas " +
-            "ou 36 tiros); nas costas, 2 espadadas ou 6 tiros matam. Ele demora para virar, então passe por trás " +
-            "dele (pulando por cima ou na hora do ataque também vale); quanto mais difícil, mais rápido ele vira. " +
+            "ou 36 tiros); nas costas, 2 espadadas ou 6 tiros matam. Tudo que vem da frente bate no escudo, até de cima. " +
+            "Ele vira rápido (0,4 s, até 0,15 s no difícil) e se afasta se o Freny chega por trás: pule por cima e bata logo. " +
             "6 de vida, 300 pontos.");
         Entry(parent, null, "Ciclope",
-            "O chefe gigante: chega no centro do chão aos 50 mil pontos e depois a cada 100 mil (150 mil, 250 mil...); " +
+            "O chefe gigante: prefere ficar no meio, embaixo da primeira plataforma (bom para pular no olho). Chega no centro do chão aos 50 mil pontos e cada próximo 150 mil pontos depois de o anterior morrer; " +
             "dois de uma vez só a partir de 1 milhão, com as barras embaixo, uma de cada lado. Cada luta traz mais " +
             "ajuda: 2 feiticeiros comuns na primeira, um a mais em cada uma seguinte (até 5), e a partir da segunda " +
             "os outros inimigos também continuam vindo. Sempre vem um morcego e um inseto atrás do Freny, para manter o combo vivo. O feitiço dos feiticeiros não fere o Ciclope. 100 de " +
             "vida e barra de chefe. Não pula: fica no chão. Soco: 1 coração e arremessa o Freny longe. " +
             "Pancada no chão: uma onda pelo piso, 2 corações e o mesmo arremesso (pule!). Bomba: de longe, uma mina " +
-            "3 vezes maior jogada com força, 2 corações. Vômito: um jato de até 7 de distância, em 2 de 5 ataques de perto, " +
-            "quando o Freny está a alguns passos ou embaixo (numa plataforma, o jato a atravessa e cai no andar de baixo). " +
-            "Ele se espalha numa poça larga que fica 6 s: o jato e a poça queimam, e a poça deixa o Freny lento. Depois de cada golpe ele descansa " +
+            "3 vezes maior jogada com força, 2 corações. Vômito: ele vomita no chão e alaga o andar de baixo inteiro por 4 s; " +
+            "quem estiver no chão queima (os outros inimigos também, menos ele), então suba numa plataforma. " +
+            "Na Lua de Sangue ele solta até 3 raios vermelhos do olho em direção ao Freny (3 corações), que desintegram tudo no caminho. " +
+            "Na pancada ele dá um pulinho e a tela treme. Depois de cada golpe ele descansa " +
             "3 s: é a hora de bater. Acertar o olho tira o dobro. Vale 5 000 pontos, 30 moedas e deixa um baú.");
         Entry(parent, null, "Feiticeiro",
             "Fica parado e lança uma bola a cada 5 segundos (o Supremo a cada 3,5); ela tira 2 e empurra, e abaixar desvia " +
             "de um tiro reto. " +
             "Nas torres, muda de lugar a cada 3 feitiços e some depois de 8. 2 de vida. Na Arena, " +
             "contando os dois tipos, há no máximo 1 feiticeiro até 50 mil pontos, 2 depois disso e " +
-            "3 depois de 100 mil; quando um morre, outro só aparece no lugar dele 15 s depois. " +
+            "3 só depois de 1 milhão; quando um morre, outro só aparece no lugar dele 15 s depois. " +
             "De dia, as bolas " +
             "ganham uma borda escura para aparecer no céu claro.");
         Entry(parent, null, "Feiticeiro Supremo",
@@ -182,8 +185,13 @@ public static class GuideScreen {
             "Um recorde novo aparece no fim da corrida, com o botão Salvar recorde ou o motivo de não poder ir para o Ranking. " +
             "No automático, a próxima corrida começa 10 s depois (ou na hora, em Jogar agora); com 10 mil " +
             "pontos ou mais, o jogo pergunta antes.");
+        Entry(parent, null, "Lua de Sangue",
+            "Dia de 1 minuto, noite de 4. A cada 3 noites a lua fica vermelha por 30 s no meio da noite (a primeira uns 10 minutos de corrida). Nesse tempo, " +
+            "os inimigos ficam 25% mais rápidos, tiram 1 coração a mais, recuperam vida (1 a cada 3 s, o Ciclope também) " +
+            "e ficam de olhos vermelhos, deixando um rastro vermelho.");
         Entry(parent, art ? art.rageHelmet : null, "Dificuldade",
-            "Fácil, Médio, Difícil ou Freny: quanto maior, mais inimigos, mais rápidos e mais cedo.");
+            "Fácil, Médio, Difícil ou Freny: quanto maior, mais inimigos, mais rápidos e mais cedo. " +
+            "Com o tempo e os pontos a Arena aperta, mas para de apertar no primeiro Ciclope (50 mil) e só volta em 1 milhão.");
         Entry(parent, Achievements.Icon(Achievement.Cyclops), "Conquistas",
             "10 desafios (pausa > Conquistas). Só valem corridas manuais: depois que o piloto joga, a corrida não " +
             "dá mais conquistas. No fim da corrida, o servidor confere cada conquista nova e o site mostra quantos % " +

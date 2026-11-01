@@ -12,7 +12,7 @@ using UnityEngine;
 // taken they appear on the platforms like everyone else. How many sorcerers (either kind) can be
 // around at once goes with the score: one up to 50 000 points, two past that, three past 100 000.
 // The scene's EnemySpawners are only a fallback. The Escudeiro joins the list at runtime, and every
-// BossEvery points the Ciclope is called onto the floor; while it lives nobody else comes.
+// FirstBossAt points (then AfterBossKill points after each one falls) the Ciclope is called onto the floor; while it lives nobody else comes.
 public class ArenaDirector : MonoBehaviour {
 
     [System.Serializable]
@@ -61,8 +61,14 @@ public class ArenaDirector : MonoBehaviour {
     public static float CurrentOvertime { get; private set; }
 
     private float RampTime => Tuning.RampSeconds.Value * ArenaDifficulty.RampFactor;
-    public float Difficulty => Mathf.Clamp01(ArenaDifficulty.StartAt + Elapsed / RampTime);
-    public float Overtime => Mathf.Max(0f, Elapsed - RampTime * (1f - ArenaDifficulty.StartAt)) / 60f;
+    public float Difficulty => Mathf.Clamp01(ArenaDifficulty.StartAt + rampElapsed / RampTime);
+    public float Overtime => Mathf.Max(0f, rampElapsed - RampTime * (1f - ArenaDifficulty.StartAt)) / 60f;
+    // the time the difficulty ramp counts: it stops at the first Ciclope and starts again at a
+    // million (José, 2026-10-29: after the first Ciclope it got too hard too fast; a million should
+    // be reachable, but hard)
+    private float rampElapsed;
+    public const int RampPausedFrom = FirstBossAt;
+    public const int RampResumesAt = 1000000;
     // a busy arena from the start (3), the peak at the end of the curve, then one more per
     // minute of overtime, up to MaxEnemies
     private const int MaxEnemies = 24;
@@ -102,10 +108,10 @@ public class ArenaDirector : MonoBehaviour {
 
     // ---- the Escudeiro and the Ciclope (EnemyTemplates) ----
 
-    // José, 2026-10-29: the first Ciclope at 50k, then one every 100k (150k, 250k...); two at once
-    // only from a million. Each one brings more enemies with it (BossHelpers, BossCompany)
+    // José: the first Ciclope at 50k, then each one AfterBossKill points after the last one fell
+    // (2026-10-30; it was every 100k); two at once only from a million. Each one brings more enemies with it (BossHelpers, BossCompany)
     public const int FirstBossAt = 50000;
-    public const int BossEvery = 100000;
+    public const int AfterBossKill = 150000;   // José, 2026-10-30: the next one comes this many points after the last one falls
     public const int TwoBossesAt = 1000000;
     private const float TwinGap = 4f;
     private GameObject cyclopsTemplate;
@@ -130,16 +136,20 @@ public class ArenaDirector : MonoBehaviour {
             list.Add(new Entry { prefab = shielded, unlockAt = 0.4f, weight = 1f });
             enemies = list.ToArray();
         }
-        cyclopsTemplate = EnemyTemplates.Make<Cyclops>(golem, "Cyclops_Boss", new Vector2(1.9f, 2.45f), new Vector2(0f, -0.36f));
+        cyclopsTemplate = EnemyTemplates.Make<Cyclops>(golem, "Cyclops_Boss", new Vector2(1.9f * Cyclops.Size, 2.45f * Cyclops.Size), new Vector2(0f, Cyclops.Size * 1.225f - 1.585f));
     }
 
     private bool BossAround => bossPending || Cyclops.Current != null;
+    // after a Ciclope falls the arena fills up again at the usual pace, not all at once
+    private const float AfterBossCalm = 20f;
+    private float calmUntil;
+    private bool bossWasAround;
 
     private void UpdateBoss() {
         if (cyclopsTemplate == null || BossAround || Score < nextBossScore) {
             return;
         }
-        nextBossScore += BossEvery;
+        nextBossScore = int.MaxValue;   // set again when it falls: AfterBossKill points later
         bossesCalled++;
         StartCoroutine(SpawnBoss());
     }
@@ -235,10 +245,18 @@ public class ArenaDirector : MonoBehaviour {
             return;
         }
 
+        if (Score < RampPausedFrom || Score >= RampResumesAt) {
+            rampElapsed += Time.deltaTime;
+        }
         UpdateBoss();
         UpdateBossHelpers();
         UpdateBossFodder();
         int present = AliveEnemies() + pendingSpawns;
+        if (bossWasAround && !BossAround) {
+            calmUntil = Time.time + AfterBossCalm;
+            nextBossScore = Score + AfterBossKill;
+        }
+        bossWasAround = BossAround;
         bool spawnNow = BossAround ? Company() < BossCompany && !bossPending : present < MaxAlive;
         if (Time.time >= nextSpawnTime && spawnNow) {
             Entry pick = Pick();
@@ -246,7 +264,7 @@ public class ArenaDirector : MonoBehaviour {
                 StartCoroutine(SpawnWithPortal(pick));
             }
             // a half-empty arena fills up fast: no more long stretches with two enemies around
-            bool sparse = present + 1 < MaxAlive / 2;
+            bool sparse = present + 1 < MaxAlive / 2 && Time.time >= calmUntil;
             nextSpawnTime = Time.time + SpawnInterval * (sparse ? 0.35f : 1f);
         }
 
@@ -333,7 +351,7 @@ public class ArenaDirector : MonoBehaviour {
 
     // sorcerers (plain and Supreme) at once, by score (José, 2026-10-29)
     public static int SorcererLimit(int score) {
-        return score >= 100000 ? 3 : score >= 50000 ? 2 : 1;
+        return score >= RampResumesAt ? 3 : score >= 50000 ? 2 : 1;   // the third only from a million
     }
 
     // alive ones, the portals they are coming out of, and the places of the ones that died in the
@@ -358,6 +376,9 @@ public class ArenaDirector : MonoBehaviour {
     private bool Unlocked(Entry entry) {
         if (entry.unlockScore > 0 && Score < entry.unlockScore) {
             return false;
+        }
+        if (entry.prefab != null && entry.prefab.GetComponent<Golem>() is Golem golem && golem.Armored && Golem.RedAlive >= Golem.MaxRed) {
+            return false;   // José, 2026-10-30: at most 3 red Golems at once
         }
         if (Score < SupremeAt && entry.prefab != null && entry.prefab.GetComponent<Sorcerer>() is Sorcerer sorcerer && sorcerer.IsSupreme) {
             return false;   // José, 2026-10-29: the Feiticeiro Supremo only from 100k

@@ -15,12 +15,6 @@ public static class SettingsScreens {
         page.Slider("Brilho", 0, GameSettings.BrightnessSteps, GameSettings.Brightness,
             v => (v - GameSettings.DefaultBrightness).ToString("+0;-0;0"), v => GameSettings.Brightness = v);
 
-        int minSpeed = Mathf.RoundToInt(GameSpeed.Min * 10f);
-        int maxSpeed = Mathf.RoundToInt(GameSpeed.Max * 10f);
-        // the pause menu stops time; GameSpeed.Value saves without applying until the game resumes
-        page.Slider("Velocidade", minSpeed, maxSpeed, Mathf.RoundToInt(GameSpeed.Value * 10f),
-            v => (v / 10f).ToString("0.0") + "x", v => SetSpeed(v / 10f));
-
         if (GameSettings.CanChangeScreen) {
             page.Choice("Tela cheia", new[] { "Não", "Sim" }, GameSettings.Fullscreen ? 1 : 0,
                 i => GameSettings.Fullscreen = i == 1);
@@ -41,14 +35,6 @@ public static class SettingsScreens {
         page.Button("Controles", () => stack.Push(Controls(stack)));
         page.Button("Voltar", stack.Back);
         return page;
-    }
-
-    private static void SetSpeed(float speed) {
-        bool paused = Time.timeScale == 0f;
-        GameSpeed.Value = speed;      // applies it
-        if (paused) {
-            Time.timeScale = 0f;      // still paused until the menu closes
-        }
     }
 
     public static MenuPage Controls(MenuStack stack) {

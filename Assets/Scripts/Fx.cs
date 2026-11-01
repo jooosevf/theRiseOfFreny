@@ -28,6 +28,18 @@ public static class Fx {
         }
     }
 
+    // specks floating up and fading, with no gravity (a big enemy crumbling away)
+    public static void Rise(Vector3 position, Color color, float size, float life) {
+        Ensure();
+        ParticleSystem.EmitParams p = new ParticleSystem.EmitParams();
+        p.position = position;
+        p.velocity = new Vector3(Random.Range(-0.35f, 0.35f), Random.Range(0.6f, 1.6f), 0f);
+        p.startColor = color;
+        p.startSize = size;
+        p.startLifetime = life;
+        dust.Emit(p, 1);
+    }
+
     // debris flying out in every direction (hits, deaths, impacts)
     public static void Burst(Vector3 position, Color color, int count, float speed = 3f, float size = 0.1f, float life = 0.6f) {
         Ensure();

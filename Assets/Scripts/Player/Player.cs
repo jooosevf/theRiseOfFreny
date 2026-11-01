@@ -249,6 +249,9 @@ public class Player : MonoBehaviour, IDamageable {
             _input = gameObject.AddComponent<FrenyInput>();
         }
         rg2d = GetComponent<Rigidbody2D>();
+        if (rg2d != null) {
+            rg2d.collisionDetectionMode = CollisionDetectionMode2D.Continuous;   // the big knockbacks can't skip a wall's edge
+        }
         col2d = GetComponent<Collider2D>();
         if (col2d is CapsuleCollider2D capsule) {
             standSize = capsule.size;
@@ -339,9 +342,16 @@ public class Player : MonoBehaviour, IDamageable {
     }
 
     // all velocity changes happen here: doing them in Update made the jump depend on the frame rate
+    private float nextWallCheck;
+
     private void FixedUpdate() {
         if (isDead || rg2d == null) {
             return;
+        }
+        // a big shove or a wrap can leave him inside a wall's tiles, where nothing pushes him out
+        if (col2d != null && Time.time >= nextWallCheck) {
+            nextWallCheck = Time.time + 0.1f;
+            WallRescue.Free(transform, col2d.bounds.center, col2d.bounds.size.y, rg2d);
         }
 
         Vector2 velocity = rg2d.Vel();

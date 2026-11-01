@@ -11,12 +11,9 @@ using UnityEngine.UI;
 public class Cyclops : Enemy {
     public const int Life = 100;   // José, 2026-10-29
     private const float SmashCooldown = 7f;
-    private const float VomitCooldown = 9f;
+    private const float VomitCooldown = 12f;
     private const float SmashReach = 9f;
-    private const float VomitReach = 7f;    // the jet reaches this far (José, 2026-10-29: a ranged attack too)
     private const float JetMinDistance = 2.5f;
-    private const float PuddleWidth = 4f;   // wide and lasting: a stretch of floor Freny can't walk on
-    private const float PuddleSeconds = 6f;
     private const string Sheets = "Cyclops/Cyclops ";
     // the red Golem's mine, thrown much harder: fast and flat, hard to dodge
     private const float BombCooldown = 8f;
@@ -39,9 +36,14 @@ public class Cyclops : Enemy {
 
     // the eye (in the Idle frame, 0.88 forward and 0.73 up from the sprite's middle): hits there
     // take double (José, 2026-10-29)
-    private static readonly Vector2 EyeOffset = new Vector2(0.88f, 0.73f);
-    private const float EyeRadius = 0.45f;
+    private static readonly Vector2 EyeOffset = new Vector2(0.88f, 0.73f) * Size;
+    private const float EyeRadius = 0.45f * Size;
 
+    // José, 2026-10-30: 20% bigger. The art's pivot is its middle and its feet are at the bottom,
+    // so the sprite moves up 1.6 per unit of growth; the collider (ArenaDirector) grows with it
+    public const float Size = 1.2f;
+
+    public Vector3 EyePoint => Eye;   // the autopilot aims its sword there
     private Vector3 Eye => sprite.bounds.center + new Vector3((FacingRight ? 1f : -1f) * EyeOffset.x, EyeOffset.y, 0f);
 
     protected override float HitScale(Vector3 from, bool shot) {
@@ -110,6 +112,8 @@ public class Cyclops : Enemy {
         sightHeight = 4f;
         base.Init();
         maxHealth = Health;
+        sprite.transform.localScale = Vector3.one * Size;
+        sprite.transform.localPosition = new Vector3(0f, 1.6f * (Size - 1f), 0f);
         frames = sprite.GetComponent<FrameAnimator>();
         if (frames == null) {
             frames = sprite.gameObject.AddComponent<FrameAnimator>();
@@ -145,8 +149,10 @@ public class Cyclops : Enemy {
             return;
         }
         if (special) {
-            StickToGround();
-            ClampToArena();
+            if (!hopping) {
+                StickToGround();
+                ClampToArena();
+            }
             return;
         }
         UpdateLaugh();
@@ -157,18 +163,21 @@ public class Cyclops : Enemy {
             quietUntil = Time.time + AfterBlowRest;   // after a punch, nothing right away
         }
         punching = IsAttacking;
+        TrackBloodMoon();
         if (isDead || IsAttacking || player == null || player.Health <= 0 || Time.time < quietUntil) {
             return;
         }
         Vector3 feet = Feet;
         float dx = Mathf.Abs(player.Feet.x - feet.x);
         float dy = player.Feet.y - feet.y;
-        if (Time.time >= nextBomb && dx >= BombMinDistance && dx <= BombMaxDistance && Mathf.Abs(dy) < 6f) {
+        if (CanBeam) {
+            StartCoroutine(Beam());   // the Lua de Sangue: a red beam out of its eye
+        } else if (Time.time >= nextBomb && dx >= BombMinDistance && dx <= BombMaxDistance && Mathf.Abs(dy) < 6f) {
             ThrowBomb();
         } else if (Time.time >= nextSmash && dx < SmashReach && Mathf.Abs(dy) < 2.5f) {
             StartCoroutine(Smash());
-        } else if (Time.time >= nextVomit && dx < VomitReach && (dy < -1.5f || (dx >= JetMinDistance && dy < 1f))) {
-            StartCoroutine(Vomit());   // Freny down below, or a few steps away: a jet of vomit at him
+        } else if (Time.time >= nextVomit && dx >= JetMinDistance) {
+            StartCoroutine(Vomit());   // a few steps away: it floods the floor under him
         }
     }
 
@@ -218,6 +227,46 @@ public class Cyclops : Enemy {
     // José, 2026-10-29: he stays on the floor; Freny up on a platform gets the bomb and the vomit
     protected override bool Climbs => false;
 
+    // José, 2026-10-30: he likes to stand under the first platform in the middle, where Freny can
+    // jump at his eye; off in a corner he was hard to reach. He still follows Freny, but only
+    // part of the way and never further than HomeLeash from that spot
+    private const float HomePull = 0.5f;
+    private const float HomeLeash = 4f;
+    private float homeX = float.NaN;
+
+    protected override float ChaseX(float targetX) {
+        if (!ArenaBounds.Active) {
+            return targetX;
+        }
+        if (float.IsNaN(homeX)) {
+            homeX = FindHome();
+        }
+        float x = Mathf.Lerp(targetX, homeX, HomePull);
+        return ArenaBounds.ClampX(Mathf.Clamp(x, homeX - HomeLeash, homeX + HomeLeash), 0.5f);
+    }
+
+    // the middle of the lowest platform above the floor in the central half of the arena
+    private float FindHome() {
+        float middle = (ArenaBounds.Left + ArenaBounds.Right) / 2f;
+        float quarter = (ArenaBounds.Right - ArenaBounds.Left) / 4f;
+        ArenaMap map = player != null ? ArenaMap.Shared(player) : null;
+        if (map == null || map.Floor == null) {
+            return middle;
+        }
+        ArenaMap.Platform best = null;
+        foreach (ArenaMap.Platform platform in map.Platforms) {
+            float centre = (platform.xMin + platform.xMax) / 2f;
+            if (platform.tower || platform.y < map.Floor.y + 1f || Mathf.Abs(centre - middle) > quarter) {
+                continue;
+            }
+            if (best == null || platform.y < best.y - 0.1f
+                || (Mathf.Abs(platform.y - best.y) <= 0.1f && Mathf.Abs(centre - middle) < Mathf.Abs((best.xMin + best.xMax) / 2f - middle))) {
+                best = platform;
+            }
+        }
+        return best != null ? (best.xMin + best.xMax) / 2f : middle;
+    }
+
     private void ThrowBomb() {
         FacePlayer();
         nextBomb = Time.time + BombCooldown * ScoreCooldown;
@@ -227,52 +276,152 @@ public class Cyclops : Enemy {
         GolemMine.ThrowAt(this, from, player.transform.position, BombAngle, BombGravity, BombMaxSpeed, BombSize);
     }
 
+    // José, 2026-10-30: each blow holds its pose a moment. The smash: it jumps with its arms up
+    // (frames 5-6), hits the ground on frame 7 and stays down on frame 8 before getting up
+    private const int SmashFrames = 12;
+    private const int SmashImpactFrame = 7;
+    private const float SmashHold = 0.6f;
+    private const float SmashShake = 0.35f;
+    private const int SmashHopFrame = 4;      // it leaves the ground here and lands on the impact frame
+    private const float SmashHopHeight = 0.9f;
+    private bool hopping;
+    private const float SmashShakeSeconds = 0.5f;
+
     private IEnumerator Smash() {
         special = true;
         FacePlayer();
         float length = frames.Length("smash");
+        float frame = length / SmashFrames;
         frames.Play("smash", length);
         PlaySound("windup");
-        yield return new WaitForSeconds(length * 0.55f);
+        yield return new WaitForSeconds(frame * SmashHopFrame);
+        // a little hop with the arms up, coming down on the impact frame
+        hopping = true;
+        Vector3 ground = transform.position;
+        float air = frame * (SmashImpactFrame - SmashHopFrame);
+        for (float t = 0f; t < air && !isDead; t += Time.deltaTime) {
+            float u = t / air;
+            transform.position = ground + Vector3.up * (SmashHopHeight * 4f * u * (1f - u));
+            yield return null;
+        }
+        transform.position = ground;
+        hopping = false;
         if (!isDead) {
             Vector3 feet = Feet;
             Fx.Dust(feet, 24);
             Sfx.Play("grenade_explode", feet, 0.8f, 0.6f);
             Shockwave.Launch(feet, 1f);
             Shockwave.Launch(feet, -1f);
+            ScreenKick.Kick(SmashShake, SmashShakeSeconds);   // the whole screen shakes (José, 2026-10-30)
+            yield return new WaitForSeconds(frame * 1.1f);
+            frames.Hold(SmashHold);   // on the ground, fist down
+            yield return new WaitForSeconds(SmashHold);
         }
-        yield return new WaitForSeconds(length * 0.45f);
+        yield return new WaitForSeconds(Mathf.Max(0f, length - frame * (SmashImpactFrame + 1.1f)));
         nextSmash = Time.time + SmashCooldown * ScoreCooldown;
         quietUntil = Time.time + AfterBlowRest;
         special = false;
     }
 
+    // José, 2026-10-30: it throws up where it stands (its Vomit sheet: frame 4 starts it, frame 5 is
+    // held while it pours), enough to flood the whole ground floor for a while. Everything down
+    // there gets burned but the Ciclopes, so Freny has to keep off the floor (AcidPuddle.Flood)
+    private const int VomitFrames = 9;
+    private const int VomitStartFrame = 4;
+    private const float FloodHold = 1.2f;
+    private const float FloodSeconds = 4f;
+    private const float MouthForward = 2.07f;   // the stream in frame 4, from the sprite's middle
+
+    // a flood is on its way (from the start of the vomit): the autopilot climbs right away
+    public static bool FloodComing => Alive.Exists(c => c != null && !c.isDead && c.vomiting);
+    private bool vomiting;
+
     private IEnumerator Vomit() {
         special = true;
+        vomiting = true;
         FacePlayer();
         float length = frames.Length("vomit");
+        float frame = length / VomitFrames;
         frames.Play("vomit", length);
         Sfx.Play("potion", Center, 1f, 0.5f);   // a deep, slow gurgle
-        yield return new WaitForSeconds(length * 0.5f);
+        yield return new WaitForSeconds(frame * VomitStartFrame);
         if (!isDead) {
-            SpillVomit();
+            float mouthX = transform.position.x + Facing * MouthForward * Size;
+            ArenaMap map = player != null && ArenaBounds.Active ? ArenaMap.Shared(player) : null;
+            if (map != null && map.Floor != null) {
+                AcidPuddle.Flood(mouthX, map.Floor.y, map.Floor.xMin, map.Floor.xMax, FloodSeconds);
+            } else {
+                AcidPuddle.Flood(mouthX, Feet.y, ArenaBounds.Left, ArenaBounds.Right, FloodSeconds);
+            }
+            yield return new WaitForSeconds(frame * 1.1f);
+            frames.Hold(FloodHold);   // head down, pouring
+            yield return new WaitForSeconds(FloodHold);
         }
-        yield return new WaitForSeconds(length * 0.5f);
+        yield return new WaitForSeconds(Mathf.Max(0f, length - frame * (VomitStartFrame + 1.1f)));
         nextVomit = Time.time + VomitCooldown * ScoreCooldown;
         quietUntil = Time.time + AfterBlowRest;
+        vomiting = false;
         special = false;
     }
 
-    // a stream from the mouth that lands above Freny (or just in front) and, on a platform, keeps
-    // pouring straight down through it to the floor below (AcidPuddle.Pour)
-    private void SpillVomit() {
-        Vector3 feet = Feet;
-        Vector3 mouth = Center + Vector3.up * (HalfHeight * 0.45f) + Vector3.right * (Facing * (HalfWidth * 0.8f));
-        float reach = 1.5f;
-        if (player != null && Mathf.Sign(player.Feet.x - mouth.x) == Facing) {
-            reach = Mathf.Abs(player.Feet.x - mouth.x);
+    // José, 2026-10-30: in the Lua de Sangue its eye turns red and it fires a red beam at Freny
+    // (BloodBeam), 2 or 3 times a Blood Moon at most: the first BeamFirst seconds into it, then one
+    // every BeamGap seconds. It charges the eye, locks on where Freny is and fires
+    private const int BeamsPerMoon = 3;
+    private const float BeamFirst = 2f;
+    private const float BeamGap = 8f;
+    private const float BeamCharge = 0.9f;
+    private const float BeamSeconds = 0.8f;
+    private int beamsThisMoon;
+    private float nextBeam;
+    private bool inBloodMoon;
+
+    private bool CanBeam => inBloodMoon && beamsThisMoon < BeamsPerMoon && Time.time >= nextBeam;
+
+    private void TrackBloodMoon() {
+        bool blood = BloodMoon > 0.5f;
+        if (blood && !inBloodMoon) {
+            beamsThisMoon = 0;
+            nextBeam = Time.time + BeamFirst;
         }
-        AcidPuddle.Pour(mouth, Facing, Mathf.Min(reach, VomitReach), feet.y, player, PuddleWidth, PuddleSeconds);
+        inBloodMoon = blood;
+    }
+
+    // where the beam leaves the eye: a little over the middle of the eye (José: it looked like it
+    // came from behind it)
+    private Vector3 BeamEye => Eye + Vector3.up * (0.18f * Size);
+    private const float GlowSize = 1.3f;
+
+    private IEnumerator Beam() {
+        special = true;
+        beamsThisMoon++;
+        FacePlayer();
+        frames.Play("idle", BeamCharge + BeamSeconds);
+        PlaySound("windup");
+        Sfx.Play("supreme_laugh", Center, 0.8f, 0.5f);
+        SpriteRenderer glow = BloodBeam.Orb("Eye Glow", sprite);
+        for (float t = 0f; t < BeamCharge && !isDead; t += Time.deltaTime) {
+            float u = t / BeamCharge;
+            glow.transform.position = BeamEye;
+            glow.transform.localScale = Vector3.one * (GlowSize * (0.3f + 0.7f * u) * (1f + Mathf.Sin(Time.time * 40f) * 0.08f));
+            if (Random.value < 0.4f) {
+                Fx.Burst(BeamEye, new Color(1f, 0.1f, 0.1f), 1, 1.5f * (1f - u) + 0.3f, 0.06f, 0.2f);
+            }
+            yield return null;
+        }
+        if (!isDead && player != null) {
+            BloodBeam.Fire(BeamEye, player.BodyCenter, BeamSeconds, player, sprite);
+            Sfx.Play("grenade_explode", Eye, 0.9f, 0.4f);
+            for (float t = 0f; t < BeamSeconds && !isDead; t += Time.deltaTime) {
+                glow.transform.position = BeamEye;
+                glow.transform.localScale = Vector3.one * (GlowSize * 1.3f * (1f + Mathf.Sin(Time.time * 50f) * 0.12f));
+                yield return null;
+            }
+        }
+        Destroy(glow.gameObject);
+        nextBeam = Time.time + BeamGap;
+        quietUntil = Time.time + AfterBlowRest;
+        special = false;
     }
 
     // the game's boss bar (Prefabs/HUD/Resources/BossHealth, taken from stage 1-9): the Boss
@@ -280,8 +429,9 @@ public class Cyclops : Enemy {
     private GameObject bar;
     private const float BarSpacing = 95f;   // canvas units between two bars (each is 132 x 0.75 tall)
     private const float BarBottom = 12f;
+    private const float SingleBarBottom = 12f;   // canvas units: the version label is in the corner now
     private const float TouchBarScale = 0.6f;
-    private const float TouchBarBottom = 40f;   // canvas units: clear of the version label
+    private const float TouchBarBottom = 12f;
     private const float TouchBarStep = 62f;     // a bar is 132 x 0.75 x 0.6 tall
     // set by the ArenaDirector right after it brings two in at once (Init and the bar come a frame later)
     [System.NonSerialized] public bool Paired;
@@ -301,13 +451,13 @@ public class Cyclops : Enemy {
         bar.name = "BossHealth";
         RectTransform rect = bar.GetComponent<RectTransform>();
         if (rect != null && Paired) {
-            // two at once: their bars go down at the bottom, one on the left and one on the right of
-            // the version label, so the top stays clear (José, 2026-10-29)
+            // two at once: their bars go down at the bottom, one on the left and one on the right,
+            // so the top stays clear (José, 2026-10-29)
             float side = slot % 2 == 0 ? 0.25f : 0.75f;
             rect.pivot = new Vector2(0.5f, 0f);
             if (TouchControls.Active) {
                 // on a phone the corners are the d-pad and the buttons: smaller, one over the other
-                // in the middle, just above the version label
+                // in the middle
                 rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
                 rect.localScale *= TouchBarScale;
                 rect.anchoredPosition = new Vector2(0f, TouchBarBottom + TouchBarStep * (slot % 2));
@@ -315,8 +465,12 @@ public class Cyclops : Enemy {
                 rect.anchorMin = rect.anchorMax = new Vector2(side, 0f);
                 rect.anchoredPosition = new Vector2(0f, BarBottom);
             }
-        } else if (rect != null && slot > 0) {
-            rect.anchoredPosition += Vector2.down * (BarSpacing * slot);   // one more while another is out
+        } else if (rect != null) {
+            // one: at the bottom, over the arena floor (José,
+            // 2026-10-29: the top is full of HUD); one more while another is out goes over it
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
+            rect.pivot = new Vector2(0.5f, 0f);
+            rect.anchoredPosition = new Vector2(0f, SingleBarBottom + BarSpacing * slot);
         }
         foreach (Slider slider in bar.GetComponentsInChildren<Slider>(true)) {
             if (slider.name == "HealthBar") {
@@ -343,7 +497,8 @@ public class Cyclops : Enemy {
         }
     }
 
-    private void LateUpdate() {
+    protected override void LateUpdate() {
+        base.LateUpdate();
         if (isDead && bar != null) {
             Destroy(bar);
         }

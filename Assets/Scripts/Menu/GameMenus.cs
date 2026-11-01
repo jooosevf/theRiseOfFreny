@@ -129,12 +129,13 @@ public class GameMenus : MonoBehaviour {
     // small and dim, at the bottom centre: at the top right it covered the coin counter
     private void CreateVersionLabel() {
         Canvas canvas = MenuKit.CreateCanvas("Version", 30000, transform);
-        Text label = MenuKit.MakeText(canvas.transform, Version, MenuKit.SmallTextSize, MenuKit.DimTextColor, TextAnchor.LowerCenter);
+        // small, in the bottom-right corner (José, 2026-10-30: the boss bar takes the middle)
+        Text label = MenuKit.MakeText(canvas.transform, Version, MenuKit.SmallTextSize - 3, MenuKit.DimTextColor, TextAnchor.LowerRight);
         label.raycastTarget = false;
         label.horizontalOverflow = HorizontalWrapMode.Overflow;
         RectTransform rect = label.rectTransform;
-        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0f);
-        rect.anchoredPosition = new Vector2(0f, 6f);
+        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(1f, 0f);
+        rect.anchoredPosition = new Vector2(-8f, 4f);
         rect.sizeDelta = new Vector2(300f, 22f);
     }
 
