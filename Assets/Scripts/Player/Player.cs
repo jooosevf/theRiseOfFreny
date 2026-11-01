@@ -210,6 +210,11 @@ public class Player : MonoBehaviour, IDamageable {
     // body and jump, for the autopilot's platform map (the same numbers the physics uses)
     public float JumpHeight => jumpHeight;
     public float MaxSpeed => _speed * runMultiplier;
+    // what he moves at right now (sprint and the acid's slow included) and the jump's two
+    // gravities (heavier on the way down), for the autopilot's jumps off the flood (FloodEscape)
+    public float GroundSpeed => _speed * (IsRunning ? runMultiplier : 1f) * SlowFactor;
+    public float RiseGravity => Mathf.Abs(Physics2D.gravity.y) * gravityScale;
+    public float FallGravity => RiseGravity * fallMultiplier;
 
     // slowed down for a moment (wading through the Ciclope's vomit)
     private float slowUntil;

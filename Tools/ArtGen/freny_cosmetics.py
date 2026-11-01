@@ -4,7 +4,10 @@
 # sleeves in light greys, which the game tints with the chosen colour (FrenyLookRenderer draws it
 # over the body with SpriteRenderer.color, so one sheet serves every colour).
 #
-#   python3 freny_cosmetics.py <repo root>
+#   python3 freny_cosmetics.py <repo root> [helmet id ...]
+#
+# With helmet ids, only those helmet sheets are written (the others and the shirt keep their metas
+# untouched), e.g. `cyclops` for the golden chest's Elmo do Ciclope.
 #
 # Writes Assets/Sprites/Characters/Player/Resources/FrenyLook/{helmet_<id>,shirt}.png + .meta,
 # one sprite per body frame, named after that frame and pivoted on the body's pivot. The capes are
@@ -26,15 +29,18 @@ HELMETS = {
     'viking': {LIGHT: (190, 195, 205), MID: (130, 135, 150), SHADE: (85, 88, 105), WHITE: (235, 238, 245)},
     'shadow': {LIGHT: (70, 50, 90), MID: (48, 32, 64), SHADE: (28, 18, 40), WHITE: (190, 110, 250)},
     'crown': GOLD,
+    # the golden chest's own (FrenyLook: Unlock.GoldenChest): the Ciclope's purples, with its eye
+    'cyclops': {LIGHT: (112, 92, 196), MID: (79, 64, 159), SHADE: (54, 55, 120), WHITE: (160, 140, 230)},
 }
 BONE, BONE_SHADE, HORN_TIP = (239, 228, 200), (196, 180, 150), (120, 100, 80)
 CROWN, CROWN_SHADE, JEWEL = (255, 214, 74), (196, 140, 40), (208, 47, 47)
+SCLERA, SCLERA_SHADE, IRIS, PUPIL = (239, 228, 200), (196, 180, 150), (208, 47, 47), (99, 13, 38)
 # the shirt's greys in the mask: white-ish, so the tint shows true and the shading stays
 SHIRT = {LIGHT: (255, 255, 255), MID: (205, 205, 205), SHADE: (150, 150, 150)}
 
 
-def addons(kind, head):
-    """pixels added around the helmet: horns (viking) or a crown"""
+def addons(kind, head, frame):
+    """pixels added around the helmet: horns (viking), a crown, or the Ciclope's eye"""
     xs = [x for x, _ in head]; ys = [y for _, y in head]
     lo, hi, top = min(xs), max(xs), min(ys)
     extra = {}
@@ -49,6 +55,12 @@ def addons(kind, head):
         for x in (lo + 1, mid, hi - 1):
             extra[(x, top - 2)] = CROWN
         extra[(mid, top - 1)] = JEWEL
+    elif kind == 'cyclops' and 'climb' not in frame:
+        # one big eye on the front of the helmet (he faces right in his sheets); none from behind
+        for (dx, dy), c in {(-3, 3): SCLERA_SHADE, (-2, 3): SCLERA, (-1, 3): SCLERA,
+                            (-3, 4): SCLERA, (-2, 4): IRIS, (-1, 4): PUPIL}.items():
+            if (hi + dx, top + dy) in head:
+                extra[(hi + dx, top + dy)] = c
     return extra
 
 
@@ -116,7 +128,8 @@ def atlas(name, entries):
 
 def main():
     os.makedirs(OUT, exist_ok=True)
-    helmets = {kind: [] for kind in HELMETS}
+    only = sys.argv[2:]
+    helmets = {kind: [] for kind in HELMETS if not only or kind in only}
     shirts = []
     for sheet in fh.SHEETS:
         img = Image.open(os.path.join(fh.PLAYER, sheet + '.png')).convert('RGBA')
@@ -126,16 +139,18 @@ def main():
             head = fh.helmet(cell)
             if head is None:
                 continue
-            for kind, pal in HELMETS.items():
+            for kind in helmets:
+                pal = HELMETS[kind]
                 pix = {p: fh.repaint(cell.getpixel((p[0] * PX, p[1] * PX))[:3], pal) for p in head}
-                pix.update(addons(kind, head))
+                pix.update(addons(kind, head, name))
                 helmets[kind].append((name, pix, r, pivot))
             body = shirt(cell, head)
             if body:
                 shirts.append((name, body, r, pivot))
     for kind, entries in helmets.items():
         atlas('helmet_' + kind, entries)
-    atlas('shirt', shirts)
+    if not only:
+        atlas('shirt', shirts)
 
 
 main()

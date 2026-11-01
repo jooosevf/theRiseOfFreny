@@ -22,6 +22,8 @@ public class MovingBlock : MonoBehaviour {
     private Rigidbody2D heroBody;
 
     public Bounds Bounds => box != null ? box.bounds : new Bounds(transform.position, Vector3.zero);
+    // how far it is from where it started (and where the autopilot's map saw it): AcidPitPilot.Track
+    public float Offset => body != null ? body.position.x - home.x : 0f;
 
     private void OnEnable() {
         Active.Add(this);

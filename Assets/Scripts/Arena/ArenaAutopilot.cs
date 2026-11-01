@@ -70,6 +70,9 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
     private int attempts;
     private float walkBestDx;               // closest he has been to the stand spot (the walk is stuck when it stops shrinking)
     private Transform routeLoot;            // the coin/chest this route is for (null: it is for the enemy)
+    private float walkWaitStart = -1f;      // waiting for a sliding platform (MovingBlock) to come within reach
+    private bool wasCracking;               // stood on a crumbling platform giving way at the last frame
+    private readonly FloodEscape floodEscape = new FloodEscape();   // off the floor when the Ciclope floods it
     private readonly Dictionary<Transform, float> lootUnreachableUntil = new Dictionary<Transform, float>();
 
     public string CurrentAction { get; private set; } = "";  // enemies, target and what he is doing (logged to the console)
@@ -104,6 +107,12 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
             return default;
         }
         TrackPlatform();
+        // a crumbling platform under him gives way in 0.7 s: think now, not at the next decision
+        bool cracking = player.IsGrounded && AcidPitPilot.Cracking(standingOn);
+        if (cracking && !wasCracking) {
+            nextDecisionTime = Time.time;
+        }
+        wasCracking = cracking;
 
         if (Time.time >= nextScanTime) {
             Scan();
@@ -138,8 +147,15 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
             }
         }
 
-        // reflexes, every frame and not only at decisions: the Ciclope's wave crosses his jump
-        // window (about 0.35 s) faster than he re-thinks
+        // reflexes, every frame and not only at decisions. The Ciclope's flood: a jump up onto a
+        // platform from the moment it starts to throw up (FloodEscape)
+        if (floodEscape.Frame(player, map, FeetY, ref nextJumpTime, jumpCooldown, out PlayerInputFrame escape)) {
+            phase = Phase.None;   // any hop it was on is dropped: this one is quicker
+            action = floodEscape.Action;
+            Announce();
+            return escape;
+        }
+        // the Ciclope's wave crosses his jump window (about 0.35 s) faster than he re-thinks
         if (WaveReflex(out PlayerInputFrame jump)) {
             return jump;
         }
@@ -268,6 +284,11 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
 
         // 1a. the Ciclope's flood on the ground floor: up onto a platform until it drains
         if (FleeFlood(ref frame, me, myPlatform)) {
+            return frame;
+        }
+
+        // 1a'. the Poço's crumbling platform giving way under him: off it before it drops him
+        if (LeaveCrumbling(ref frame, me, myPlatform)) {
             return frame;
         }
 
@@ -543,6 +564,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
     private const float WaveJumpAt = 3.2f;            // a shockwave this close: jump now
 
     private const float WaveReactTime = 0.3f;   // jump when the wave will reach him this soon
+    private const float MovingWaitMax = 7f;     // a sliding platform comes back within one slide (6 s)
 
     private const float HexReactTime = 0.25f;   // a hexball this close in time: jump it now
 
@@ -687,11 +709,15 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
             action = "Esperando a enchente baixar";
             return true;
         }
+        if (floodEscape.Target != null) {
+            action = floodEscape.Action;   // a jump up through a one-way platform: it drives the frames
+            return true;
+        }
         ArenaMap.Platform best = null;
         float bestScore = float.PositiveInfinity;
         foreach (ArenaMap.Platform platform in map.Platforms) {
             int count = HopsTo(platform);
-            if (platform == map.Floor || platform.tower || count == int.MaxValue) {
+            if (platform == map.Floor || platform.tower || count == int.MaxValue || !map.Landable(platform)) {
                 continue;
             }
             float score = count * 10f + Mathf.Abs((platform.xMin + platform.xMax) / 2f - me.x);
@@ -705,6 +731,47 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
             return true;
         }
         return false;
+    }
+
+    // a crumbling platform of the Poço cracks the moment he stands on it (CrumbleBlock): the
+    // quickest hop off it, by the walk to where it starts, else off the nearer edge. The hop
+    // already leaving it goes on
+    private bool LeaveCrumbling(ref PlayerInputFrame frame, Vector2 me, ArenaMap.Platform myPlatform) {
+        if (!player.IsGrounded || !AcidPitPilot.Cracking(myPlatform)) {
+            return false;
+        }
+        if (phase != Phase.None && route.from == myPlatform && map.Landable(route.to)) {
+            wantsRoute = true;
+            action = "Saindo da plataforma que racha";
+            return true;
+        }
+        bool found = false;
+        ArenaMap.Step best = default;
+        float bestCost = float.MaxValue;
+        foreach (ArenaMap.Step step in map.StepsFrom(myPlatform)) {
+            if (!map.Landable(step.to)) {
+                continue;
+            }
+            float cost = Mathf.Abs(step.x - me.x);
+            if (step.kind == ArenaMap.StepKind.Drop && step.from.y - step.to.y > Player.SafeFallHeight) {
+                cost += 10f;   // a heart lost in the fall
+            }
+            if (cost < bestCost) {
+                bestCost = cost;
+                best = step;
+                found = true;
+            }
+        }
+        if (found) {
+            routeLoot = null;
+            StartHop(best);
+            action = "Saindo da plataforma que racha";
+            return true;
+        }
+        frame.move = me.x - myPlatform.xMin < myPlatform.xMax - me.x ? -1f : 1f;
+        frame.runHeld = player.RunReady;
+        action = "Saindo da plataforma que racha pela beirada";
+        return true;
     }
 
     private bool AvoidHazards(ref PlayerInputFrame frame, Vector2 me, float myFeet) {
@@ -933,6 +1000,12 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         if (!map.FirstStep(from, destination, fromX, out ArenaMap.Step step)) {
             return false;
         }
+        StartHop(step);
+        return true;
+    }
+
+    // keeps (or starts) a hop
+    private void StartHop(ArenaMap.Step step) {
         wantsRoute = true;
         if (phase == Phase.None || !route.Same(step)) {
             route = step;
@@ -943,7 +1016,6 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         action = route.kind == ArenaMap.StepKind.Climb
             ? $"Indo até a beirada para subir em {route.to}"
             : $"Indo até a beirada para descer para {route.to}";
-        return true;
     }
 
     private void SetPhase(Phase next) {
@@ -952,6 +1024,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         lastProgressTime = Time.time;
         if (next == Phase.Walk) {
             walkBestDx = float.MaxValue;
+            walkWaitStart = -1f;
         }
     }
 
@@ -991,7 +1064,31 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
 
         switch (phase) {
             case Phase.Walk: {
-                float dx = route.x - x;
+                if (!map.Landable(route.to)) {
+                    // it crumbled (or started to) on his way there: plan again
+                    phase = Phase.None;
+                    nextDecisionTime = Time.time;
+                    break;
+                }
+                // a sliding platform of the Poço (MovingBlock): the spot beside it moves with it
+                float standX = route.x + (route.kind == ArenaMap.StepKind.Climb ? AcidPitPilot.Shift(route.to) : 0f);
+                float dx = standX - x;
+                if (route.kind == ArenaMap.StepKind.Climb && !route.from.Contains(standX, 0.05f)) {
+                    // that spot is off his platform now (or his platform slid away from it): wait for
+                    // it at the nearest end, without jumping, for at most about one slide
+                    if (walkWaitStart < 0f) {
+                        walkWaitStart = Time.time;
+                    }
+                    float closest = Mathf.Clamp(standX, route.from.xMin + player.BodyHalfWidth, route.from.xMax - player.BodyHalfWidth);
+                    frame.move = Mathf.Abs(closest - x) > 0.1f ? Mathf.Sign(closest - x) : 0f;
+                    action = $"Esperando {route.to} chegar perto";
+                    phaseStart = Time.time;
+                    if (Time.time - walkWaitStart > MovingWaitMax) {
+                        FailRoute("a plataforma não chegou perto");
+                    }
+                    break;
+                }
+                walkWaitStart = -1f;
                 if (route.kind == ArenaMap.StepKind.Climb) {
                     if (Mathf.Abs(dx) > 0.08f) {
                         frame.move = Mathf.Sign(dx); // no sprint here: it is saved for the move onto the platform
@@ -1013,7 +1110,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
                     }
                 }
                 // stuck only when he stops getting closer to the spot (a far edge takes longer than any fixed time)
-                float remaining = Mathf.Abs(route.x - x);
+                float remaining = Mathf.Abs(standX - x);
                 if (remaining < walkBestDx - 0.25f) {
                     walkBestDx = remaining;
                     phaseStart = Time.time;

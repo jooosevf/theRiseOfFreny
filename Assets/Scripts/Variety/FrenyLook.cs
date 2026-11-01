@@ -5,8 +5,9 @@ using UnityEngine;
 public enum LookSlot { Helmet, Cape, Color }
 
 // Freny's looks (José, 2026-11-01): helmets, capes and the colour of his shirt, picked on the menu's
-// Visual screen (VarietyScreens) and worn everywhere (FrenyLookRenderer). Bought with coins or
-// unlocked by an achievement or by rebirths (Rebirth). Purely cosmetic. What is owned and worn is
+// Visual screen (VarietyScreens) and worn everywhere (FrenyLookRenderer). Bought with coins,
+// unlocked by an achievement or by rebirths (Rebirth), or found only in the Ciclope's golden chest
+// (GoldenChest). Purely cosmetic. What is owned and worn is
 // part of the save slot (SaveSystem: looks, lookWorn), so the cloud keeps it.
 //
 // The helmets are sheets cut per body frame (Tools/ArtGen/freny_cosmetics.py ->
@@ -14,7 +15,12 @@ public enum LookSlot { Helmet, Cape, Color }
 // capes are drawn at runtime (CapeArt).
 public static class FrenyLook {
 
-    public enum Unlock { Free, Coins, Achievement, Rebirths }
+    // GoldenChest: only the Ciclope's golden chest drops it (ChestDrop); once dropped it is kept
+    // with the bought ones (BoughtIds), so the save slot and the cloud carry it the same way
+    public enum Unlock { Free, Coins, Achievement, Rebirths, GoldenChest }
+
+    // the chance a golden chest also holds a look, one he doesn't have yet (José, 2026-11-01)
+    public const float ChestLookChance = 0.25f;
 
     public class Item {
         public string id;
@@ -39,6 +45,7 @@ public static class FrenyLook {
         new Item { id = "helmet.viking", slot = LookSlot.Helmet, name = "Elmo viking", unlock = Unlock.Coins, price = 4000, art = "viking" },
         new Item { id = "helmet.shadow", slot = LookSlot.Helmet, name = "Elmo sombrio", unlock = Unlock.Achievement, achievement = Achievement.Cyclops, art = "shadow" },
         new Item { id = "helmet.crown", slot = LookSlot.Helmet, name = "Coroa", unlock = Unlock.Rebirths, price = 1, art = "crown" },
+        new Item { id = "helmet.cyclops", slot = LookSlot.Helmet, name = "Elmo do Ciclope", unlock = Unlock.GoldenChest, art = "cyclops" },
 
         new Item { id = "cape.none", slot = LookSlot.Cape, name = "Sem capa", unlock = Unlock.Free },
         new Item { id = "cape.red", slot = LookSlot.Cape, name = "Capa vermelha", unlock = Unlock.Coins, price = 1500,
@@ -49,6 +56,8 @@ public static class FrenyLook {
             color = C(110, 16, 30), shade = C(68, 8, 20), trim = C(208, 47, 47) },
         new Item { id = "cape.royal", slot = LookSlot.Cape, name = "Capa real", unlock = Unlock.Rebirths, price = 1,
             color = C(100, 42, 146), shade = C(62, 24, 94), trim = C(255, 214, 74) },
+        new Item { id = "cape.gold", slot = LookSlot.Cape, name = "Capa dourada", unlock = Unlock.GoldenChest,
+            color = C(240, 196, 70), shade = C(176, 122, 36), trim = C(255, 244, 180) },
 
         new Item { id = "color.none", slot = LookSlot.Color, name = "Cinza", unlock = Unlock.Free },
         new Item { id = "color.red", slot = LookSlot.Color, name = "Vermelho", unlock = Unlock.Coins, price = 400, color = C(222, 74, 70) },
@@ -89,7 +98,8 @@ public static class FrenyLook {
         }
         switch (item.unlock) {
             case Unlock.Free: return true;
-            case Unlock.Coins: return BoughtIds.Contains(item.id);
+            case Unlock.Coins:
+            case Unlock.GoldenChest: return BoughtIds.Contains(item.id);
             case Unlock.Achievement: return Achievements.Has(item.achievement);
             default: return Rebirth.Count >= item.price;
         }
@@ -101,8 +111,31 @@ public static class FrenyLook {
             case Unlock.Free: return "";
             case Unlock.Coins: return item.price + " moedas";
             case Unlock.Achievement: return "Conquista: " + Achievements.Of(item.achievement).name;
+            case Unlock.GoldenChest: return "Só no baú dourado do Ciclope";
             default: return item.price == 1 ? "1 renascimento" : item.price + " renascimentos";
         }
+    }
+
+    // the golden chest's look (GoldenChest.Open): ChestLookChance of one he doesn't have yet, kept
+    // at once like a bought one; null when the roll fails or he has them all
+    public static Item ChestDrop() => GrantChestLook(UnityEngine.Random.value < ChestLookChance);
+
+    // `lucky` skips the roll (the final test calls this by reflection with true)
+    private static Item GrantChestLook(bool lucky) {
+        if (!lucky) {
+            return null;
+        }
+        List<Item> missing = new List<Item>(Array.FindAll(All, i => i.unlock == Unlock.GoldenChest && !Owns(i)));
+        if (missing.Count == 0) {
+            return null;
+        }
+        Item item = missing[UnityEngine.Random.Range(0, missing.Count)];
+        List<string> owned = BoughtIds;
+        owned.Add(item.id);
+        SetBoughtIds(owned);
+        PlayerPrefs.Save();
+        Changed?.Invoke();
+        return item;
     }
 
     public static bool TryBuy(Item item) {
