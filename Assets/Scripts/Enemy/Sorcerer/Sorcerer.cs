@@ -35,6 +35,7 @@ public class Sorcerer : Enemy {
     public override void Init() {
         base.Init();
         SorcererCastPosition = FindCastPosition();
+        MageStaff.Remember(hexballEffectPrefab);   // the Cajado do Mago casts the same ball
     }
 
     protected override Color DeathColor => predictive ? new Color(1f, 0.3f, 0.3f) : new Color(0.45f, 0.3f, 0.7f);

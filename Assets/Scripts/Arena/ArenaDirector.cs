@@ -123,6 +123,11 @@ public class ArenaDirector : MonoBehaviour {
     private void AddRuntimeEnemies() {
         GameObject golem = null;
         foreach (Entry entry in enemies) {
+            if (entry.prefab != null && entry.prefab.GetComponent<Sorcerer>() is Sorcerer caster) {
+                MageStaff.Remember(caster.hexballEffectPrefab);   // a staff picked up before any sorcerer came still casts
+            }
+        }
+        foreach (Entry entry in enemies) {
             if (entry.prefab != null && entry.prefab.GetComponent<Golem>() != null && entry.unlockScore == 0) {
                 golem = entry.prefab;
                 break;

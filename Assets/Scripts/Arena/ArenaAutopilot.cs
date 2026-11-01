@@ -820,6 +820,14 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         if (nearest == null || best > SpiderShootRange) {
             return false;
         }
+        if (best > SpiderKeepOut + 2f) {
+            // a far one waits while something else is on him: no turning his back to a Golem
+            foreach (Enemy enemy in enemies) {
+                if (enemy && !enemy.IsDead && !(enemy is SpiderMine) && Vector2.Distance(enemy.Center, me) < 2.2f) {
+                    return false;
+                }
+            }
+        }
         float dx = nearest.Center.x - me.x;
         float toward = Mathf.Sign(dx);
         bool facing = (dx > 0f) == player.FacingRight;

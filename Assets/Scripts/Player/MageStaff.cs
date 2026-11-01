@@ -37,14 +37,19 @@ public class MageStaff : MonoBehaviour {
         return Current != null && Current.player == player && Current.Active;
     }
 
+    // every sorcerer that comes into the scene hands over its ball, so the staff can cast it
+    public static void Remember(GameObject hexballPrefab) {
+        if (hexballPrefab != null) {
+            hexPrefab = hexballPrefab;
+        }
+    }
+
     // ArenaDirector, when a sorcerer dies
     public static void RollDrop(Sorcerer sorcerer) {
         if (sorcerer == null) {
             return;
         }
-        if (sorcerer.hexballEffectPrefab != null) {
-            hexPrefab = sorcerer.hexballEffectPrefab;
-        }
+        Remember(sorcerer.hexballEffectPrefab);
         if (!ArenaBounds.Active || hexPrefab == null || Random.value >= DropChance) {
             return;
         }
