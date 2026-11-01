@@ -12,12 +12,12 @@ public static class CapeArt {
     public const float ArtPixel = Px / PixelsPerUnit;   // one art pixel, in units
 
     // art pixels: from the shoulders down
-    public static readonly int[] Widths = { 3, 4, 5 };
+    public static readonly int[] Widths = { 4, 5, 6 };
     public static readonly int[] Heights = { 4, 4, 5 };
 
     // where the cape hangs from, on the helmet of the frame (FrenyLook.NeckSheet): this many art
     // pixels in from the back edge, and up from the bottom (the neck)
-    public const float BackInset = 1.5f;
+    public const float BackInset = 0f;
     public const float NeckLift = 0.5f;
 
     private static readonly Dictionary<string, Sprite[]> cache = new Dictionary<string, Sprite[]>();
