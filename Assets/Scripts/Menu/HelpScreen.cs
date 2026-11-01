@@ -65,12 +65,17 @@ public static class HelpScreen {
         for (int i = lines.childCount - 1; i >= 0; i--) {
             Object.Destroy(lines.GetChild(i).gameObject);
         }
-        string move = device == Device.Keyboard ? "Setas ou A/D" : device == Device.Gamepad ? "Analógico" : "Direcional (esquerda)";
-        string vertical = device == Device.Keyboard ? "Seta baixo / cima" : device == Device.Gamepad ? "Analógico" : "Direcional baixo / cima";
+        string move = device == Device.Keyboard ? Keys(GameAction.Left, GameAction.Right) + " ou setas"
+            : device == Device.Gamepad ? "Analógico" : "Direcional (esquerda)";
+        string vertical = device == Device.Keyboard ? Keys(GameAction.Down, GameAction.Up) + " ou setas"
+            : device == Device.Gamepad ? "Analógico" : "Direcional baixo / cima";
         Line(lines, "Andar", "Anda para os lados", move);
         Line(lines, "Agachar/Mirar", "Baixo agacha, cima mira", vertical);
 
         foreach (GameAction action in InputBindings.All) {
+            if (InputBindings.IsMovement(action)) {
+                continue;
+            }
             Line(lines, InputBindings.ActionName(action), WhatItDoes(action), Button(action, device));
         }
 
@@ -78,6 +83,10 @@ public static class HelpScreen {
             Line(lines, "Piloto (Arena)", "Liga e desliga o automático", "T");
             Line(lines, "Minimapa", "Mostra ou esconde o mapa", "M");
         }
+    }
+
+    private static string Keys(GameAction a, GameAction b) {
+        return InputBindings.KeyName(InputBindings.Keyboard(a)) + " / " + InputBindings.KeyName(InputBindings.Keyboard(b));
     }
 
     private static string WhatItDoes(GameAction action) {

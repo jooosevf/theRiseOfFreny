@@ -1,8 +1,8 @@
 using UnityEngine;
 
 // The human side, on the old Input Manager: keyboard, mouse and gamepad through InputBindings
-// (remappable in Settings > Controls). Walking reads the Horizontal axis (keys, stick, d-pad),
-// filtered by StickFilter.
+// (remappable in Settings > Controls). Walking takes the Left/Right/Up/Down keys or the gamepad
+// stick and d-pad, whichever is pushed further, filtered by StickFilter.
 public class KeyboardInputSource : IPlayerInputSource {
 
     public const float MaxChargeSeconds = 1.2f; // hold the grenade button this long for a full-power throw (Worms style)
@@ -29,8 +29,8 @@ public class KeyboardInputSource : IPlayerInputSource {
             grenadeHoldStart = -1f;
         }
 
-        RawMove = Input.GetAxisRaw("Horizontal");
-        float vertical = Input.GetAxisRaw("Vertical");
+        RawMove = Stronger(InputBindings.KeyAxis(GameAction.Left, GameAction.Right), InputBindings.PadHorizontal);
+        float vertical = Stronger(InputBindings.KeyAxis(GameAction.Down, GameAction.Up), InputBindings.PadVertical);
         // the on-screen stick of touch screens, when it is pushed further than keys or gamepad
         if (Mathf.Abs(TouchControls.Horizontal) > Mathf.Abs(RawMove)) {
             RawMove = TouchControls.Horizontal;
@@ -58,5 +58,9 @@ public class KeyboardInputSource : IPlayerInputSource {
             grenadeHeld = held,
             grenadeCharge = charge,
         };
+    }
+
+    private static float Stronger(float a, float b) {
+        return Mathf.Abs(b) > Mathf.Abs(a) ? b : a;
     }
 }
