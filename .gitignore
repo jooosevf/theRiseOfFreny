@@ -80,6 +80,7 @@ crashlytics-build.properties
 # Firebase config for the online features (see docs/firebase/SETUP.md)
 /[Aa]ssets/[Rr]esources/FirebaseConfig.json
 /[Aa]ssets/[Rr]esources/FirebaseConfig.json.meta
+/Assets/Resources.meta
 # Leaderboard signing key: the old in-game key file (no longer used) and the rules with the key
 /[Aa]ssets/[Ss]cripts/[Oo]nline/ScoreKey.cs
 /[Aa]ssets/[Ss]cripts/[Oo]nline/ScoreKey.cs.meta
