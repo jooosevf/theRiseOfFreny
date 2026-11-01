@@ -173,7 +173,7 @@ public class GameMenus : MonoBehaviour {
         }
         if (!paused) {
             SaveSystem.AddPlayTime(Time.unscaledDeltaTime);
-            if (InputBindings.GetDown(GameAction.Pause)) {
+            if (InputBindings.GetDown(GameAction.Pause) || GameCursor.LockLost()) {
                 Pause();
             }
         } else if (deathRanking != null && pauseStack.Top == deathRanking && InputBindings.GetDown(GameAction.Jump)) {
@@ -300,6 +300,10 @@ public class GameMenus : MonoBehaviour {
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
             });
         }
+        // José, 2026-11-01: straight to the shop, without going through the main menu; what is bought
+        // counts right away (FrenyProgress.Changed reaches Player)
+        page.Button("Armeiro", () => pauseStack.Push(InventoryScreens.Armory(pauseStack)));
+        page.Button("Inventário", () => pauseStack.Push(InventoryScreens.Inventory(pauseStack)));
         page.Button("Ajuda", () => pauseStack.Push(HelpScreen.Help(pauseStack)));
         page.Button("Guia", () => pauseStack.Push(GuideScreen.Guide(pauseStack)));
         page.Button("Conquistas", () => pauseStack.Push(AchievementsScreen.Page(pauseStack)));

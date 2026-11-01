@@ -8,10 +8,17 @@ using UnityEngine;
 public static class Loadout {
 
     public const string Helmet = "Helmet";
+    // José, 2026-11-01: the first cosmetic (Armeiro > Cosméticos): the Berserker helmet just for the
+    // look. Worn without armor it has a snapped horn; with armor (bought helmet or a drop) it is whole.
+    public const string CosmeticHelmet = "CosmeticHelmet";
     public const string GearKeyPrefix = "freny.gear.";
     public const int HelmetCost = 6000;
+    public const int CosmeticHelmetCost = 1000;
 
-    public static readonly string[] GearIds = { Helmet };
+    public static readonly string[] GearIds = { Helmet, CosmeticHelmet };
+
+    // the cosmetic is on: Freny always wears the Berserker helmet (FrenyMotion, CombatHud)
+    public static bool WearsCosmeticHelmet => IsEquipped(CosmeticHelmet);
 
     public static bool Owns(string gear) {
         return PlayerPrefs.GetInt(GearKeyPrefix + gear, 0) > 0;
@@ -31,11 +38,11 @@ public static class Loadout {
     }
 
     public static int Cost(string gear) {
-        return HelmetCost;
+        return gear == CosmeticHelmet ? CosmeticHelmetCost : HelmetCost;
     }
 
     public static string DisplayName(string gear) {
-        return "Capacete Berserker";
+        return gear == CosmeticHelmet ? "Capacete Berserker (visual)" : "Capacete Berserker";
     }
 
     public static bool CanBuy(string gear) {

@@ -96,12 +96,13 @@ public static class HelpScreen {
             case GameAction.Ranged: return "Atira com a arma escolhida";
             case GameAction.Dash: return "Avança rápido no ar";
             case GameAction.Run: return "Corre no chão; no ar dá dash";
-            case GameAction.Grenade: return "Segure para carregar, solte";
+            case GameAction.Grenade: return "Joga a granada (5 s de pavio); segure para queimar o pavio na mão";
             case GameAction.Potion: return "Bebe uma poção e cura";
             case GameAction.Pistol: return "Troca para a pistola";
             case GameAction.Shotgun: return "Troca para a escopeta";
             case GameAction.Interact: return "Entra em portas e abre a loja";
             case GameAction.Pause: return "Pausa, ajuda e configurações";
+            case GameAction.Fury: return "Com a barra cheia, ativa a Fúria";
             default: return "";
         }
     }
@@ -141,6 +142,7 @@ public static class HelpScreen {
             case GameAction.Shotgun: return "Arma (troca)";
             case GameAction.Interact: return "Direcional p/ cima";
             case GameAction.Pause: return "II no topo";
+            case GameAction.Fury: return "Fúria";
             default: return "-";
         }
     }

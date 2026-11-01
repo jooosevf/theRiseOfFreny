@@ -66,8 +66,10 @@ public static class GuideScreen {
             "3 balas em leque, 1 cartucho por tiro; cada bala empurra o inimigo. Troque com o botão Escopeta. Vem de baús " +
             "da Arena ou do Armeiro (6 cartuchos por fase). Até 30 cartuchos.");
         Entry(parent, art ? art.grenade : null, "Granada",
-            "Segure para carregar a força, solte para lançar em arco; sem espera entre uma e outra. " +
-            "Explode em 1 s, ao tocar um inimigo ou ao cair no chão: 3 de dano em todos num raio " +
+            "Aperte para lançar em arco, sempre à mesma distância (uns 6 m); sem espera entre uma e outra. " +
+            "Ela quica, rola e só explode 5 s depois de puxar o pino, onde estiver (os segundos aparecem em cima dela). " +
+            "Segurar o botão já puxa o pino: o pavio queima na mão e, ao soltar, ela vai com o tempo que sobrou; " +
+            "segurou 5 s, explode na mão. 3 de dano em todos num raio " +
             "grande (mata quase todos; o Golem Vermelho aguenta uma) e quebra baús e vasos. Cuidado: perto demais, o Freny " +
             "também leva 2 de dano e é arremessado. Até 6.");
     }
@@ -78,7 +80,8 @@ public static class GuideScreen {
             "apanhar ele pisca 1,2 s sem levar dano. Queda alta também tira vida.");
         Entry(parent, art ? art.rageHelmet : null, "Fúria",
             "A barra Fúria enche lutando: matar, acertar a espada e apanhar. Parada 2 s, ela " +
-            "esvazia. Cheia, dá 20 s de FÚRIA: a espada tira 2 de dano.");
+            "esvazia. Cheia, ela espera: aperte F (troque em Configurações > Controles) na hora certa para " +
+            "20 s de FÚRIA: a espada tira 2 de dano. O piloto automático ativa sozinho com um inimigo perto.");
         Entry(parent, art ? art.berserkerHelmet : null, "Armadura (Capacete Berserker)",
             Player.ArmorMax + " corações cinza que levam os golpes antes da vida (queda não). " +
             "Cai de inimigos e vasos; comprado no Armeiro, cada fase começa com ela cheia.");
@@ -98,7 +101,7 @@ public static class GuideScreen {
         Entry(parent, art ? art.diamond : null, "Diamante",
             "Vale " + ItemPickup.DiamondValue + " moedas.");
         Entry(parent, art ? art.coin : null, "Moedas",
-            "Caem de todo inimigo e ficam salvas. Compram melhorias no Armeiro.");
+            "Caem de todo inimigo e ficam salvas. Compram melhorias no Armeiro (Jogar > Armeiro, ou direto da pausa no meio da partida).");
     }
 
     private static void Drops(Transform parent, MenuArt art) {
@@ -129,6 +132,10 @@ public static class GuideScreen {
             "Começa cada fase com a escopeta e 6 cartuchos.");
         Entry(parent, art ? art.berserkerHelmet : null, "Capacete Berserker · " + Loadout.HelmetCost,
             "Começa cada fase com " + Player.ArmorMax + " de armadura.");
+        Entry(parent, art ? art.berserkerHelmet : null, "Cosmético: Capacete Berserker (visual) · " + Loadout.CosmeticHelmetCost,
+            "Na aba Cosméticos. Só visual: o Freny anda sempre de capacete, com um chifre quebrado; quando " +
+            "ele tem armadura, o chifre volta inteiro. Liga e desliga em Inventário > Visual. O Armeiro e o " +
+            "Inventário também abrem direto da pausa.");
         Entry(parent, art ? art.heart : null, "Vida, Velocidade e Recarga",
             "+1 coração, +8% de velocidade, -10% de recarga por nível. Vida: 1.500, 3.000, 6.000 e 10.000. " +
             "Velocidade e Recarga: 800, 1.500, 2.500, 4.000 e 6.000. O Inventário deixa armas compradas em casa.");
@@ -162,7 +169,8 @@ public static class GuideScreen {
             "quem estiver no chão queima (os outros inimigos também, menos ele), então suba numa plataforma. " +
             "Na Lua de Sangue ele solta até 3 raios vermelhos do olho em direção ao Freny (3 corações), que desintegram tudo no caminho. " +
             "Na pancada ele dá um pulinho e a tela treme. Depois de cada golpe ele descansa " +
-            "3 s: é a hora de bater. Acertar o olho tira o dobro. Vale 5 000 pontos, 30 moedas e deixa um baú.");
+            "3 s: é a hora de bater. Acertar o olho tira o dobro. Vale 5 000 pontos, 30 moedas e deixa um baú. " +
+            "Enquanto um Ciclope estiver vivo, os outros inimigos valem só 1 ponto cada (com ou sem combo).");
         Entry(parent, null, "Feiticeiro",
             "Fica parado e lança uma bola a cada 5 segundos (o Supremo a cada 3,5); ela tira 2 e empurra, e abaixar desvia " +
             "de um tiro reto. " +
@@ -185,6 +193,9 @@ public static class GuideScreen {
             "Um recorde novo aparece no fim da corrida, com o botão Salvar recorde ou o motivo de não poder ir para o Ranking. " +
             "No automático, a próxima corrida começa 10 s depois (ou na hora, em Jogar agora); com 10 mil " +
             "pontos ou mais, o jogo pergunta antes.");
+        Entry(parent, art ? art.sword : null, "Mouse",
+            "Durante a partida o ponteiro some e fica preso no jogo, para um clique não sair da tela " +
+            "(no navegador, ele prende no primeiro clique). Esc solta o mouse e pausa; ele volta nos menus.");
         Entry(parent, null, "Lua de Sangue",
             "Dia de 1 minuto, noite de 4. A cada 3 noites a lua fica vermelha por 30 s no meio da noite (a primeira uns 10 minutos de corrida). Nesse tempo, " +
             "os inimigos ficam 25% mais rápidos, tiram 1 coração a mais, recuperam vida (1 a cada 3 s, o Ciclope também) " +

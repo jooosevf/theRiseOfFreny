@@ -8,12 +8,14 @@ using UnityEngine.Networking;
 
 namespace Online {
     // What happened in a ranked run: every kill, with when it was (game seconds since the run
-    // started), which enemy and the combo step it was scored at (0 = 1.0x, 1 = 1.1x, ...).
+    // started), which enemy and the combo step it was scored at (0 = 1.0x, 1 = 1.1x, ...), plus a
+    // 4th field, 1, on a kill worth 1 flat point because a Ciclope was alive (UIManager.ScoresFlat).
     public class RunLog {
         private struct Kill {
             public float time;
             public string enemy;
             public int combo;
+            public bool flat;
         }
 
         private struct Moment {
@@ -41,7 +43,8 @@ namespace Online {
             _kills.Add(new Kill {
                 time = GameTime,
                 enemy = PrefabName(enemy.gameObject.name),
-                combo = Mathf.Max(0, Mathf.RoundToInt((combo - 1f) * 10f))
+                combo = Mathf.Max(0, Mathf.RoundToInt((combo - 1f) * 10f)),
+                flat = UIManager.ScoresFlat(enemy)
             });
         }
 
@@ -73,7 +76,8 @@ namespace Online {
             for (int i = 0; i < _kills.Count; i++) {
                 if (i > 0) json.Append(',');
                 json.Append('[').Append(_kills[i].time.ToString("0.###", CultureInfo.InvariantCulture))
-                    .Append(",\"").Append(_kills[i].enemy).Append("\",").Append(_kills[i].combo).Append(']');
+                    .Append(",\"").Append(_kills[i].enemy).Append("\",").Append(_kills[i].combo)
+                    .Append(_kills[i].flat ? ",1]" : "]");
             }
             AppendMoments(json.Append("],\"events\":["), _moments);
             AppendMoments(json.Append("],\"vitals\":["), _vitals);

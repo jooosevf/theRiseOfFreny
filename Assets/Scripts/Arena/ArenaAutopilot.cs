@@ -90,7 +90,103 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
 
     private float FeetY => player.feetPos ? player.feetPos.position.y : transform.position.y;
 
+    // ---- José, 2026-11-01: the Fúria waits for its button and grenades for their 5 s fuse ----
+
+    private bool cooking;              // a grenade cooking in his hand
+    private bool cookSeen;             // ...and Player has pulled its pin
+    private Enemy cookTarget;          // the enemy it is for
+    private float cookCharge;
+    private float cookReleaseAt;
+    private const float FuryReach = 4f;          // an enemy this close (or the Ciclope within 7 m) is worth the Fúria
+    private const float CookLanding = 0.8f;      // seconds the grenade should sit on the floor before it goes off
+
     public PlayerInputFrame ReadInput() {
+        PlayerInputFrame frame = Drive();
+        if (player == null || player.IsDead) {
+            cooking = false;
+            return frame;
+        }
+        frame.furyPressed = WantsFury();
+        Cook(ref frame);
+        AvoidGrenades(ref frame);
+        return frame;
+    }
+
+    private bool WantsFury() {
+        if (!player.RageReady) {
+            return false;
+        }
+        Vector2 me = player.transform.position;
+        foreach (Enemy enemy in enemies) {
+            if (!enemy || enemy.IsDead) {
+                continue;
+            }
+            Vector2 d = (Vector2)enemy.Center - me;
+            float reach = enemy is Cyclops ? 7f : FuryReach;
+            if (Mathf.Abs(d.x) <= reach && Mathf.Abs(d.y) <= 2.5f) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // the decision picked a target: hold the button so the fuse burns, then throw with what it
+    // takes to land there and go off soon after
+    private void StartCooking(Enemy target, float charge) {
+        cooking = true;
+        cookSeen = false;
+        cookTarget = target;
+        cookCharge = charge;
+        float flight = player.GrenadeFlightTime(charge, target.transform.position.x - transform.position.x);
+        cookReleaseAt = Time.time + Mathf.Max(0f, Player.GrenadeFuse - flight - CookLanding);
+        action = "Cozinhando a granada";
+    }
+
+    private void Cook(ref PlayerInputFrame frame) {
+        if (!cooking) {
+            return;
+        }
+        if (player.ChargingGrenade) {
+            cookSeen = true;
+        } else if (cookSeen || Time.time > cookReleaseAt + 0.5f) {
+            cooking = false;   // thrown (or gone off), or the pin was never pulled
+            return;
+        }
+        frame.grenadeHeld = true;
+        frame.grenadePressed = false;
+        bool alive = cookTarget && !cookTarget.IsDead;
+        float dx = alive ? cookTarget.transform.position.x - transform.position.x : (player.FacingRight ? 1f : -1f);
+        float flight = player.GrenadeFlightTime(cookCharge, dx);
+        bool due = Time.time >= cookReleaseAt || !alive || player.GrenadeFuseLeft <= flight + 0.3f;
+        if (!due || !player.ChargingGrenade) {
+            return;
+        }
+        if (alive && (dx > 0f) != player.FacingRight && player.GrenadeFuseLeft > flight + 0.15f) {
+            frame.move = Mathf.Sign(dx);   // turn to it first
+            return;
+        }
+        float charge = alive ? player.GrenadeChargeFor(dx, cookTarget.Center.y - (transform.position.y + 0.6f)) : -1f;
+        frame.grenadeHeld = false;
+        frame.grenadeCharge = charge >= 0f ? charge : (alive ? cookCharge : Player.GrenadeTapCharge);
+    }
+
+    // a grenade about to go off nearby: walk away from it
+    private void AvoidGrenades(ref PlayerInputFrame frame) {
+        Vector2 me = player.transform.position;
+        foreach (Grenade grenade in Grenade.Live) {
+            if (grenade == null || grenade.SecondsLeft > 1.6f) {
+                continue;
+            }
+            Vector2 d = me - (Vector2)grenade.transform.position;
+            if (Mathf.Abs(d.x) < Grenade.BlastRadius + 0.8f && Mathf.Abs(d.y) < Grenade.BlastRadius) {
+                frame.move = d.x == 0f ? (player.FacingRight ? -1f : 1f) : Mathf.Sign(d.x);
+                frame.meleePressed = false;
+                return;
+            }
+        }
+    }
+
+    private PlayerInputFrame Drive() {
         if (player == null || player.IsDead) {
             CurrentAction = "";
             phase = Phase.None;
@@ -419,7 +515,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         // 3. grenade (they are counted now: found in chests or bought): a group, an enemy on a
         // platform above, or one he can't reach at all (a sorcerer on a tower), lobbed with the
         // charge that lands there
-        if (player.CanThrowGrenade && player.IsGrounded) {
+        if (player.CanThrowGrenade && player.IsGrounded && !cooking && !player.ChargingGrenade) {
             Enemy lob = GrenadeTarget(me, target, out string why);
             if (lob != null) {
                 float lobDx = lob.transform.position.x - me.x;
@@ -427,9 +523,8 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
                 if ((lobDx > 0) != player.FacingRight) {
                     Turn(ref frame, Mathf.Sign(lobDx));
                 } else {
-                    frame.grenadePressed = true;
-                    frame.grenadeCharge = Mathf.Clamp01(charge * Random.Range(1f - grenadeAimError, 1f + grenadeAimError));
-                    action = why;
+                    StartCooking(lob, Mathf.Clamp01(charge * Random.Range(1f - grenadeAimError, 1f + grenadeAimError)));
+                    action = why + " (cozinhando)";
                 }
                 return frame;
             }

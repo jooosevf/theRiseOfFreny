@@ -67,9 +67,19 @@ public class Player : MonoBehaviour, IDamageable {
     [SerializeField] private int grenadesFromUpgrade = 2;  // the shop's grenade upgrade starts each run with these
     [SerializeField] private int grenadesMax = 6;
     [SerializeField] private float grenadeAngle = 55f;     // degrees above the horizontal
-    [SerializeField] private float grenadeMinSpeed = 5f;
+    [SerializeField] private float grenadeMinSpeed = 8f;   // José, 2026-11-01: was 5, it landed at his feet
     [SerializeField] private float grenadeMaxSpeed = 13f;
     public const float GrenadeGravity = 1.5f;
+    // the keyboard, gamepad and touch throw (a charge of GrenadeTapCharge): always the same flat lob,
+    // about 6 m on flat ground and low enough to stay under the platform above; only the autopilot
+    // picks its own power, on the steep grenadeAngle that reaches the platforms
+    public const float GrenadeTapCharge = -1f;
+    private const float GrenadeTapAngle = 30f;
+    private const float GrenadeTapSpeed = 10f;
+    private const float GrenadeTapHeight = 0.9f;   // over his feet: the arc tops out under a platform 2.2 up
+    // José, 2026-11-01: every grenade goes off 5 s after the pin is pulled, wherever it is. Holding the
+    // button burns the fuse in his hand (cooking it); held too long, it goes off there.
+    public const float GrenadeFuse = 5f;
 
     // ---- state --------------------------------------------------------------------------------
     public int coins;
@@ -90,8 +100,11 @@ public class Player : MonoBehaviour, IDamageable {
     public bool ShotgunOwned { get; private set; }          // bought in the shop, or found in a chest this run
     public bool ShotgunEquipped { get; private set; } = true; // 1 = pistol, 2 = shotgun
     public bool IsRunning { get; private set; }
-    public bool ChargingGrenade { get; private set; }
-    public float GrenadeCharge { get; private set; }
+    // the grenade in his hand, its fuse burning (the HUD counts it down)
+    public bool ChargingGrenade => cookStart >= 0f;
+    public float GrenadeFuseLeft => ChargingGrenade ? Mathf.Max(0f, GrenadeFuse - (Time.time - cookStart)) : GrenadeFuse;
+    private float cookStart = -1f;
+    private bool grenadeNeedsRelease;   // it went off in his hand: the next one waits for the button to come up
 
     private bool isGrounded;
     private bool wasGrounded;
@@ -198,9 +211,11 @@ public class Player : MonoBehaviour, IDamageable {
     public bool ComboContinues => ComboStep > 0 && ComboStep < 3 && Time.time - attackReadyAt <= ComboWindow;
     // armor hearts (the Berserker helmet): each one takes a hit before the life hearts
     public int Armor { get => _armor; private set => _armor = value; }
-    // kills, sword hits and hits taken fill the Rage meter, calm drains it; full, it gives
+    // kills, sword hits and hits taken fill the Rage meter, calm drains it; full, it waits for the
+    // Fúria button (José, 2026-11-01: it used to start on its own at the wrong moment), then gives
     // RageSeconds of red helmet and harder sword hits
     public float Rage { get; private set; }
+    public bool RageReady => !Raging && Rage >= 1f;
     public bool Raging => Time.time < rageUntil;
     public float RageLeft => Raging ? (rageUntil - Time.time) / RageSeconds : 0f;
     public int MeleeDamage => Raging ? RageMeleeDamage : 1;
@@ -321,7 +336,7 @@ public class Player : MonoBehaviour, IDamageable {
             // blink while invulnerable
             _sprite.enabled = !IsInvulnerable || Mathf.Repeat(Time.time, 0.16f) < 0.08f;
         }
-        if (!Raging && Rage > 0f && Time.time - lastRageAction > RageCalmDelay) {
+        if (!Raging && !RageReady && Rage > 0f && Time.time - lastRageAction > RageCalmDelay) {
             Rage = Mathf.Max(0f, Rage - RageDrainPerSecond * Time.deltaTime);
         }
 
@@ -347,6 +362,9 @@ public class Player : MonoBehaviour, IDamageable {
         Shoot();
         ThrowGrenade();
         UsePotion();
+        if (_input.Current.furyPressed) {
+            StartRage();
+        }
     }
 
     // all velocity changes happen here: doing them in Update made the jump depend on the frame rate
@@ -643,8 +661,6 @@ public class Player : MonoBehaviour, IDamageable {
         if (IsRunning) {
             EndRun();
         }
-        ChargingGrenade = false;
-        GrenadeCharge = 0f;
 
         rg2d.SetVel(velocity);
         stunned = true;
@@ -807,26 +823,57 @@ public class Player : MonoBehaviour, IDamageable {
         return true;
     }
 
-    // Worms style: hold the grenade button (E) to charge, release to lob the grenade forward in an arc whose range
-    // depends on the charge. The autopilot sends the charge it wants directly.
+    // The grenade button (E): a tap throws it forward in an arc, always as far (GrenadeTapCharge);
+    // holding it pulls the pin and the 5 s fuse burns in his hand, and letting go throws it with
+    // what is left. The autopilot sends the power it wants, and may cook one the same way.
     private void ThrowGrenade() {
         PlayerInputFrame input = _input.Current;
-        ChargingGrenade = CanThrowGrenade && input.grenadeHeld;
-        GrenadeCharge = ChargingGrenade ? input.grenadeCharge : 0f;
+        if (ChargingGrenade) {
+            if (Time.time - cookStart >= GrenadeFuse) {
+                // held too long: it goes off in his hand
+                cookStart = -1f;
+                grenadeNeedsRelease = true;
+                Grenades--;
+                SpawnGrenade(transform.position + Vector3.up * 0.6f, Vector2.zero, 0f);
+            } else if (!input.grenadeHeld) {
+                float left = GrenadeFuseLeft;
+                cookStart = -1f;
+                Throw(input.grenadeCharge, left);
+            }
+            return;
+        }
+        if (!input.grenadeHeld) {
+            grenadeNeedsRelease = false;
+        }
+        if (!CanThrowGrenade || grenadeNeedsRelease) {
+            return;
+        }
+        if (input.grenadeHeld) {
+            cookStart = Time.time;
+            Sfx.Play("pistol_reload", transform.position);   // the pin
+        } else if (input.grenadePressed) {
+            Throw(input.grenadeCharge, GrenadeFuse);
+        }
+    }
 
-        if (!input.grenadePressed || !CanThrowGrenade) {
+    private void Throw(float charge, float fuse) {
+        if (!CanThrowGrenade) {
             return;
         }
         Grenades--;
-        ChargingGrenade = false;
-
-        Vector3 from = transform.position + Vector3.up * 0.6f;
+        bool tap = charge < 0f;
+        Vector3 from = tap ? Feet + Vector3.up * GrenadeTapHeight : transform.position + Vector3.up * 0.6f;
         float facing = FacingRight ? 1f : -1f;
-        float speed = Mathf.Lerp(grenadeMinSpeed, grenadeMaxSpeed, Mathf.Clamp01(input.grenadeCharge));
-        float rad = grenadeAngle * Mathf.Deg2Rad;
+        float speed = tap ? GrenadeTapSpeed : Mathf.Lerp(grenadeMinSpeed, grenadeMaxSpeed, Mathf.Clamp01(charge));
+        float rad = (tap ? GrenadeTapAngle : grenadeAngle) * Mathf.Deg2Rad;
         Vector2 velocity = new Vector2(facing * Mathf.Cos(rad), Mathf.Sin(rad)) * speed;
+        SpawnGrenade(from, velocity, fuse);
+        Fx.Spray(from, velocity, new Color(1f, 0.9f, 0.6f), 4, 2f, 0.4f);
+        Sfx.Play("grenade_throw", from);
+    }
 
-        // built at runtime, so no prefab is needed
+    // built at runtime, so no prefab is needed; it bounces and rolls (only its fuse sets it off)
+    private void SpawnGrenade(Vector3 from, Vector2 velocity, float fuse) {
         GameObject grenade = new GameObject("Grenade");
         grenade.transform.position = from;
         grenade.transform.localScale = Vector3.one * 0.35f;
@@ -835,14 +882,28 @@ public class Player : MonoBehaviour, IDamageable {
         renderer.sortingOrder = 50;
         Rigidbody2D body = grenade.AddComponent<Rigidbody2D>();
         body.gravityScale = GrenadeGravity;
+        body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+#if UNITY_6000_0_OR_NEWER
+        body.angularDamping = 1.5f;   // it rolls a little and stops, instead of rolling across the arena
+#else
+        body.angularDrag = 1.5f;
+#endif
         body.SetVel(velocity);
-        body.angularVelocity = -facing * 360f;
-        CircleCollider2D trigger = grenade.AddComponent<CircleCollider2D>();
-        trigger.isTrigger = true;
-        trigger.radius = 0.4f;
-        grenade.AddComponent<Grenade>();
-        Fx.Spray(from, velocity, new Color(1f, 0.9f, 0.6f), 4, 2f, 0.4f);
-        Sfx.Play("grenade_throw", from);
+        body.angularVelocity = -Mathf.Sign(velocity.x) * 360f;
+        CircleCollider2D ball = grenade.AddComponent<CircleCollider2D>();
+        ball.radius = 0.4f;
+        ball.sharedMaterial = Grenade.Bouncy;
+        foreach (Collider2D mine in GetComponentsInChildren<Collider2D>()) {
+            Physics2D.IgnoreCollision(ball, mine);
+        }
+        grenade.AddComponent<Grenade>().fuse = fuse;
+    }
+
+    // about how long a throw at this charge flies to cover dx (the autopilot times its cooking with it)
+    public float GrenadeFlightTime(float charge, float dx) {
+        bool tap = charge < 0f;
+        float speed = tap ? GrenadeTapSpeed : Mathf.Lerp(grenadeMinSpeed, grenadeMaxSpeed, Mathf.Clamp01(charge));
+        return Mathf.Abs(dx) / Mathf.Max(0.1f, speed * Mathf.Cos((tap ? GrenadeTapAngle : grenadeAngle) * Mathf.Deg2Rad));
     }
 
     // the charge (0..1) that lands a grenade `dx` away horizontally and `dy` higher, on the
@@ -990,17 +1051,26 @@ public class Player : MonoBehaviour, IDamageable {
     }
 
     private void AddRage(float amount) {
-        if (isDead || Raging) {
+        if (isDead || Raging || RageReady) {
             return;
         }
         lastRageAction = Time.time;
         Rage = Mathf.Min(1f, Rage + amount);
-        if (Rage >= 1f) {
-            Rage = 0f;
-            rageUntil = Time.time + RageSeconds;
-            Fx.Burst(transform.position + Vector3.up * 0.4f, new Color(1f, 0.25f, 0.2f), 30, 3.5f, 0.12f, 0.7f);
-            Sfx.Play("level_up", transform.position);
+        if (RageReady) {
+            Sfx.Play("checkpoint", transform.position);   // full: the Fúria button can start it now
         }
+    }
+
+    // the Fúria button (F): only with the meter full
+    public bool StartRage() {
+        if (isDead || !RageReady) {
+            return false;
+        }
+        Rage = 0f;
+        rageUntil = Time.time + RageSeconds;
+        Fx.Burst(transform.position + Vector3.up * 0.4f, new Color(1f, 0.25f, 0.2f), 30, 3.5f, 0.12f, 0.7f);
+        Sfx.Play("level_up", transform.position);
+        return true;
     }
 
     public void AddCoins(int amount) {

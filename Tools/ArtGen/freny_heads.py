@@ -7,8 +7,8 @@
 #
 #   python3 freny_heads.py <repo root>
 #
-# Writes Assets/Sprites/Characters/Player/Resources/FrenyHeads/{rage,berserker,rage_berserker}.png + .meta (and the red
-# Berserker icon for the HUD, rage_berserker_icon.png); FrenyMotion loads them by the
+# Writes Assets/Sprites/Characters/Player/Resources/FrenyHeads/{rage,berserker,rage_berserker,berserker_broken}.png + .meta
+# (and the HUD icons rage_berserker_icon.png, the red Berserker, and berserker_broken_icon.png, the cosmetic one-horn helmet); FrenyMotion loads them by the
 # body sprite's name. Rerun it after changing the icons or any of her sheets. Frames with no helmet (white hit flash, death) get no head.
 import os, re, sys, random
 from PIL import Image
@@ -29,13 +29,24 @@ RED, DEEP_RED, PALE_RED = (208, 47, 47), (150, 32, 40), (240, 120, 105)
 
 # the HUD icons drawn on the head: cell index in Items 100x100.png, and a recolour
 RED_BERSERKER = {PLUM: RED, BLACK: PLUM}     # the horns stay bone
-ICONS = {'rage': (6, {}), 'berserker': (7, {}), 'rage_berserker': (7, RED_BERSERKER)}
+ICONS = {'rage': (6, {}), 'berserker': (7, {}), 'rage_berserker': (7, RED_BERSERKER), 'berserker_broken': (7, {})}
 # the grey helmet's colours, for any helmet pixel an icon doesn't cover
 PALETTES = {
     'rage': {LIGHT: RED, MID: DEEP_RED, SHADE: PLUM, WHITE: PALE_RED},
     'berserker': {LIGHT: PLUM, MID: DARK, SHADE: BLACK, WHITE: PLUM},
     'rage_berserker': {LIGHT: RED, MID: DEEP_RED, SHADE: PLUM, WHITE: RED},
+    # the cosmetic Berserker helmet without its armor (Loadout.Cosmetic): one horn snapped off
+    'berserker_broken': {LIGHT: PLUM, MID: DARK, SHADE: BLACK, WHITE: PLUM},
 }
+BONE = (176, 162, 141)
+
+
+def break_horn(icon):
+    """the icon with its right horn snapped off: only a short stump by the helmet stays"""
+    pix, w, h = icon
+    stump = lambda x, y: (x == w - 3 and y <= 4) or (x == w - 2 and y == 3)
+    out = {p: c for p, c in pix.items() if not (c == BONE and p[0] >= w - 3 and not stump(*p))}
+    return out, w, h
 ALIGN = {0: (.5, .5), 1: (0, 1), 2: (.5, 1), 3: (1, 1), 4: (0, .5), 5: (1, .5), 6: (0, 0), 7: (.5, 0), 8: (1, 0)}
 
 
@@ -149,6 +160,7 @@ def put_icon(head, icon):
 def main():
     os.makedirs(OUT, exist_ok=True)
     icons = {kind: icon_art(i, recolour) for kind, (i, recolour) in ICONS.items()}
+    icons['berserker_broken'] = break_horn(icons['berserker_broken'])
     entries = []                       # (name, pixels {(x,y): rgb per helmet}, origin, pivot px)
     for sheet in SHEETS:
         img = Image.open(os.path.join(PLAYER, sheet + '.png')).convert('RGBA')
@@ -196,6 +208,7 @@ def main():
         write_meta(ROOT, os.path.join(OUT, kind + '.png.meta'), sprites)
         print(kind, len(sprites), 'heads', atlas.size)
     save_icon(icons['rage_berserker'], 'rage_berserker')
+    save_icon(icons['berserker_broken'], 'berserker_broken')
 
 
 
