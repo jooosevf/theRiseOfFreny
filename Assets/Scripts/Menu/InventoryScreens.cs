@@ -263,7 +263,7 @@ public static class InventoryScreens {
             UpgradeRow(page, upgrade, refresh, refreshAll, null, () => message);
         }
         page.Space(4f);
-        message = page.Label("Cada nível ganho na Arena vale 1 ponto.");
+        message = page.Label("Cada nível ganho na Arena vale 1 ponto. Os níveis ficam mais longos.");
         page.Button("Voltar", stack.Back);
         refreshAll();
         return page;
@@ -308,7 +308,7 @@ public static class InventoryScreens {
             int max = FrenyProgress.MaxLevel(upgrade);
             name.text = FrenyProgress.DisplayName(upgrade) + (max > 1 ? " (" + level + "/" + max + ")" : "");
             price.text = FrenyProgress.IsMaxed(upgrade) ? (max > 1 ? "máximo" : "comprado")
-                : FrenyProgress.IsBrain(upgrade) ? "1 ponto" : FrenyProgress.Cost(upgrade).ToString();
+                : FrenyProgress.CostText(upgrade);
         });
     }
 

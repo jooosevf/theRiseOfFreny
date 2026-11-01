@@ -130,8 +130,8 @@ public static class GuideScreen {
         Entry(parent, art ? art.berserkerHelmet : null, "Capacete Berserker · " + Loadout.HelmetCost,
             "Começa cada fase com " + Player.ArmorMax + " de armadura.");
         Entry(parent, art ? art.heart : null, "Vida, Velocidade e Recarga",
-            "+1 coração, +8% de velocidade, -10% de recarga por nível. Custam 100, +50 a cada " +
-            "nível. O Inventário deixa armas compradas em casa.");
+            "+1 coração, +8% de velocidade, -10% de recarga por nível. Vida: 1.500, 3.000, 6.000 e 10.000. " +
+            "Velocidade e Recarga: 800, 1.500, 2.500, 4.000 e 6.000. O Inventário deixa armas compradas em casa.");
     }
 
     // the tough ones; the Arena brings them in as the run heats up (ArenaDirector's list in the scene)
@@ -197,8 +197,8 @@ public static class GuideScreen {
             "dá mais conquistas. No fim da corrida, o servidor confere cada conquista nova e o site mostra quantos % " +
             "dos jogadores têm cada uma.");
         Entry(parent, art ? art.run : null, "XP e piloto automático",
-            "Matar dá XP. Cada nível vale 1 ponto, que compra melhorias do piloto no Armeiro: " +
-            "reação, esquiva com dash, poção sozinho e melhor alvo.");
+            "Matar dá XP, e cada nível pede mais XP que o anterior. Cada nível vale 1 ponto para o piloto no " +
+            "Armeiro: reação (1 a 5 pontos por nível), esquiva com dash (3), poção sozinho (4) e melhor alvo (5).");
     }
 
     // icon | name over what it does

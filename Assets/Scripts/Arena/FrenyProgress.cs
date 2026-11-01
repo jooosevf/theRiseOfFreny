@@ -49,7 +49,9 @@ public static class FrenyProgress {
 
     public static int Xp => PlayerPrefs.GetInt(XpKey, 0);
 
-    // level 1 at 0 XP; level n -> n + 1 costs 100 * n XP
+    // level 1 at 0 XP; level n -> n + 1 costs 200 * n² XP (2026-11-01 rebalance: was 100 * n, and one
+    // 2-minute run on Difícil (~18k XP) bought the whole autopilot). Levels 2-5 still come in the
+    // first run; level 10 takes ~57k XP (3 runs of 65k points), level 28 (every brain upgrade) ~1.4M.
     public static int Level {
         get {
             int level = 1;
@@ -73,7 +75,7 @@ public static class FrenyProgress {
     }
 
     public static int XpToNext(int level) {
-        return 100 * level;
+        return 200 * level * level;
     }
 
     // one brain point per level gained
@@ -111,18 +113,34 @@ public static class FrenyProgress {
         }
     }
 
-    // coins for attributes, brain points for the autopilot
+    // Prices (rebalanced 2026-11-01 from real Difícil runs: a 65k-point run of ~2 min brings ~260
+    // coins, 200k ~640, 1M ~2,800). The whole coin shop is ~67,600: ~260 typical runs, ~25 of the
+    // best ones, so buying everything takes a while. The first buy (Pulo duplo) is ~4 runs away.
+    private static readonly int[] HealthCosts = { 1500, 3000, 6000, 10000 };
+    private static readonly int[] TrainingCosts = { 800, 1500, 2500, 4000, 6000 };   // Velocidade and Recarga
+
+    // coins for attributes, brain points for the autopilot (27 points for all of it)
     public static int Cost(FrenyUpgrade upgrade) {
-        if (IsBrain(upgrade)) {
-            return 1;
-        }
+        int level = GetLevel(upgrade);
         switch (upgrade) {
-            case FrenyUpgrade.DoubleJump: return 600;
-            case FrenyUpgrade.Shotgun: return 1200;
-            case FrenyUpgrade.GreatSword: return 1000;
-            case FrenyUpgrade.Grenade: return 800;
-            default: return 400 + 200 * GetLevel(upgrade);
+            case FrenyUpgrade.DoubleJump: return 1000;
+            case FrenyUpgrade.Grenade: return 2000;
+            case FrenyUpgrade.GreatSword: return 3500;
+            case FrenyUpgrade.Shotgun: return 5000;
+            case FrenyUpgrade.MaxHealth: return HealthCosts[Mathf.Min(level, HealthCosts.Length - 1)];
+            case FrenyUpgrade.MoveSpeed:
+            case FrenyUpgrade.AttackSpeed: return TrainingCosts[Mathf.Min(level, TrainingCosts.Length - 1)];
+            case FrenyUpgrade.Reaction: return level + 1;   // 1, 2, 3, 4, 5
+            case FrenyUpgrade.DashDodge: return 3;
+            case FrenyUpgrade.AutoPotion: return 4;
+            case FrenyUpgrade.SmartTarget: return 5;
+            default: return 1000;
         }
+    }
+
+    public static string CostText(FrenyUpgrade upgrade) {
+        int cost = Cost(upgrade);
+        return IsBrain(upgrade) ? (cost == 1 ? "1 ponto" : cost + " pontos") : cost.ToString();
     }
 
     public static string DisplayName(FrenyUpgrade upgrade) {
