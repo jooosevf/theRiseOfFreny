@@ -15,7 +15,8 @@ using UnityEngine;
 // - life and armor refilled to the top;
 // - the Fúria right away (20 s of harder sword hits), the temporary super item;
 // - the revolver reserve, the shells (with the shotgun) and the grenades filled up;
-// - the great sword's big swings, when he can use them (not when he already owns it).
+// - the great sword's big swings, when he can use them (not when he already owns it);
+// - FrenyLook.ChestLookChance of a look found nowhere else (FrenyLook.Unlock.GoldenChest).
 public class GoldenChest : MonoBehaviour, IDamageable {
 
     private const string SheetPath = "BossLoot/Golden Chest";
@@ -193,6 +194,19 @@ public class GoldenChest : MonoBehaviour, IDamageable {
             ItemPickup.Spawn(ItemPickup.Kind.Diamond, 1, center + Vector3.up * 0.3f, new Vector2(i == 0 ? -0.9f : 0.9f, 6.5f));
         }
         Reward(player);
+        ExclusiveLook(center);
+    }
+
+    // sometimes a look only this chest has (FrenyLook.ChestDrop), his for good: saved like a bought
+    // one, so it is waiting on the Visual screen after the run
+    private static void ExclusiveLook(Vector3 center) {
+        FrenyLook.Item look = FrenyLook.ChestDrop();
+        if (look == null) {
+            return;
+        }
+        Color purple = new Color(0.8f, 0.6f, 1f);
+        ArenaBossLoot.Say("Novo visual: " + look.name + "!", center + Vector3.up * 1.6f, purple, 3.5f);
+        Fx.Burst(center + Vector3.up * 0.4f, purple, 18, 3f, 0.1f, 0.9f);
     }
 
     // everything that is not on the floor goes straight to Freny

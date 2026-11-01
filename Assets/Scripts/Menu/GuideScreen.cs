@@ -141,7 +141,9 @@ public static class GuideScreen {
         Entry(parent, GoldenChest.Icon, "Baú dourado",
             "Surge por um portal dourado numa das plataformas mais altas quando a chave cai, e espera até ser aberto. " +
             "Só abre com a chave (encoste ou bata). Dá cerca de 145 moedas (moedas e 2 diamantes), enche a vida, a armadura, " +
-            "as balas, os cartuchos e as granadas, solta a Fúria na hora e, se você não tem o Espadão, uns golpes com ele. Não dá pontos.");
+            "as balas, os cartuchos e as granadas, solta a Fúria na hora e, se você não tem o Espadão, uns golpes com ele. Não dá pontos. " +
+            "E tem " + Mathf.RoundToInt(FrenyLook.ChestLookChance * 100f) + "% de chance de trazer um visual que só ele dá " +
+            "(Elmo do Ciclope ou Capa dourada), um que você ainda não tem.");
         Entry(parent, MageStaff.Icon, "Feiticeiros (Arena)",
             "Cada feiticeiro que morre tem " + Mathf.RoundToInt(MageStaff.DropChance * 100f) + "% de chance de deixar o Cajado do Mago.");
     }
@@ -322,7 +324,7 @@ public static class GuideScreen {
             "e no site). Moedas, recordes, conquistas e o visual ficam. Alguns visuais só abrem renascendo.");
         Entry(parent, art ? art.berserkerHelmet : null, "Visual",
             "Em Jogar > Visual o Freny troca de elmo, de capa e de cor da roupa. Uns se compram com moedas, " +
-            "outros abrem com uma conquista ou renascendo. Só muda o visual, não a luta. Na Fúria e com " +
+            "outros abrem com uma conquista, renascendo ou só no baú dourado do Ciclope. Só muda o visual, não a luta. Na Fúria e com " +
             "armadura ele ainda mostra os capacetes deles.");
         foreach (FrenyLook.Item item in FrenyLook.All) {
             if (item.unlock != FrenyLook.Unlock.Free && item.unlock != FrenyLook.Unlock.Coins) {
