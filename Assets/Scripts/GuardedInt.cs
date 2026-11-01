@@ -45,7 +45,7 @@ public struct GuardedInt {
 // log; the ranking API refuses a run that carries any.
 public static class AntiCheat {
     private static readonly HashSet<string> _flags = new HashSet<string>();
-    private static uint _state = (uint)Environment.TickCount | 1u;
+    private static uint _state = (uint)System.Environment.TickCount | 1u;
 
     public static IEnumerable<string> Flags => _flags;
     public static bool Tampered => _flags.Count > 0;
