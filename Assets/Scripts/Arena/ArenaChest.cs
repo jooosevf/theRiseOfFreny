@@ -74,7 +74,7 @@ public class ArenaChest : MonoBehaviour, IDamageable {
             ItemPickup.Spawn(ItemPickup.Kind.Shotgun, shotgunShells, from, new Vector2(Random.Range(-0.8f, 0.8f), 5.5f));
         } else {
             ScatterCoins();
-            if (Random.value < diamondChance) {
+            if (Random.value < diamondChance * FrenyProgress.CoinShare) {
                 ItemPickup.Spawn(ItemPickup.Kind.Diamond, 1, from, new Vector2(Random.Range(-0.5f, 0.5f), 6f));
             }
         }
@@ -93,8 +93,10 @@ public class ArenaChest : MonoBehaviour, IDamageable {
         }
         int total = Random.Range(minCoins, maxCoins + 1);
         int each = Mathf.Max(1, total / coinCount);
-        for (int i = 0; i < coinCount; i++) {
-            float side = coinCount == 1 ? 0f : Mathf.Lerp(-1f, 1f, i / (float)(coinCount - 1));
+        // with the autopilot playing, a third of the coins come out (FrenyProgress.CoinShare)
+        int count = Mathf.Max(1, Mathf.RoundToInt(coinCount * FrenyProgress.CoinShare));
+        for (int i = 0; i < count; i++) {
+            float side = count == 1 ? 0f : Mathf.Lerp(-1f, 1f, i / (float)(count - 1));
             Vector2 velocity = new Vector2(side * scatter * Random.Range(0.75f, 1f), Random.Range(4.5f, 6f));
             GameObject dropped = Instantiate(coinPrefab, transform.position + Vector3.up * 0.3f, Quaternion.identity);
             Coin coin = dropped.GetComponent<Coin>();

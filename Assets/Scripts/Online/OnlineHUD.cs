@@ -83,7 +83,7 @@ namespace Online {
             }
             if (unranked != null) {
                 // automatic runs restart on their own; the board stays closed
-                LastResult = score + " pontos · não vale para o ranking";
+                LastResult = score + " pontos · " + unranked;
                 return;
             }
             ArenaLevel level = ArenaDifficulty.Current;

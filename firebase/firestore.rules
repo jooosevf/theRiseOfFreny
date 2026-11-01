@@ -57,7 +57,8 @@ service cloud.firestore {
     // API gave it
     function isBoard(board) {
       return board in ['leaderboard_hard', 'leaderboard_freny', 'leaderboard_medium', 'leaderboard_easy']
-          || board.matches('daily_(hard|freny|medium|easy)_20[0-9]{6}');
+          || board.matches('daily_(hard|freny|medium|easy)_20[0-9]{6}')
+          || board.matches('auto_(hard|freny|medium|easy)');   // the autopilot's boards (2026-11-01)
     }
 
     function isOwner(userId) {

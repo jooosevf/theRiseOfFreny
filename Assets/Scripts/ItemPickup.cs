@@ -187,7 +187,8 @@ public class ItemPickup : MonoBehaviour {
             case Kind.Grenades: return 2f * (1f - player.GrenadesFill);
             case Kind.Armor: return 2f * (Player.ArmorMax - player.Armor) / (float)Player.ArmorMax;
             case Kind.GreatSword: return player.WantsGreatSword ? 1f : 0f;
-            default: return 1f;  // diamonds are always welcome
+            case Kind.Diamond: return FrenyProgress.CoinShare;   // always welcome, less so for the autopilot
+            default: return 1f;
         }
     }
 

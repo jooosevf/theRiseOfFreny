@@ -198,7 +198,9 @@ public static class GuideScreen {
             "dos jogadores têm cada uma.");
         Entry(parent, art ? art.run : null, "XP e piloto automático",
             "Matar dá XP, e cada nível pede mais XP que o anterior. Cada nível vale 1 ponto para o piloto no " +
-            "Armeiro: reação (1 a 5 pontos por nível), esquiva com dash (3), poção sozinho (4) e melhor alvo (5).");
+            "Armeiro: reação (1 a 5 pontos por nível), esquiva com dash (3), poção sozinho (4) e melhor alvo (5). " +
+            "Enquanto o piloto joga, cai 1/3 das moedas e as mortes dão metade do XP. Corridas no Automático " +
+            "têm ranking próprio e recomeçam sozinhas.");
     }
 
     // icon | name over what it does
