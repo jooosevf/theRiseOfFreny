@@ -9,7 +9,7 @@ public static class Loadout {
 
     public const string Helmet = "Helmet";
     public const string GearKeyPrefix = "freny.gear.";
-    public const int HelmetCost = 1200;
+    public const int HelmetCost = 6000;
 
     public static readonly string[] GearIds = { Helmet };
 

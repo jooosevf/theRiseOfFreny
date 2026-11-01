@@ -158,7 +158,7 @@ public class ArenaHud : MonoBehaviour {
         bool stored = current > 0 && FrenyProgress.IsEquipment(upgrade) && !FrenyProgress.IsEquipped(upgrade);
         string price = stored ? "guardado no Inventário"
             : FrenyProgress.IsMaxed(upgrade) ? "máx."
-            : FrenyProgress.IsBrain(upgrade) ? $"{FrenyProgress.Cost(upgrade)} ponto" : $"{FrenyProgress.Cost(upgrade)} moedas";
+            : FrenyProgress.IsBrain(upgrade) ? FrenyProgress.CostText(upgrade) : $"{FrenyProgress.Cost(upgrade)} moedas";
 
         GUILayout.BeginHorizontal();
         GUI.enabled = FrenyProgress.CanBuy(upgrade, player);
