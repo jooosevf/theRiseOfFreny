@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 // What the autopilot (ArenaAutopilot) knows about the Poço de Ácido, kept out of its file: hop
@@ -110,5 +111,87 @@ public static class AcidPitPilot {
         }
         frame.move = away;
         frame.runHeld = player.RunReady;
+    }
+
+    // ---- the platforms that come and go (CrumbleBlock, MovingBlock) on the autopilot's map ----
+
+    private const float CrumbleCost = 4f;     // a solid crumbling platform: only when no other way is near
+
+    private static ArenaMap tracked;
+    private static readonly Dictionary<ArenaMap.Platform, Slide> slides = new Dictionary<ArenaMap.Platform, Slide>();
+
+    private struct Slide {
+        public MovingBlock block;
+        public float homeMin, homeMax;
+    }
+
+    // ArenaMap.LandingCost in the Poço (AcidPitArena sets it): a crumbled platform, or one already
+    // cracking, can't be landed on, so no route goes there or through it; a solid one costs a few
+    // hops (it gives way 0.7 s after he steps on it, too soon to walk on to the next hop)
+    public static float LandingCost(ArenaMap.Platform platform) {
+        CrumbleBlock block = CrumbleOf(platform);
+        if (block == null) {
+            return 0f;
+        }
+        return !block.Solid || block.Cracking ? float.PositiveInfinity : CrumbleCost;
+    }
+
+    // he stands on a crumbling platform that is giving way: off it now
+    public static bool Cracking(ArenaMap.Platform platform) {
+        CrumbleBlock block = CrumbleOf(platform);
+        return block != null && block.Cracking;
+    }
+
+    private static CrumbleBlock CrumbleOf(ArenaMap.Platform platform) {
+        if (platform == null || platform.collider == null) {
+            return null;
+        }
+        foreach (CrumbleBlock block in CrumbleBlock.Active) {
+            if (block != null && block.gameObject == platform.collider.gameObject) {
+                return block;
+            }
+        }
+        return null;
+    }
+
+    // every frame (AcidPitArena): the sliding platforms' edges on the map follow them, so where he
+    // stands, where he lands and the edge he jumps for are where the platform is now
+    public static void Track(ArenaMap map) {
+        if (map == null) {
+            return;
+        }
+        if (tracked != map) {
+            tracked = map;
+            slides.Clear();
+        }
+        foreach (MovingBlock block in MovingBlock.Active) {
+            if (block == null) {
+                continue;
+            }
+            ArenaMap.Platform platform = null;
+            foreach (KeyValuePair<ArenaMap.Platform, Slide> known in slides) {
+                if (known.Value.block == block) {
+                    platform = known.Key;
+                    break;
+                }
+            }
+            if (platform == null) {
+                platform = map.Platforms.Find(p => p.collider != null && p.collider.gameObject == block.gameObject);
+                if (platform == null) {
+                    continue;
+                }
+                // the map was built before it started sliding: its extents are the home ones
+                slides[platform] = new Slide { block = block, homeMin = platform.xMin, homeMax = platform.xMax };
+            }
+            Slide slide = slides[platform];
+            platform.xMin = slide.homeMin + block.Offset;
+            platform.xMax = slide.homeMax + block.Offset;
+        }
+    }
+
+    // how far a sliding platform is from where the map's hops were planned (0 for the others): the
+    // spot beside it he jumps from moves with it
+    public static float Shift(ArenaMap.Platform platform) {
+        return platform != null && slides.TryGetValue(platform, out Slide slide) ? platform.xMin - slide.homeMin : 0f;
     }
 }

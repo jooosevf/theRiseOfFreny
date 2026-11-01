@@ -91,6 +91,7 @@ public class AcidPitArena : MonoBehaviour {
             return;
         }
         AnimatePools();
+        AcidPitPilot.Track(map);   // the sliding platforms' edges on the autopilot's map
         if (hero != null && !hero.IsDead && Time.time >= nextSpike) {
             nextSpike = Time.time + Mathf.Lerp(SpikeSlow, SpikeFast, ArenaDirector.CurrentDifficulty);
             DropSpike();
@@ -110,6 +111,7 @@ public class AcidPitArena : MonoBehaviour {
         floorY = map.Floor.y;
         MakePools();
         MakeCrumblingPlatforms();
+        map.LandingCost = AcidPitPilot.LandingCost;   // no route onto a crumbled or cracking one
         MakeFog();
     }
 

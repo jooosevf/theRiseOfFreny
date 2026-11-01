@@ -50,6 +50,21 @@ public class ArenaMap {
     public readonly List<Platform> Platforms = new List<Platform>();
     private readonly List<Step>[] steps;   // outgoing steps per platform
     private readonly LayerMask ground;
+    public LayerMask Ground => ground;
+
+    // what landing on a platform costs on top of the hop, for the ones that come and go (the Poço
+    // de Ácido's crumbling platforms: AcidPitPilot.LandingCost); PositiveInfinity while it can't be
+    // stood on, so no route goes there or through it. Null: every platform is always there
+    public System.Func<Platform, float> LandingCost;
+
+    private float CostOf(Platform platform) => LandingCost != null ? LandingCost(platform) : 0f;
+
+    public bool Landable(Platform platform) => platform != null && !float.IsPositiveInfinity(CostOf(platform));
+
+    // the hops that leave a platform (the autopilot picks one itself to get off a crumbling one)
+    public IReadOnlyList<Step> StepsFrom(Platform from) {
+        return from != null && from.index < steps.Length ? steps[from.index] : (IReadOnlyList<Step>)System.Array.Empty<Step>();
+    }
     private readonly float halfWidth, height, jumpHeight;
     private readonly float left, right;
 
@@ -393,6 +408,9 @@ public class ArenaMap {
             if (platform.y > point.y + 0.15f || point.y - platform.y > maxDrop || !platform.Contains(point.x, -0.05f)) {
                 continue;
             }
+            if (platform.collider != null && !platform.collider.enabled) {
+                continue;   // a crumbled platform of the Poço (CrumbleBlock): not there until it grows back
+            }
             if (best == null || platform.y > best.y) {
                 best = platform;
             }
@@ -415,7 +433,7 @@ public class ArenaMap {
         while (queue.Count > 0) {
             Platform current = queue.Dequeue();
             foreach (Step step in steps[current.index]) {
-                if (hops[step.to.index] == int.MaxValue) {
+                if (hops[step.to.index] == int.MaxValue && Landable(step.to)) {
                     hops[step.to.index] = hops[current.index] + 1;
                     queue.Enqueue(step.to);
                 }
@@ -459,6 +477,11 @@ public class ArenaMap {
                 if (step.kind == StepKind.Drop && step.from.y - step.to.y > Player.SafeFallHeight) {
                     stepCost += 6f; // a drop that costs a heart: only when there is no other way down
                 }
+                float landing = CostOf(step.to);
+                if (float.IsPositiveInfinity(landing)) {
+                    continue;       // crumbled, or about to
+                }
+                stepCost += landing;
                 float total = cost[best] + stepCost;
                 if (total < cost[step.to.index]) {
                     cost[step.to.index] = total;
