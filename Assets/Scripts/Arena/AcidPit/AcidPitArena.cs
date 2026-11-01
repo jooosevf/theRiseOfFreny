@@ -31,10 +31,13 @@ public class AcidPitArena : MonoBehaviour {
     private const float PoolGap = 2.5f;           // floor left between two pools
     private const float KeepClearOfEdges = 1.2f;  // from where a route leaves or reaches the floor
     private const float KeepClearOfMiddle = 2.5f; // the Ciclope comes out in the middle
-    private const float SurfaceLift = 0.12f;      // the acid's top over the floor line
+    // the acid's top over the floor line. The surface tile's liquid starts 44 px (0.44) under its top
+    // edge, so this lifts the tile until the liquid itself shows over the floor (it sat under it)
+    private const float SurfaceLift = 0.6f;
     private const float PoolFrameSeconds = 0.25f;
 
     private const int CrumblingPlatforms = 2;
+    private const int MovingPlatforms = 2;
 
     // a spike now and then, more often as the run heats up
     private const float SpikeFirst = 8f;
@@ -227,12 +230,15 @@ public class AcidPitArena : MonoBehaviour {
         // to a platform, where he lands dropping off one), so the autopilot's hops stay dry, from the
         // middle (the Ciclope) and from where Freny starts
         List<Vector2> blocked = new List<Vector2>();
+        // what is never given up: the middle, Freny's start and the pools already made
+        List<Vector2> hard = new List<Vector2>();
         float middle = (ArenaBounds.Left + ArenaBounds.Right) * 0.5f;
-        blocked.Add(new Vector2(middle - KeepClearOfMiddle, middle + KeepClearOfMiddle));
+        hard.Add(new Vector2(middle - KeepClearOfMiddle, middle + KeepClearOfMiddle));
         if (hero != null) {
             float x = hero.transform.position.x;
-            blocked.Add(new Vector2(x - 2f, x + 2f));
+            hard.Add(new Vector2(x - 2f, x + 2f));
         }
+        blocked.AddRange(hard);
         foreach (ArenaMap.Platform p in map.Platforms) {
             if (p == floor) {
                 continue;
@@ -253,20 +259,27 @@ public class AcidPitArena : MonoBehaviour {
         float max = Mathf.Min(floor.xMax, ArenaBounds.Right) - 2f;
         acidTiles = FrameAnimator.Load("Liquids/Acid 100x100");
         foreach (int wanted in PoolWidths) {
+            // the wide one first; where it doesn't fit, a narrower one. The routes' landing spots
+            // left room for only two pools (José, 2026-11-01: three): the last try lets a pool sit
+            // near a route's foot, never in the middle, at Freny's start or on another pool
             bool placed = false;
-            // the wide one first; where it doesn't fit, a narrower one
-            for (int width = wanted; width >= 2 && !placed; width--) {
-                for (int attempt = 0; attempt < 60 && !placed; attempt++) {
-                    float center = Mathf.Round(Random.Range(min + width / 2f, max - width / 2f) * 2f) / 2f;
-                    float left = center - width / 2f, right = center + width / 2f;
-                    bool clear = true;
-                    foreach (Vector2 b in blocked) {
-                        clear &= right <= b.x || left >= b.y;
-                    }
-                    if (clear) {
-                        MakePool(center, width);
-                        blocked.Add(new Vector2(left - PoolGap, right + PoolGap));
-                        placed = true;
+            for (int pass = 0; pass < 2 && !placed; pass++) {
+                List<Vector2> avoid = pass == 0 ? blocked : hard;
+                for (int width = wanted; width >= 2 && !placed; width--) {
+                    for (int attempt = 0; attempt < 60 && !placed; attempt++) {
+                        float center = Mathf.Round(Random.Range(min + width / 2f, max - width / 2f) * 2f) / 2f;
+                        float left = center - width / 2f, right = center + width / 2f;
+                        bool clear = true;
+                        foreach (Vector2 b in avoid) {
+                            clear &= right <= b.x || left >= b.y;
+                        }
+                        if (clear) {
+                            MakePool(center, width);
+                            Vector2 taken = new Vector2(left - PoolGap, right + PoolGap);
+                            blocked.Add(taken);
+                            hard.Add(taken);
+                            placed = true;
+                        }
                     }
                 }
             }
@@ -345,6 +358,17 @@ public class AcidPitArena : MonoBehaviour {
             int pick = Random.Range(0, floating.Count);
             floating[pick].gameObject.AddComponent<CrumbleBlock>();
             floating.RemoveAt(pick);
+        }
+        // and the moving ones (José, 2026-11-01): of the rest, those with room to slide
+        int moving = 0;
+        while (moving < MovingPlatforms && floating.Count > 0) {
+            int pick = Random.Range(0, floating.Count);
+            BoxCollider2D box = floating[pick];
+            floating.RemoveAt(pick);
+            if (MovingBlock.PathClear(box)) {
+                box.gameObject.AddComponent<MovingBlock>();
+                moving++;
+            }
         }
     }
 
@@ -507,7 +531,9 @@ public class AcidPitArena : MonoBehaviour {
         }
         float scale = Screen.width / 1920f;
         titleStyle.fontSize = Mathf.Max(16, Mathf.RoundToInt(64f * scale));
-        Rect r = new Rect(0f, Screen.height * 0.28f, Screen.width, 90f * scale);
+        // under the blessing / mutator lines that ArenaRunVariety shows at the same time (they sit at
+        // about a quarter of the screen); it covered them
+        Rect r = new Rect(0f, Screen.height * 0.40f, Screen.width, 90f * scale);
         titleStyle.normal.textColor = new Color(0f, 0f, 0f, alpha * 0.8f);
         GUI.Label(new Rect(r.x + 3f, r.y + 3f, r.width, r.height), "POÇO DE ÁCIDO", titleStyle);
         titleStyle.normal.textColor = new Color(0.6f, 1f, 0.3f, alpha);

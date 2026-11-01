@@ -13,7 +13,7 @@ public class MageStaff : MonoBehaviour {
     public const int Damage = 2;
     private const float BallSpeed = 3.2f;   // x the prefab's speed (3): a little quicker than a sorcerer's
     private const float BlinkFor = 3f;      // the staff blinks before it goes
-    private static readonly Color SparkColor = new Color(0.7f, 0.45f, 1f);
+    private static readonly Color SparkColor = new Color(0.45f, 1f, 0.35f);
     // Freny's balls are green-gold, so they don't read as the sorcerers' purple ones
     public static readonly Color BallTint = new Color(0.6f, 1f, 0.6f);
 
@@ -104,11 +104,57 @@ public class MageStaff : MonoBehaviour {
             effect.speedMultiplier = BallSpeed;
             effect.SetDirection(direction);
         }
+        // the sorcerers' ball art is purple, and a green tint over purple only came out dark blue:
+        // Freny's balls hide it and draw a green orb of their own in its place
         foreach (SpriteRenderer renderer in ball.GetComponentsInChildren<SpriteRenderer>()) {
-            renderer.color = BallTint;
+            renderer.color = new Color(1f, 1f, 1f, 0f);
+            AddGreenOrb(renderer);
+        }
+        // and its purple glow (the prefab's two particle systems) turns green too
+        foreach (ParticleSystem glow in ball.GetComponentsInChildren<ParticleSystem>()) {
+            ParticleSystem.MainModule main = glow.main;
+            main.startColor = new ParticleSystem.MinMaxGradient(new Color(BallTint.r, BallTint.g, BallTint.b, main.startColor.color.a));
+            glow.Clear();
+        }
+        // and the purple light it casts on the walls
+        foreach (UnityEngine.Rendering.Universal.Light2D light in ball.GetComponentsInChildren<UnityEngine.Rendering.Universal.Light2D>()) {
+            light.color = new Color(0.25f, 0.9f, 0.3f);
         }
         Fx.Burst(from, SparkColor, 8, 1.5f, 0.08f, 0.4f);
         Sfx.Play("hexball_launch", from, 0.8f, 1.2f);
+    }
+
+    // a soft green orb over the ball's sprite, the same size
+    private static Sprite orbSprite;
+
+    private static void AddGreenOrb(SpriteRenderer over) {
+        if (orbSprite == null) {
+            const int size = 16;
+            Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
+            for (int y = 0; y < size; y++) {
+                for (int x = 0; x < size; x++) {
+                    float d = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), new Vector2(size / 2f, size / 2f)) / (size / 2f);
+                    Color c = d < 0.35f ? new Color(0.85f, 1f, 0.75f) : d < 0.7f ? BallTint : new Color(0.2f, 0.75f, 0.25f);
+                    c.a = d < 0.7f ? 1f : Mathf.Clamp01((1f - d) / 0.3f) * 0.8f;
+                    texture.SetPixel(x, y, c);
+                }
+            }
+            texture.Apply();
+            orbSprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
+        }
+        GameObject go = new GameObject("Green Orb");
+        go.transform.SetParent(over.transform, false);
+        SpriteRenderer orb = go.AddComponent<SpriteRenderer>();
+        orb.sprite = orbSprite;
+        orb.sortingLayerID = over.sortingLayerID;
+        orb.sortingOrder = over.sortingOrder + 1;
+        if (ItemPickup.UnlitMaterial != null) {
+            orb.sharedMaterial = ItemPickup.UnlitMaterial;
+        }
+        // as big as the ball looks: the orb is 1 unit across, the ball's sprite this many units in the
+        // ball's own space (its scale applies to both)
+        float across = over.sprite != null ? Mathf.Min(over.sprite.bounds.size.x, over.sprite.bounds.size.y) * 0.8f : 0.4f;
+        go.transform.localScale = new Vector3(across, across, 1f);
     }
 
     private void Update() {

@@ -352,6 +352,9 @@ public static class GuideScreen {
         Entry(parent, FirstFrame("Traps/Crumbling block"), "Plataformas que desmoronam",
             "Duas plataformas por corrida são de pedra rachada: pisou, elas tremem e desmoronam logo depois. " +
             "Voltam 5 s mais tarde.");
+        Entry(parent, null, "Plataformas que se movem",
+            "Até duas plataformas por corrida, de cor mais clara, deslizam de um lado para o outro " +
+            "e levam junto quem estiver em cima. Calcule o pulo.");
     }
 
     private static Sprite FirstFrame(string path) {

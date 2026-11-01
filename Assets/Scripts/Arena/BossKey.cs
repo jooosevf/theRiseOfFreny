@@ -177,7 +177,9 @@ public class BossKey : MonoBehaviour {
         Fx.Burst(transform.position, Gold, 18, 2.5f, 0.08f, 0.5f);
         Sfx.Play("upgrade", transform.position, 1f, 1.15f);
         Sfx.Play("door", transform.position, 0.6f, 1.6f);   // the click of a key
-        DamageNumbers.Show(player.HeadPoint + Vector3.up * 0.4f, "Chave do Ciclope!", Gold);
+        // the damage numbers' box is made for "-2": a phrase wrapped and got cut, so it goes in the
+        // chest's wide floating text
+        ArenaBossLoot.Say("Chave do Ciclope!", player.HeadPoint + Vector3.up * 0.6f, Gold, 1.6f);
         Destroy(gameObject);
     }
 }

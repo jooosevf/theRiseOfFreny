@@ -85,7 +85,7 @@ public static class VarietyScreens {
 
     // ---- Renascer ----
 
-    public static string RebirthButtonLabel => Rebirth.Count > 0 ? "Renascer " + Rebirth.Star(Rebirth.Count) : "Renascer";
+    public static string RebirthButtonLabel => Rebirth.Count > 0 ? "Renascer <color=#FFD84A>" + Rebirth.Star(Rebirth.Count) + "</color>" : "Renascer";
 
     public static MenuPage RebirthPage(MenuStack stack) {
         MenuPage page = new MenuPage(stack.transform, "Renascer", 640f, new Vector2(0.5f, 0.5f), 6f);

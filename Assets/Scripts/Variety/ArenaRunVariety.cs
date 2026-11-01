@@ -30,6 +30,7 @@ public class ArenaRunVariety : MonoBehaviour {
 
     private Canvas pickerCanvas;
     private Button[] cards;
+    private readonly System.Collections.Generic.List<Outline> cardEdges = new System.Collections.Generic.List<Outline>();
     private Blessing[] offered;
     private bool picking;
     private float announcedAt = -100f;
@@ -226,6 +227,7 @@ public class ArenaRunVariety : MonoBehaviour {
         Place(sub.rectTransform, new Vector2(0f, 140f), new Vector2(980f, 44f));
 
         cards = new Button[offered.Length];
+        cardEdges.Clear();
         for (int i = 0; i < offered.Length; i++) {
             cards[i] = Card(panel.transform, i, offered[i], new Vector2((i - (offered.Length - 1) / 2f) * 330f, -45f));
         }
@@ -246,6 +248,16 @@ public class ArenaRunVariety : MonoBehaviour {
     private Button Card(Transform parent, int index, Blessing blessing, Vector2 position) {
         Blessings.Info info = Blessings.Of(blessing);
         Button card = MenuKit.MakeButton(parent, "", () => Pick(index));
+        // the menus' bright selection colour drowned the card's pink name and its text: a card
+        // lights up halfway, and its edge shows which one is picked
+        ColorBlock colors = MenuKit.Colors();
+        colors.highlightedColor = colors.selectedColor = Color.Lerp(MenuKit.ButtonColor, MenuKit.SelectedColor, 0.45f);
+        card.colors = colors;
+        Outline edge = card.gameObject.AddComponent<Outline>();
+        edge.effectColor = MenuKit.SelectedColor;
+        edge.effectDistance = new Vector2(3f, -3f);
+        edge.enabled = false;
+        cardEdges.Add(edge);
         RectTransform rect = card.GetComponent<RectTransform>();
         Place(rect, position, new Vector2(300f, 260f));
 
@@ -304,6 +316,11 @@ public class ArenaRunVariety : MonoBehaviour {
                     events.SetSelectedGameObject(cards[0].gameObject);
                 }
             }
+        }
+        // the picked card's edge
+        GameObject current = events != null ? events.currentSelectedGameObject : null;
+        for (int i = 0; i < cards.Length && i < cardEdges.Count; i++) {
+            cardEdges[i].enabled = cards[i] != null && current == cards[i].gameObject;
         }
     }
 

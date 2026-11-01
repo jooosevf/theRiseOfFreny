@@ -157,7 +157,7 @@ public class HexballEffect : MonoBehaviour
                 } else {
                     enemy.HitBy(caster, damage);
                 }
-                Fx.Burst(transform.position, new Color(0.7f, 0.4f, 1f), 12, 2.5f, 0.1f, 0.4f);
+                Fx.Burst(transform.position, fromFreny ? MageStaff.BallTint : new Color(0.7f, 0.4f, 1f), 12, 2.5f, 0.1f, 0.4f);
                 Sfx.Play("hexball_impact", transform.position);
                 Destroy(gameObject);
                 return true;
