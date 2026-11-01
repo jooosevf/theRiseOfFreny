@@ -19,6 +19,8 @@ public class SaveData {
     public List<Entry> bestTimes = new List<Entry>();
     public List<string> unequipped = new List<string>();   // bought, but left at home
     public List<string> gear = new List<string>();         // Armeiro items that aren't upgrades (Loadout)
+    public string stats;      // AccountStats' JSON (the Estatísticas); empty in older saves
+    public string missions;   // DailyMissions' JSON (today's progress); empty in older saves
 
     [Serializable]
     public class Entry {
@@ -210,6 +212,8 @@ public static class SaveSystem {
             spentPoints = PlayerPrefs.GetInt(FrenyProgress.SpentPointsKey, 0),
             bestRunSeconds = PlayerPrefs.GetFloat(FrenyProgress.BestWaveKey, 0f),
             campaignUnlocked = PlayerPrefs.GetInt(CampaignProgress.UnlockedKey, 0),
+            stats = PlayerPrefs.GetString(AccountStats.Key, ""),
+            missions = PlayerPrefs.GetString(DailyMissions.Key, ""),
         };
         foreach (FrenyUpgrade upgrade in Enum.GetValues(typeof(FrenyUpgrade))) {
             int level = PlayerPrefs.GetInt(FrenyProgress.LevelKeyPrefix + upgrade, 0);
@@ -245,6 +249,8 @@ public static class SaveSystem {
         SetOrDelete(FrenyProgress.SpentPointsKey, data.spentPoints);
         SetOrDelete(FrenyProgress.BestWaveKey, data.bestRunSeconds);
         SetOrDelete(CampaignProgress.UnlockedKey, data.campaignUnlocked);
+        SetOrDelete(AccountStats.Key, data.stats);
+        SetOrDelete(DailyMissions.Key, data.missions);
 
         foreach (FrenyUpgrade upgrade in Enum.GetValues(typeof(FrenyUpgrade))) {
             SaveData.Entry entry = data.upgrades.Find(e => e.id == upgrade.ToString());

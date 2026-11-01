@@ -28,6 +28,7 @@ namespace Online {
                     if (body.Contains("\"" + info.key + "\":")) Achievements.MarkConfirmed(info.key);
                 }
                 if (body.Contains("\"played\":")) Achievements.MarkConfirmed("played");
+                PlayerTitles.ReadOwn(body);
                 PlayerPrefs.Save();
             });
         }

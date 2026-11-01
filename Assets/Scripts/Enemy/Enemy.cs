@@ -1210,6 +1210,16 @@ public abstract class Enemy : MonoBehaviour, IDamageable
     public const string BackHit = "back";
     public const string EyeHit = "eye";
     public string LastHitMark { get; protected set; }
+    // a hit from Freny that landed on a mark (the eye, the back), when it lands: the daily
+    // missions count eye hits, not only the killing one
+    public static event System.Action<Enemy, string> MarkedHit;
+
+    // what Freny's last hit was: SwordHit, ShotHit or BlastHit (the daily missions ask for kills
+    // with a given weapon); null before he hits it
+    public const string SwordHit = "sword";
+    public const string ShotHit = "shot";
+    public const string BlastHit = "blast";
+    public string LastHitWeapon { get; private set; }
 
     // hits scaled below a point add up here until they make one
     private float wear;
@@ -1231,7 +1241,11 @@ public abstract class Enemy : MonoBehaviour, IDamageable
 
     private void ScaledHit(int amount, bool shot) {
         LastHitMark = null;
+        LastHitWeapon = shot ? ShotHit : SwordHit;
         float scale = player_t != null ? HitScale(player != null ? player.Feet : player_t.position, shot) : 1f;
+        if (LastHitMark != null) {
+            MarkedHit?.Invoke(this, LastHitMark);
+        }
         wear += Mathf.Max(1, amount) * scale;
         int whole = Mathf.FloorToInt(wear + 0.001f);
         if (whole < 1) {
@@ -1248,6 +1262,7 @@ public abstract class Enemy : MonoBehaviour, IDamageable
             return;
         }
         LastHitMark = null;
+        LastHitWeapon = BlastHit;
         TakeDamage(Mathf.Max(1, amount));
     }
 
