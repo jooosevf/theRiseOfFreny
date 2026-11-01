@@ -14,6 +14,7 @@ public class ArenaMap {
         public float xMin, xMax;
         public Collider2D collider;  // the collider the samples came from (edges are refined on it)
         public bool tower;           // the pocket ledge up in a side tower, out of Freny's reach (MarkTowers)
+        public bool sliding;         // the Poço's moving platform (AcidPitPilot.Track keeps xMin/xMax up to date)
 
         public float Width => xMax - xMin;
 
@@ -22,7 +23,8 @@ public class ArenaMap {
         }
 
         public override string ToString() {
-            return $"P{index} (y {y:0.0}, x {xMin:0.0} a {xMax:0.0}{(tower ? ", torre" : "")})";
+            // a sliding platform's x changes every frame: left out, so the autopilot's label stays put
+            return sliding ? $"P{index} (y {y:0.0}, móvel)" : $"P{index} (y {y:0.0}, x {xMin:0.0} a {xMax:0.0}{(tower ? ", torre" : "")})";
         }
     }
 

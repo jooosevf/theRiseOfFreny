@@ -182,6 +182,7 @@ public static class AcidPitPilot {
                 }
                 // the map was built before it started sliding: its extents are the home ones
                 slides[platform] = new Slide { block = block, homeMin = platform.xMin, homeMax = platform.xMax };
+                platform.sliding = true;
             }
             Slide slide = slides[platform];
             platform.xMin = slide.homeMin + block.Offset;
