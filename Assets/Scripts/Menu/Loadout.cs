@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 
@@ -11,14 +12,16 @@ public static class Loadout {
     public const string GearKeyPrefix = "freny.gear.";
     public const int HelmetCost = 6000;
 
-    public static readonly string[] GearIds = { Helmet };
+    // 2026-11-01: the Armeiro no longer sells the helmet (it only drops); a bought one was refunded
+    // (FrenyProgress.MigrateShop). The list is empty so saves and rebirths leave it alone.
+    public static readonly string[] GearIds = { };
 
     public static bool Owns(string gear) {
         return PlayerPrefs.GetInt(GearKeyPrefix + gear, 0) > 0;
     }
 
     public static bool IsEquipped(string gear) {
-        return Owns(gear) && PlayerPrefs.GetInt(FrenyProgress.UnequippedKeyPrefix + gear, 0) == 0;
+        return Array.IndexOf(GearIds, gear) >= 0 && Owns(gear) && PlayerPrefs.GetInt(FrenyProgress.UnequippedKeyPrefix + gear, 0) == 0;
     }
 
     public static void SetEquipped(string gear, bool equipped) {
@@ -39,7 +42,7 @@ public static class Loadout {
     }
 
     public static bool CanBuy(string gear) {
-        return !Owns(gear) && FrenyProgress.Coins >= Cost(gear);
+        return Array.IndexOf(GearIds, gear) >= 0 && !Owns(gear) && FrenyProgress.Coins >= Cost(gear);
     }
 
     public static bool TryBuy(string gear) {

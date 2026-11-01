@@ -1245,14 +1245,20 @@ public abstract class Enemy : MonoBehaviour, IDamageable
         HitPoint = null;
     }
 
+    // the next hit from Freny's sword or gun lands this much harder: the Armeiro's damage buffs and
+    // a critical (WeaponLevels.Roll). Set by MeleeAttack / RangedAttack right before the hit.
+    public static float NextHitPower = 1f;
+
     private void ScaledHit(int amount, bool shot) {
+        float power = NextHitPower;
+        NextHitPower = 1f;
         LastHitMark = null;
         LastHitWeapon = shot ? ShotHit : SwordHit;
         float scale = player_t != null ? HitScale(player != null ? player.Feet : player_t.position, shot) : 1f;
         if (LastHitMark != null) {
             MarkedHit?.Invoke(this, LastHitMark);
         }
-        wear += Mathf.Max(1, amount) * scale * RunModifiers.DamageMultiplier;   // blessing Força, rebirths
+        wear += Mathf.Max(1, amount) * scale * RunModifiers.DamageMultiplier * power;   // blessing Força, rebirths
         int whole = Mathf.FloorToInt(wear + 0.001f);
         if (whole < 1) {
             TakeHit(true);   // it flinches, but holds

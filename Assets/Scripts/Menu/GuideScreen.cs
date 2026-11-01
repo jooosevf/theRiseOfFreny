@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -64,18 +65,18 @@ public static class GuideScreen {
             "Os golpes 1 e 2 recarregam em 0,25 s, o 3º em 0,65 s. Funciona no ar e agachado.");
         Entry(parent, art ? art.greatSword : null, "Espadão",
             "Corte e alcance 1,8x maiores (mesmo dano): pega mais inimigos de uma vez. " +
-            "Do chão vale 6 golpes (2 combos); comprado no Armeiro, é para sempre.");
+            "Só cai do chão: vale 6 golpes (2 combos), mais 3 por nível de \"Espadão: +3 golpes\" no Armeiro.");
         Entry(parent, art ? art.revolver : null, "Revólver",
             "4 tiros por tambor; vazio, recarrega sozinho em 1,6 s com a reserva de balas " +
             "(começa com 8, máximo 16). Sem reserva, fica sem tiro. Cima atira para cima. Não empurra o inimigo.");
         Entry(parent, art ? art.shotgun : null, "Escopeta",
             "3 balas em leque, 1 cartucho por tiro; cada bala empurra o inimigo. Troque com o botão Escopeta. Vem de baús " +
-            "da Arena ou do Armeiro (6 cartuchos por fase). Até 30 cartuchos.");
+            "e inimigos da Arena. Até 30 cartuchos (40 ou 50 com o Armeiro).");
         Entry(parent, art ? art.grenade : null, "Granada",
             "Segure para carregar a força, solte para lançar em arco; sem espera entre uma e outra. " +
             "Explode em 1 s, ao tocar um inimigo ou ao cair no chão: 3 de dano em todos num raio " +
             "grande (mata quase todos; o Golem Vermelho aguenta uma) e quebra baús e vasos. Cuidado: perto demais, o Freny " +
-            "também leva 2 de dano e é arremessado. Até 6.");
+            "também leva 2 de dano e é arremessado. Até 6 (8 ou 10 com o Armeiro).");
         Entry(parent, NetThrower.Icon, "Rede",
             "Comprada no Armeiro: " + NetThrower.NetsPerStage + " por fase (até " + NetThrower.MaxNets + "), botão Rede. Voa em arco e abre no " +
             "primeiro inimigo ou no chão: todos embaixo dela ficam presos " + NetTrap.Seconds + " s, parados e sem atacar (o morcego " +
@@ -85,9 +86,9 @@ public static class GuideScreen {
             MageStaff.Duration + " s, o botão Atirar lança bolas de feitiço sem gastar munição: " + MageStaff.Damage +
             " de dano, ferem os inimigos (até o Ciclope) e nunca o Freny. O cajado aparece nas costas dele e no HUD, " +
             "e pisca nos últimos segundos. Pegar outro recomeça o tempo.");
-        Entry(parent, art ? art.revolver : null, "Níveis do Armeiro",
-            "Pistola, escopeta, espadão e granada têm níveis 2 e 3 no Armeiro (veja Armeiro). Só a arma comprada e " +
-            "equipada sobe de nível: a escopeta do baú e o espadão do chão ficam no nível 1.");
+        Entry(parent, art ? art.revolver : null, "Melhorias do Armeiro",
+            "O Armeiro não vende armas: vende melhorias para elas (dano, munição, recarga, crítico). Elas valem " +
+            "para sempre e para a arma que cair do chão também (veja Armeiro).");
     }
 
     private static void Defense(Transform parent, MenuArt art) {
@@ -96,10 +97,10 @@ public static class GuideScreen {
             "apanhar ele pisca 1,2 s sem levar dano. Queda alta também tira vida.");
         Entry(parent, art ? art.rageHelmet : null, "Fúria",
             "A barra Fúria enche lutando: matar, acertar a espada e apanhar. Parada 2 s, ela " +
-            "esvazia. Cheia, dá 20 s de FÚRIA: a espada tira 2 de dano.");
+            "esvazia. Cheia, dá 20 s de FÚRIA (25 ou 30 com o Armeiro): a espada tira 2 de dano.");
         Entry(parent, art ? art.berserkerHelmet : null, "Armadura (Capacete Berserker)",
             Player.ArmorMax + " corações cinza que levam os golpes antes da vida (queda não). " +
-            "Cai de inimigos e vasos; comprado no Armeiro, cada fase começa com ela cheia.");
+            "Cai de inimigos e vasos.");
         Entry(parent, art ? art.armorHeart : null, "Itens que sobram",
             "Com vida, balas ou armadura cheias, o item fica no chão até você precisar. " +
             "Itens duram 25 s e piscam antes de sumir.");
@@ -148,31 +149,36 @@ public static class GuideScreen {
             "Cada feiticeiro que morre tem " + Mathf.RoundToInt(MageStaff.DropChance * 100f) + "% de chance de deixar o Cajado do Mago.");
     }
 
+    // the Armeiro's buffs (2026-11-01), prices read from FrenyProgress
     private static void Shop(Transform parent, MenuArt art) {
-        Entry(parent, art ? art.jump : null, "Pulo duplo · " + FrenyProgress.CostAt(FrenyUpgrade.DoubleJump, 0),
-            "Um segundo pulo no ar.");
-        Entry(parent, art ? art.grenade : null, "Granada · " + FrenyProgress.CostAt(FrenyUpgrade.Grenade, 0),
-            "Começa cada fase com 2 granadas.");
-        Entry(parent, art ? art.greatSword : null, "Espadão · " + FrenyProgress.CostAt(FrenyUpgrade.GreatSword, 0),
-            "A espada fica 1,8x maior para sempre.");
-        Entry(parent, art ? art.shotgun : null, "Escopeta · " + FrenyProgress.CostAt(FrenyUpgrade.Shotgun, 0),
-            "Começa cada fase com a escopeta e 6 cartuchos.");
-        Entry(parent, art ? art.berserkerHelmet : null, "Capacete Berserker · " + Loadout.HelmetCost,
-            "Começa cada fase com " + Player.ArmorMax + " de armadura.");
-        Entry(parent, art ? art.revolver : null, "Pistola nv. 2 · " + Price(FrenyUpgrade.Pistol, 0) + " · nv. 3 · " + Price(FrenyUpgrade.Pistol, 1),
-            "Nv. 2: atira 25% mais rápido e recarrega 30% mais rápido. Nv. 3: atira 40% mais rápido e recarrega na metade do tempo.");
-        Entry(parent, art ? art.shotgun : null, "Escopeta nv. 2 · " + Price(FrenyUpgrade.Shotgun, 1) + " · nv. 3 · " + Price(FrenyUpgrade.Shotgun, 2),
-            "Nv. 2: 5 balas no leque em vez de 3. Nv. 3: atira 30% mais rápido e começa a fase com 4 cartuchos a mais.");
-        Entry(parent, art ? art.greatSword : null, "Espadão nv. 2 · " + Price(FrenyUpgrade.GreatSword, 1) + " · nv. 3 · " + Price(FrenyUpgrade.GreatSword, 2),
-            "Nv. 2: corte 2,2x maior (em vez de 1,8x). Nv. 3: +1 de dano em todo golpe.");
-        Entry(parent, art ? art.grenade : null, "Granada nv. 2 · " + Price(FrenyUpgrade.Grenade, 1) + " · nv. 3 · " + Price(FrenyUpgrade.Grenade, 2),
-            "Nv. 2: explosão 30% maior e 1 granada a mais por fase. Nv. 3: 4 de dano (mata o Golem Vermelho em duas) e 2 a mais por fase. " +
-            "Cuidado: a explosão maior também pega o Freny de mais longe.");
-        Entry(parent, NetThrower.Icon, "Rede · " + FrenyProgress.NetCost,
-            "Começa cada fase com " + NetThrower.NetsPerStage + " redes (veja Armas).");
-        Entry(parent, art ? art.heart : null, "Vida, Velocidade e Recarga",
-            "+1 coração, +8% de velocidade, -10% de recarga por nível. Vida: 1.500, 3.000, 6.000 e 10.000. " +
-            "Velocidade e Recarga: 800, 1.500, 2.500, 4.000 e 6.000. O Inventário deixa armas compradas em casa.");
+        Entry(parent, art ? art.revolver : null, "Pistola",
+            "Dano +25% por nível (" + Prices(FrenyUpgrade.PistolDamage) + "), tambor 4→5→6 (" + Prices(FrenyUpgrade.PistolDrum) +
+            "), reserva 16→24→32 (" + Prices(FrenyUpgrade.PistolReserve) + "), recarga 20% mais rápida por nível (" + Prices(FrenyUpgrade.PistolReload) + ").");
+        Entry(parent, art ? art.shotgun : null, "Escopeta",
+            "Dano +25% por nível (" + Prices(FrenyUpgrade.ShotgunDamage) + "), até 40→50 cartuchos (" + Prices(FrenyUpgrade.ShotgunShells) +
+            "), leque de 5 balas (" + Prices(FrenyUpgrade.ShotgunSpread) + "). Valem para a escopeta que cair.");
+        Entry(parent, art ? art.sword : null, "Espada",
+            "Dano +25% por nível, espadão também (" + Prices(FrenyUpgrade.SwordDamage) + "), golpe 10% mais rápido por nível (" +
+            Prices(FrenyUpgrade.AttackSpeed) + "), espadão do chão +3 golpes por nível (" + Prices(FrenyUpgrade.GreatSwordSwings) + ").");
+        Entry(parent, art ? art.grenade : null, "Granada",
+            "Explosão 30% maior (" + Prices(FrenyUpgrade.GrenadeBlast) + "), 4 de dano (" + Prices(FrenyUpgrade.GrenadePower) +
+            "), carrega 8→10 (" + Prices(FrenyUpgrade.GrenadeCarry) + "). Cuidado: a explosão maior também pega o Freny de mais longe.");
+        Entry(parent, art ? art.sword : null, "Crítico e Fúria",
+            "Crítico: +5% de chance por nível de um golpe ou tiro tirar o dobro (" + Prices(FrenyUpgrade.Critical) +
+            "). Fúria: +5 s por nível (" + Prices(FrenyUpgrade.RageTime) + ").");
+        Entry(parent, art ? art.heart : null, "Freny",
+            "Vida máxima +1 (" + Prices(FrenyUpgrade.MaxHealth) + "), velocidade +5% (" + Prices(FrenyUpgrade.MoveSpeed) +
+            "), pulo duplo (" + Prices(FrenyUpgrade.DoubleJump) + "), Rede (" + Prices(FrenyUpgrade.Net) + ", " +
+            NetThrower.NetsPerStage + " por fase). Espadão, escopeta, granada e capacete só caem do chão.");
+    }
+
+    // "1.500 / 3.000 / 6.000"
+    private static string Prices(FrenyUpgrade upgrade) {
+        List<string> parts = new List<string>();
+        for (int level = 0; level < FrenyProgress.MaxLevel(upgrade); level++) {
+            parts.Add(FrenyProgress.CostAt(upgrade, level).ToString("N0", System.Globalization.CultureInfo.InvariantCulture).Replace(",", "."));
+        }
+        return string.Join(" / ", parts);
     }
 
     // the tough ones; the Arena brings them in as the run heats up (ArenaDirector's list in the scene)
@@ -249,8 +255,9 @@ public static class GuideScreen {
             "dos jogadores têm cada uma.");
         Entry(parent, art ? art.run : null, "XP e piloto automático",
             "Matar dá XP, e cada nível pede mais XP que o anterior. Cada nível vale 1 ponto para o piloto no " +
-            "Armeiro: reação (1 a 5 pontos por nível), esquiva com dash (3), poção sozinho (4) e melhor alvo (5). " +
-            "O piloto abaixa das bolas de feitiço retas, bebe a poção no último coração (ou no penúltimo com um Golem perto), " +
+            "Armeiro: reação (1 a 5 pontos por nível), esquiva com dash (3), pegar o item certo (4: busca armadura, poção com " +
+            "pouca vida e munição acabando, até no meio da luta), melhor alvo (5) e caçar chefe (6: granada e rede no Ciclope, " +
+            "e entra no olho mais cedo). O piloto abaixa das bolas de feitiço retas, bebe a poção no último coração (ou no penúltimo com um Golem perto), " +
             "atira na mina-aranha de longe e foge quando ela chega perto, e usa a rede e o cajado quando tem. " +
             "Enquanto o piloto joga, cai 1/3 das moedas e as mortes dão metade do XP. Corridas no Automático " +
             "têm ranking próprio e recomeçam sozinhas.");

@@ -277,6 +277,11 @@ public static class SaveSystem {
             SaveData.Entry entry = data.bestTimes.Find(e => e.id == stage.id);
             SetOrDelete(CampaignProgress.BestTimeKeyPrefix + stage.id, entry != null ? entry.value : 0f);
         }
+        // a slot saved before the Armeiro sold buffs: its helmet and weapons go back as coins
+        if (Has(data.gear, Loadout.Helmet)) {
+            PlayerPrefs.SetInt(Loadout.GearKeyPrefix + Loadout.Helmet, 1);
+        }
+        FrenyProgress.MigrateShop();
     }
 
     // old saves (and the cloud copies) have no list at all

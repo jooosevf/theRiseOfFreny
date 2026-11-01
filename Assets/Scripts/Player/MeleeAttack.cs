@@ -77,6 +77,9 @@ public class MeleeAttack : MonoBehaviour
             // where the blade meets the body: the middle of the hitbox, pulled onto the enemy
             Collider2D blade = GetComponent<Collider2D>();
             Vector3 at = blade != null ? (Vector3)other.ClosestPoint(blade.bounds.center) : other.bounds.center;
+            if (!enemy.IsDead) {
+                Enemy.NextHitPower = WeaponLevels.Roll(WeaponLevels.SwordPower, at);   // the Armeiro's buffs, crit
+            }
             enemy.Damage(damage, ComboPush[step - 1], at);
         } else {
             hit.Damage();

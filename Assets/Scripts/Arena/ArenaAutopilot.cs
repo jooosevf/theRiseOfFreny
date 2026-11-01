@@ -337,7 +337,14 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
 
         // 1c. the Ciclope: keep out of its reach and shoot, go in with the sword only while it
         // rests after a blow and there is time for a few hits and the way out
-        if (target is Cyclops boss && boss.RestLeft < CyclopsEngageTime && sameFloor) {
+        // 1c''. "Caçar chefe" (brain, 2026-11-01): grenades and the Rede on the Ciclope too (before,
+        // the boss branch below returned before he ever got to them), and in for the eye on a
+        // shorter rest
+        if (FrenyProgress.HasBossHunter && target is Cyclops hunted && player.IsGrounded && BossHunt(ref frame, me, hunted)) {
+            return frame;
+        }
+        float engageTime = FrenyProgress.HasBossHunter ? CyclopsHunterEngageTime : CyclopsEngageTime;
+        if (target is Cyclops boss && boss.RestLeft < engageTime && sameFloor) {
             if (Mathf.Abs(dx) < CyclopsSafeDistance) {
                 frame.move = -towardTarget;
                 frame.runHeld = player.RunReady;
@@ -493,9 +500,16 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         }
 
         // 5. potion
-        if (FrenyProgress.HasAutoPotion && player.Health <= lowHealth && player.HasPotion) {
+        if (player.Health <= lowHealth && player.HasPotion) {   // no upgrade needed since 2026-11-01
             frame.potionPressed = true;
             action = "Bebendo poção";
+            return frame;
+        }
+
+        // 5b. "Pegar o item certo" (brain, 2026-11-01): what he is short of is fetched even mid-fight
+        // and with a Ciclope out: armor, a potion at 2 hearts or less, bullets when the gun runs dry,
+        // shells for the shotgun, a great sword
+        if (FrenyProgress.HasItemSense && GoToPickup(ref frame, me, myFeet, myPlatform, pickupRange + 3f, true)) {
             return frame;
         }
 
@@ -551,6 +565,24 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
 
     private const float CyclopsSafeDistance = 3.2f;   // its punch and the start of the smash
     private const float CyclopsEngageTime = 0.9f;     // its rest must last this long to go in
+    private const float CyclopsHunterEngageTime = 0.6f;   // with "Caçar chefe"
+
+    // a grenade when it is in a lob's reach, else the Rede to slow it
+    private bool BossHunt(ref PlayerInputFrame frame, Vector2 me, Cyclops boss) {
+        if (player.CanThrowGrenade && InLobRange(me, boss)) {
+            float lobDx = boss.transform.position.x - me.x;
+            float charge = player.GrenadeChargeFor(lobDx, boss.Center.y - (me.y + 0.6f));
+            if ((lobDx > 0) != player.FacingRight) {
+                Turn(ref frame, Mathf.Sign(lobDx));
+            } else {
+                frame.grenadePressed = true;
+                frame.grenadeCharge = Mathf.Clamp01(charge * Random.Range(1f - grenadeAimError, 1f + grenadeAimError));
+                action = "Granada no Ciclope";
+            }
+            return true;
+        }
+        return ThrowNet(ref frame, me, boss);
+    }
     private const float EyeJumpReach = 1.2f;          // how far out he jumps for the eye
     private const float EyeTolerance = 0.45f;         // the eye's radius: the blade must be about there
     // while a Ciclope is out it comes first (José, 2026-10-29: he went after everything else); the
@@ -838,7 +870,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
     private const float NetMaxDistance = 7f;
 
     private bool PotionNow(Vector2 me) {
-        if (!FrenyProgress.HasAutoPotion || !player.HasPotion || player.Health >= player.MaxHealth) {
+        if (!player.HasPotion || player.Health >= player.MaxHealth) {
             return false;
         }
         if (player.Health <= lowHealth) {
@@ -1195,12 +1227,36 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         return map.PlatformUnder(new Vector2(feet.x, feet.y + 0.1f), 1.5f);
     }
 
-    private bool GoToPickup(ref PlayerInputFrame frame, Vector2 me, float myFeet, ArenaMap.Platform myPlatform, float range) {
+    // what "Pegar o item certo" goes for: something he really lacks right now
+    private bool Urgent(ItemPickup item) {
+        switch (item.kind) {
+            case ItemPickup.Kind.Armor: return player.WantsArmor;
+            case ItemPickup.Kind.Potion: return player.Health <= 2 && player.WantsPotion;
+            case ItemPickup.Kind.Bullets: return player.BulletsFill < 0.35f;
+            case ItemPickup.Kind.Shells: return player.ShotgunOwned && player.ShellsFill < 0.35f;
+            case ItemPickup.Kind.Shotgun: return !player.ShotgunOwned;
+            case ItemPickup.Kind.GreatSword: return player.WantsGreatSword;
+            default: return false;
+        }
+    }
+
+    private bool GoToPickup(ref PlayerInputFrame frame, Vector2 me, float myFeet, ArenaMap.Platform myPlatform, float range, bool urgentOnly = false) {
         Vector2 best = Vector2.zero;
         Transform bestItem = null;
         ArenaMap.Platform bestPlatform = null;
         float bestDist = float.MaxValue;
         string what = "";
+        if (urgentOnly) {
+            foreach (ItemPickup item in ItemPickup.Active) {
+                if (item && item.Landed && item.UsefulTo(player) && Urgent(item)) {
+                    Consider(item.transform, me, myPlatform, range, ref best, ref bestItem, ref bestPlatform, ref bestDist, ref what, item.Describe());
+                }
+            }
+            if (bestDist == float.MaxValue) {
+                return false;
+            }
+            return GoToLoot(ref frame, me, myPlatform, best, bestItem, bestPlatform, what);
+        }
         foreach (Coin coin in Coin.Active) {
             Consider(coin ? coin.transform : null, me, myPlatform, range, ref best, ref bestItem, ref bestPlatform, ref bestDist, ref what, "a moeda");
         }
@@ -1241,6 +1297,12 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         if (bestDist == float.MaxValue) {
             return false;
         }
+        return GoToLoot(ref frame, me, myPlatform, best, bestItem, bestPlatform, what);
+    }
+
+    // walk (or route over the map) to the chosen loot; chests and vases get a swing
+    private bool GoToLoot(ref PlayerInputFrame frame, Vector2 me, ArenaMap.Platform myPlatform, Vector2 best,
+                          Transform bestItem, ArenaMap.Platform bestPlatform, string what) {
         bool isChest = what == "o baú" || what == "o vaso" || what == "a caixa" || what == "o barril";   // they open only when hit
         float dx = best.x - me.x;
 

@@ -1,86 +1,61 @@
 using UnityEngine;
 
-// The Armeiro's levels 2 and 3 for the weapons (José, 2026-11-01: "Armeiro turbinado"). Level 1 of
-// the shotgun, the great sword and the grenade is buying them; the pistol is always carried, so its
-// level 1 is free and FrenyUpgrade.Pistol counts the levels above it. Only a bought (and equipped)
-// weapon gets them: a shotgun from a chest or a great sword from the floor stays at level 1.
-//   Pistola  nv. 2: shots 25% quicker, reload 30% quicker   nv. 3: shots 40% quicker, reload twice as fast
-//   Escopeta nv. 2: 5 pellets                                nv. 3: 5 pellets, 30% quicker, +4 shells a stage
-//   Espadão  nv. 2: cut 2.2x (instead of 1.8x)               nv. 3: and +1 damage on every hit
-//   Granada  nv. 2: blast 30% wider, +1 grenade a stage      nv. 3: and 4 damage, +2 grenades a stage
+// The Armeiro's buffs for the weapons (José, 2026-11-01: "comprar buff pra esses itens"). The
+// weapons themselves are no longer sold: the pistol is always carried, and the shotgun, the great
+// sword, the grenades and the helmet come from the floor and chests. Each buff is a FrenyUpgrade
+// with its own levels (prices in FrenyProgress):
+//   Pistola   dano +25%/nível (3), tambor +1 bala (2), reserva +8 (2), recarga -20% (2)
+//   Escopeta  dano +25%/nível (3), +10 cartuchos no máximo (2), leque de 5 tiros (1)
+//   Espada    dano +25%/nível (3, the great sword too), Espadão do chão +3 golpes (2)
+//   Granada   explosão 30% maior (1), 4 de dano (1), carrega +2 (2)
+//   Crítico   +5% de chance por nível (3) de dano dobrado em golpe ou tiro
+//   Fúria     +5 s por nível (2)
 public static class WeaponLevels {
 
-    public const int MaxTier = 3;
-
-    // 1..3 for the pistol; 0 (not bought or left at home) .. 3 for the others
-    public static int Tier(FrenyUpgrade weapon) {
-        if (weapon == FrenyUpgrade.Pistol) {
-            return 1 + FrenyProgress.GetLevel(FrenyUpgrade.Pistol);
-        }
-        return FrenyProgress.IsEquipped(weapon) ? FrenyProgress.GetLevel(weapon) : 0;
-    }
-
-    public static bool HasTiers(FrenyUpgrade upgrade) {
-        return upgrade == FrenyUpgrade.Pistol || upgrade == FrenyUpgrade.Shotgun ||
-               upgrade == FrenyUpgrade.GreatSword || upgrade == FrenyUpgrade.Grenade;
-    }
-
-    // the level a weapon is at in the shop (owned or not, equipped or not): "nv. 2/3"
-    public static int ShopTier(FrenyUpgrade upgrade) {
-        return FrenyProgress.GetLevel(upgrade) + (upgrade == FrenyUpgrade.Pistol ? 1 : 0);
+    private static int L(FrenyUpgrade upgrade) {
+        return Mathf.Min(FrenyProgress.GetLevel(upgrade), FrenyProgress.MaxLevel(upgrade));
     }
 
     // ---- pistol ----
-    public static float PistolCooldown => Pick(FrenyUpgrade.Pistol, 1f, 0.75f, 0.6f);
-    public static float ReloadTime => Pick(FrenyUpgrade.Pistol, 1f, 0.7f, 0.5f);
+    public static float PistolPower => 1f + 0.25f * L(FrenyUpgrade.PistolDamage);
+    public static int DrumBonus => L(FrenyUpgrade.PistolDrum);
+    public static int ReserveBonus => 8 * L(FrenyUpgrade.PistolReserve);
+    public static float ReloadTime => 1f - 0.2f * L(FrenyUpgrade.PistolReload);
+    public static float PistolCooldown => 1f;
 
     // ---- shotgun ----
     private static readonly float[] ThreePellets = { 10f, 0f, -10f };
     private static readonly float[] FivePellets = { 16f, 8f, 0f, -8f, -16f };
-    public static float[] ShotgunAngles => Tier(FrenyUpgrade.Shotgun) >= 2 ? FivePellets : ThreePellets;
-    public static float ShotgunCooldown => Tier(FrenyUpgrade.Shotgun) >= 3 ? 0.7f : 1f;
-    public static int ExtraShells => Tier(FrenyUpgrade.Shotgun) >= 3 ? 4 : 0;
+    public static float[] ShotgunAngles => L(FrenyUpgrade.ShotgunSpread) > 0 ? FivePellets : ThreePellets;
+    public static float ShotgunCooldown => 1f;
+    public static float ShotgunPower => 1f + 0.25f * L(FrenyUpgrade.ShotgunDamage);
+    public static int ShellsBonus => 10 * L(FrenyUpgrade.ShotgunShells);
+    public static int ExtraShells => 0;
 
-    // ---- great sword (only the bought one) ----
+    // ---- sword ----
     public const float GreatSwordScale = 1.8f;
-    public static float GreatSwordCut => Tier(FrenyUpgrade.GreatSword) >= 2 ? 2.2f : GreatSwordScale;
-    public static int GreatSwordBonus => Tier(FrenyUpgrade.GreatSword) >= 3 && FrenyProgress.HasGreatSword ? 1 : 0;
+    public static float GreatSwordCut => GreatSwordScale;
+    public static int GreatSwordBonus => 0;
+    public static float SwordPower => 1f + 0.25f * L(FrenyUpgrade.SwordDamage);
+    public static int GreatSwordExtraSwings => 3 * L(FrenyUpgrade.GreatSwordSwings);
 
     // ---- grenade ----
-    public static float GrenadeRadius => Grenade.BlastRadius * (Tier(FrenyUpgrade.Grenade) >= 2 ? 1.3f : 1f);
-    public static int GrenadeDamage => Tier(FrenyUpgrade.Grenade) >= 3 ? 4 : Grenade.EnemyDamage;
-    public static int ExtraGrenades => Mathf.Max(0, Tier(FrenyUpgrade.Grenade) - 1);
+    public static float GrenadeRadius => Grenade.BlastRadius * (L(FrenyUpgrade.GrenadeBlast) > 0 ? 1.3f : 1f);
+    public static int GrenadeDamage => L(FrenyUpgrade.GrenadePower) > 0 ? 4 : Grenade.EnemyDamage;
+    public static int ExtraGrenades => 0;
+    public static int GrenadeCarryBonus => 2 * L(FrenyUpgrade.GrenadeCarry);
 
-    private static float Pick(FrenyUpgrade weapon, float one, float two, float three) {
-        int tier = Tier(weapon);
-        return tier >= 3 ? three : tier == 2 ? two : one;
-    }
+    // ---- critical hits and Rage ----
+    public static float CritChance => 0.05f * L(FrenyUpgrade.Critical);
+    public const float CritPower = 2f;
+    public static float RageBonusSeconds => 5f * L(FrenyUpgrade.RageTime);
 
-    // what the next level brings, for the Armeiro's row and the Guia
-    public static string NextLevelText(FrenyUpgrade weapon) {
-        int next = ShopTier(weapon) + 1;
-        switch (weapon) {
-            case FrenyUpgrade.Pistol:
-                return next == 2 ? "Pistola nv. 2: tiro e recarga mais rápidos" : "Pistola nv. 3: tiro 40% e recarga 2x mais rápidos";
-            case FrenyUpgrade.Shotgun:
-                return next == 2 ? "Escopeta nv. 2: 5 tiros no leque" : "Escopeta nv. 3: mais rápida, +4 cartuchos";
-            case FrenyUpgrade.GreatSword:
-                return next == 2 ? "Espadão nv. 2: corte 2,2x maior" : "Espadão nv. 3: +1 de dano por golpe";
-            case FrenyUpgrade.Grenade:
-                return next == 2 ? "Granada nv. 2: explosão maior, +1 granada" : "Granada nv. 3: 4 de dano, +2 granadas";
-            default:
-                return FrenyProgress.DisplayName(weapon);
+    // one hit's power with the crit roll: x2 now and then, with a yellow spark where it lands
+    public static float Roll(float power, Vector3 at) {
+        if (CritChance > 0f && Random.value < CritChance) {
+            Fx.Burst(at, new Color(1f, 0.95f, 0.3f), 14, 3.5f, 0.09f, 0.35f);
+            return power * CritPower;
         }
-    }
-
-    // the whole weapon at its top level, for when it is maxed
-    public static string MaxedText(FrenyUpgrade weapon) {
-        switch (weapon) {
-            case FrenyUpgrade.Pistol: return "Pistola nv. 3";
-            case FrenyUpgrade.Shotgun: return "Escopeta nv. 3";
-            case FrenyUpgrade.GreatSword: return "Espadão nv. 3";
-            case FrenyUpgrade.Grenade: return "Granada nv. 3";
-            default: return FrenyProgress.DisplayName(weapon);
-        }
+        return power;
     }
 }
