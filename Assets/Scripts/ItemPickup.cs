@@ -456,7 +456,7 @@ public class ItemPickup : MonoBehaviour {
             case Kind.Shotgun: return player.GiveShotgun(amount);
             case Kind.GreatSword: return player.GiveGreatSword();
             case Kind.Armor: return player.GiveArmor();
-            case Kind.Diamond: player.AddCoins(DiamondValue * amount); return true;
+            case Kind.Diamond: player.AddCoins(RunModifiers.ScaleCoins(DiamondValue * amount)); return true;
             default: return false;
         }
     }

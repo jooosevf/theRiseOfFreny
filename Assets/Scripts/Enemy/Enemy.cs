@@ -231,6 +231,7 @@ public abstract class Enemy : MonoBehaviour, IDamageable
             }
         }
         Health = Small ? 1 : health; // the inspector value
+        RunModifiers.OnEnemyInit(this); // the week's "Gigantes": bigger, more life
         fullHealth = Health;
         EnemyHealthBar.Attach(this);
         hasAttackTrigger = anim && HasParameter(anim, "Attack");
@@ -597,7 +598,7 @@ public abstract class Enemy : MonoBehaviour, IDamageable
 
     // a little faster or slower than its whole-number speed
     protected virtual float SpeedFactor => 1f;
-    protected float MoveSpeed => speed * SpeedFactor * Tuning.EnemySpeed.Value * (ArenaBounds.Active ? ArenaDifficulty.SpeedFactor(Small) * ArenaDirector.SpeedRamp * (1f + BloodSpeed * BloodMoon) : 1f);
+    protected float MoveSpeed => speed * SpeedFactor * Tuning.EnemySpeed.Value * (ArenaBounds.Active ? ArenaDifficulty.SpeedFactor(Small) * ArenaDirector.SpeedRamp * (1f + BloodSpeed * BloodMoon) * RunModifiers.EnemySpeedMultiplier : 1f);
 
     // ---- the Lua de Sangue (ArenaDayNight.Blood): faster, +1 heart a hit, heals, red eyes ----
     public static float BloodMoon => ArenaBounds.Active ? ArenaDayNight.Blood : 0f;
@@ -1232,7 +1233,7 @@ public abstract class Enemy : MonoBehaviour, IDamageable
     private void ScaledHit(int amount, bool shot) {
         LastHitMark = null;
         float scale = player_t != null ? HitScale(player != null ? player.Feet : player_t.position, shot) : 1f;
-        wear += Mathf.Max(1, amount) * scale;
+        wear += Mathf.Max(1, amount) * scale * RunModifiers.DamageMultiplier;   // blessing Força, rebirths
         int whole = Mathf.FloorToInt(wear + 0.001f);
         if (whole < 1) {
             TakeHit(true);   // it flinches, but holds
@@ -1248,7 +1249,7 @@ public abstract class Enemy : MonoBehaviour, IDamageable
             return;
         }
         LastHitMark = null;
-        TakeDamage(Mathf.Max(1, amount));
+        TakeDamage(Mathf.Max(1, Mathf.RoundToInt(amount * RunModifiers.DamageMultiplier)));
     }
 
     // a harder hit from Freny (the sword during Rage, the combo)
