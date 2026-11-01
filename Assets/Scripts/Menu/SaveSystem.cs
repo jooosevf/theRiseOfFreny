@@ -14,6 +14,7 @@ public class SaveData {
     public int xp;
     public int spentPoints;
     public float bestRunSeconds;
+    public int bestArenaScore;     // the best arena run's score (it opens the Poço de Ácido); 0 in older saves
     public int campaignUnlocked;
     public List<Entry> upgrades = new List<Entry>();
     public List<Entry> bestTimes = new List<Entry>();
@@ -209,6 +210,7 @@ public static class SaveSystem {
             xp = PlayerPrefs.GetInt(FrenyProgress.XpKey, 0),
             spentPoints = PlayerPrefs.GetInt(FrenyProgress.SpentPointsKey, 0),
             bestRunSeconds = PlayerPrefs.GetFloat(FrenyProgress.BestWaveKey, 0f),
+            bestArenaScore = PlayerPrefs.GetInt(ArenaVariant.BestScoreKey, 0),
             campaignUnlocked = PlayerPrefs.GetInt(CampaignProgress.UnlockedKey, 0),
         };
         foreach (FrenyUpgrade upgrade in Enum.GetValues(typeof(FrenyUpgrade))) {
@@ -244,6 +246,7 @@ public static class SaveSystem {
         SetOrDelete(FrenyProgress.XpKey, data.xp);
         SetOrDelete(FrenyProgress.SpentPointsKey, data.spentPoints);
         SetOrDelete(FrenyProgress.BestWaveKey, data.bestRunSeconds);
+        SetOrDelete(ArenaVariant.BestScoreKey, data.bestArenaScore);
         SetOrDelete(CampaignProgress.UnlockedKey, data.campaignUnlocked);
 
         foreach (FrenyUpgrade upgrade in Enum.GetValues(typeof(FrenyUpgrade))) {

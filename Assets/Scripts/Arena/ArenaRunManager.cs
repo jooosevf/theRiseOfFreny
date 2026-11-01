@@ -49,6 +49,7 @@ public class ArenaRunManager : MonoBehaviour {
             if (RunSeconds > FrenyProgress.BestRunSeconds) {
                 FrenyProgress.BestRunSeconds = RunSeconds;
             }
+            ArenaVariant.NoteScore(UIManager.Instance != null ? UIManager.Instance.Score : 0);   // 50 000 opens the Poço de Ácido
             asking = input != null && input.AutoEnabled && UIManager.Instance != null && UIManager.Instance.Score >= askAboveScore;
             PlayerPrefs.Save();
         }

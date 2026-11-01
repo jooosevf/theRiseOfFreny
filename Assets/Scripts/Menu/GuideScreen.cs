@@ -8,7 +8,7 @@ using UnityEngine.UI;
 public static class GuideScreen {
 
     private const float IconBox = 34f;
-    private static readonly string[] Topics = { "Armas", "Fúria e defesa", "Itens", "Onde achar", "Armeiro", "Inimigos", "Arena" };
+    private static readonly string[] Topics = { "Armas", "Fúria e defesa", "Itens", "Onde achar", "Armeiro", "Inimigos", "Arena", "Poço de Ácido" };
     private static int lastTopic;
 
     public static MenuPage Guide(MenuStack stack) {
@@ -47,6 +47,7 @@ public static class GuideScreen {
             case 3: Drops(entries, art); break;
             case 4: Shop(entries, art); break;
             case 5: Enemies(entries, art); break;
+            case 7: AcidPit(entries); break;
             default: Arena(entries, art); break;
         }
     }
@@ -199,6 +200,34 @@ public static class GuideScreen {
         Entry(parent, art ? art.run : null, "XP e piloto automático",
             "Matar dá XP, e cada nível pede mais XP que o anterior. Cada nível vale 1 ponto para o piloto no " +
             "Armeiro: reação (1 a 5 pontos por nível), esquiva com dash (3), poção sozinho (4) e melhor alvo (5).");
+    }
+
+    // the second arena (AcidPitArena, Tentacle, Crawler, CrumbleBlock, FallingSpike)
+    private static void AcidPit(Transform parent) {
+        Entry(parent, FirstFrame("Liquids/Acid 100x100"), "Poço de Ácido",
+            "A segunda arena: abre quando você faz " + ArenaVariant.AcidPitScore / 1000 + " mil pontos numa corrida da Arena " +
+            "(escolha em Arena, no menu, ou em Nova corrida). É a mesma arena tomada pelo ácido, com os mesmos rankings. " +
+            "O chão tem poças de ácido que nunca secam: queimam (1 coração) e deixam o Freny lento. Pule por cima.");
+        Entry(parent, FirstFrame("Tentacle/Tentacle Idle"), "Tentáculo",
+            "Sai de uma poça de ácido e fica lá. Se o Freny fica parado 1 s, ele cospe um jato de ácido para o alto " +
+            "que cai onde o Freny estava (1 coração) e deixa uma poça no chão: não fique parado. Pisca antes de cuspir. " +
+            "Um golpe que não mata faz ele mergulhar e voltar em outra poça; depois de uns 12 s ele afunda de vez. " +
+            "2 de vida (um combo mata), 250 pontos.");
+        Entry(parent, FirstFrame("Crawler/Crawler Walk"), "Rastejante",
+            "Um olho com pernas que anda pelo chão, pelas paredes e pelo teto. Do teto, bem em cima do Freny, ele treme " +
+            "e se solta em cima dele (1 coração); no chão, morde. Atire para cima quando ele estiver no teto. " +
+            "2 de vida, 200 pontos.");
+        Entry(parent, FirstFrame("Traps/Falling spike"), "Espinhos do teto",
+            "De tempos em tempos um espinho se solta do teto em cima de onde o Freny vai: ele treme 1 s antes de cair. " +
+            "Tira 1 coração do Freny e machuca os inimigos (sem pontos). Mais frequentes com a Arena mais difícil.");
+        Entry(parent, FirstFrame("Traps/Crumbling block"), "Plataformas que desmoronam",
+            "Duas plataformas por corrida são de pedra rachada: pisou, elas tremem e desmoronam logo depois. " +
+            "Voltam 5 s mais tarde.");
+    }
+
+    private static Sprite FirstFrame(string path) {
+        Sprite[] frames = FrameAnimator.Load(path);
+        return frames.Length > 0 ? frames[0] : null;
     }
 
     // icon | name over what it does

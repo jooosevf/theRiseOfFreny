@@ -47,6 +47,13 @@ public static class ArenaBootstrap {
             dayNight.AddComponent<ArenaDayNight>();
         }
 
+        // the Poço de Ácido is this same scene, turned toxic at runtime (ArenaVariant, AcidPitArena)
+        if (ArenaVariant.Current == ArenaKind.AcidPit && AcidPitArena.Instance == null) {
+            GameObject pit = new GameObject("Acid Pit");
+            SceneManager.MoveGameObjectToScene(pit, scene);
+            pit.AddComponent<AcidPitArena>();
+        }
+
         GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
         if (playerObj == null || playerObj.GetComponent<Player>() == null) {
             return;

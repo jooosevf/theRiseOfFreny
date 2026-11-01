@@ -157,6 +157,7 @@ public class MainMenu : MonoBehaviour {
         MenuPage page = new MenuPage(stack.transform, "Arena", 560f, new Vector2(0.5f, 0.5f));
         page.Choice("Controle", new[] { "Automático", "Manual" }, ArenaDifficulty.Manual ? 1 : 0,
             i => ArenaDifficulty.Manual = i == 1);
+        ArenaVariant.AddChoice(page);   // Clássica or Poço de Ácido, once it is open
         page.Label("Só corridas manuais do começo ao fim valem para o ranking. O oficial é o do Difícil.");
         Button current = null;
         foreach (ArenaLevel level in System.Enum.GetValues(typeof(ArenaLevel))) {
