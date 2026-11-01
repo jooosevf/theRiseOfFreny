@@ -9,7 +9,7 @@ using UnityEngine;
 // full health, a full reserve, full armor) stays where it is until it fades.
 public class ItemPickup : MonoBehaviour {
 
-    public enum Kind { Potion, Bullets, Shells, Grenades, Shotgun, GreatSword, Armor, Diamond }
+    public enum Kind { Potion, Bullets, Shells, Grenades, Shotgun, GreatSword, Armor, Diamond, Staff }
 
     // enemy drops, rolled once per death on top of its coin. These are the chances when Freny is
     // half short of that item; each one is scaled by what he needs right now (Need: none at full
@@ -227,6 +227,7 @@ public class ItemPickup : MonoBehaviour {
             case Kind.GreatSword: return WorldSize * 1.4f;
             case Kind.Diamond: return WorldSize * 0.8f;
             case Kind.Potion: return WorldSize * 0.7f;
+            case Kind.Staff: return WorldSize * 1.4f;   // the Cajado do Mago (MageStaff), long and thin
             default: return WorldSize;
         }
     }
@@ -245,6 +246,9 @@ public class ItemPickup : MonoBehaviour {
                 case Kind.Armor: sprite = assets.armorHelmetIcon; break;
                 case Kind.Diamond: sprite = assets.diamondFrames != null && assets.diamondFrames.Length > 0 ? assets.diamondFrames[0] : null; break;
             }
+        }
+        if (kind == Kind.Staff) {
+            sprite = MageStaff.Icon;
         }
         return sprite != null ? sprite : FallbackSprite();
     }
@@ -415,6 +419,7 @@ public class ItemPickup : MonoBehaviour {
             case Kind.GreatSword: return player.WantsGreatSword;
             case Kind.Armor: return player.WantsArmor;
             case Kind.Diamond: return true;
+            case Kind.Staff: return true;
             default: return false;
         }
     }
@@ -429,6 +434,7 @@ public class ItemPickup : MonoBehaviour {
             case Kind.GreatSword: return "o espadão";
             case Kind.Armor: return "a armadura";
             case Kind.Diamond: return "o diamante";
+            case Kind.Staff: return "o cajado";
             default: return "o item";
         }
     }
@@ -457,6 +463,7 @@ public class ItemPickup : MonoBehaviour {
             case Kind.GreatSword: return player.GiveGreatSword();
             case Kind.Armor: return player.GiveArmor();
             case Kind.Diamond: player.AddCoins(DiamondValue * amount); return true;
+            case Kind.Staff: return MageStaff.Give(player);
             default: return false;
         }
     }
@@ -467,6 +474,7 @@ public class ItemPickup : MonoBehaviour {
             case Kind.Shotgun: return "pistol_reload";
             case Kind.GreatSword: return "weapon_switch";
             case Kind.Armor: return "upgrade";
+            case Kind.Staff: return "hexball_launch";
             case Kind.Diamond: return "coin";
             default: return "pickup_ammo";
         }

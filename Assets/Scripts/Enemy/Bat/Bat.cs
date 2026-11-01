@@ -103,7 +103,7 @@ public class Bat : Enemy {
             return;
         }
         if (windupEnd < 0f) {
-            if (dxToPlayer <= biteDistance && dyToPlayer <= 0.8f && Time.time >= nextBiteTime && Time.time >= retreatUntil) {
+            if (dxToPlayer <= biteDistance && dyToPlayer <= 0.8f && Time.time >= nextBiteTime && Time.time >= retreatUntil && !Netted) {
                 windupEnd = Time.time + biteWindup * Tuning.EnemyWindup.Value;
                 healthAtWindup = Health;
                 PlaySound("windup");

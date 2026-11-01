@@ -13,6 +13,9 @@ public class HexballEffect : MonoBehaviour
     [NonSerialized] public float speedMultiplier = 1f;
     // who cast it: it flies through its caster and hurts any other enemy it crosses
     [NonSerialized] public Enemy caster;
+    // cast by Freny with the Cajado do Mago (MageStaff): it hurts every enemy (the Ciclope too) as his
+    // own hit, and never him; the autopilot doesn't dodge it
+    [NonSerialized] public bool fromFreny;
     // a homing hexball (high scores) steers towards this one's head, a limited turn per second,
     // so a sidestep, a jump or ducking still beats it
     [NonSerialized] public Player homingTarget;
@@ -144,12 +147,16 @@ public class HexballEffect : MonoBehaviour
         for (int i = Enemy.Active.Count - 1; i >= 0; i--) {
             Enemy enemy = Enemy.Active[i];
             // the Ciclope's helpers' spells pass through it (José, 2026-10-29)
-            if (enemy == null || enemy == caster || enemy.IsDead || enemy is Cyclops) {
+            if (enemy == null || enemy == caster || enemy.IsDead || (enemy is Cyclops && !fromFreny)) {
                 continue;
             }
             Vector2 c = enemy.Center;
             if (Mathf.Abs(p.x - c.x) <= enemy.HalfWidth + EnemyHitRadius && Mathf.Abs(p.y - c.y) <= enemy.HalfHeight + EnemyHitRadius) {
-                enemy.HitBy(caster, damage);
+                if (fromFreny) {
+                    enemy.Damage(damage, 1f, transform.position);   // his hit: score, XP and combo
+                } else {
+                    enemy.HitBy(caster, damage);
+                }
                 Fx.Burst(transform.position, new Color(0.7f, 0.4f, 1f), 12, 2.5f, 0.1f, 0.4f);
                 Sfx.Play("hexball_impact", transform.position);
                 Destroy(gameObject);
@@ -161,7 +168,7 @@ public class HexballEffect : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("Player"))
+        if (other.CompareTag("Player") && !fromFreny)
         {
             Player player = other.GetComponent<Player>();
 

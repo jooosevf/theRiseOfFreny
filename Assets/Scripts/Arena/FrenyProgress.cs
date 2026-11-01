@@ -15,6 +15,10 @@ public enum FrenyUpgrade {
     DashDodge,
     AutoPotion,
     SmartTarget,
+    // added 2026-11-01 (after the brain on purpose: saves keep their names, IsBrain checks a range).
+    // Pistol counts the pistol's levels above 1 (WeaponLevels); Net is the Rede (NetThrower)
+    Pistol,
+    Net,
 }
 
 // XP, levels and the two upgrade tracks from the GDD ("Arena idle"), saved with PlayerPrefs.
@@ -96,7 +100,7 @@ public static class FrenyProgress {
     // ---- upgrades ----
 
     public static bool IsBrain(FrenyUpgrade upgrade) {
-        return upgrade >= FrenyUpgrade.Reaction;
+        return upgrade >= FrenyUpgrade.Reaction && upgrade <= FrenyUpgrade.SmartTarget;
     }
 
     public static int GetLevel(FrenyUpgrade upgrade) {
@@ -109,6 +113,11 @@ public static class FrenyProgress {
             case FrenyUpgrade.MoveSpeed: return 5;
             case FrenyUpgrade.AttackSpeed: return 5;
             case FrenyUpgrade.Reaction: return 5;
+            // the Armeiro's levels 2 and 3 (WeaponLevels); the pistol's level 1 is free
+            case FrenyUpgrade.Shotgun:
+            case FrenyUpgrade.GreatSword:
+            case FrenyUpgrade.Grenade: return WeaponLevels.MaxTier;
+            case FrenyUpgrade.Pistol: return WeaponLevels.MaxTier - 1;
             default: return 1;
         }
     }
@@ -118,15 +127,28 @@ public static class FrenyProgress {
     // best ones, so buying everything takes a while. The first buy (Pulo duplo) is ~4 runs away.
     private static readonly int[] HealthCosts = { 1500, 3000, 6000, 10000 };
     private static readonly int[] TrainingCosts = { 800, 1500, 2500, 4000, 6000 };   // Velocidade and Recarga
+    // the weapons by level (2026-11-01: levels 2 and 3 added, +43,500; with the Rede's 3,000 the
+    // coin shop is ~114,100, the top levels about as dear as the last heart)
+    private static readonly int[] GrenadeCosts = { 2000, 3000, 6000 };
+    private static readonly int[] GreatSwordCosts = { 3500, 4500, 7500 };
+    private static readonly int[] ShotgunCosts = { 5000, 6000, 9000 };
+    private static readonly int[] PistolCosts = { 2500, 5000 };      // levels 2 and 3
+    public const int NetCost = 3000;
 
     // coins for attributes, brain points for the autopilot (27 points for all of it)
     public static int Cost(FrenyUpgrade upgrade) {
-        int level = GetLevel(upgrade);
+        return CostAt(upgrade, GetLevel(upgrade));
+    }
+
+    // the price of the next level when `level` levels are already bought (the Guia lists them all)
+    public static int CostAt(FrenyUpgrade upgrade, int level) {
         switch (upgrade) {
             case FrenyUpgrade.DoubleJump: return 1000;
-            case FrenyUpgrade.Grenade: return 2000;
-            case FrenyUpgrade.GreatSword: return 3500;
-            case FrenyUpgrade.Shotgun: return 5000;
+            case FrenyUpgrade.Grenade: return GrenadeCosts[Mathf.Min(level, GrenadeCosts.Length - 1)];
+            case FrenyUpgrade.GreatSword: return GreatSwordCosts[Mathf.Min(level, GreatSwordCosts.Length - 1)];
+            case FrenyUpgrade.Shotgun: return ShotgunCosts[Mathf.Min(level, ShotgunCosts.Length - 1)];
+            case FrenyUpgrade.Pistol: return PistolCosts[Mathf.Min(level, PistolCosts.Length - 1)];
+            case FrenyUpgrade.Net: return NetCost;
             case FrenyUpgrade.MaxHealth: return HealthCosts[Mathf.Min(level, HealthCosts.Length - 1)];
             case FrenyUpgrade.MoveSpeed:
             case FrenyUpgrade.AttackSpeed: return TrainingCosts[Mathf.Min(level, TrainingCosts.Length - 1)];
@@ -144,6 +166,10 @@ public static class FrenyProgress {
     }
 
     public static string DisplayName(FrenyUpgrade upgrade) {
+        // a weapon already bought: the row sells its next level
+        if (WeaponLevels.HasTiers(upgrade) && (upgrade == FrenyUpgrade.Pistol || GetLevel(upgrade) > 0)) {
+            return IsMaxed(upgrade) ? WeaponLevels.MaxedText(upgrade) : WeaponLevels.NextLevelText(upgrade);
+        }
         switch (upgrade) {
             case FrenyUpgrade.MaxHealth: return "Vida máxima +1";
             case FrenyUpgrade.MoveSpeed: return "Velocidade +8%";
@@ -156,6 +182,7 @@ public static class FrenyProgress {
             case FrenyUpgrade.DashDodge: return "Esquiva com dash";
             case FrenyUpgrade.AutoPotion: return "Usar poção sozinho";
             case FrenyUpgrade.SmartTarget: return "Escolher alvo melhor";
+            case FrenyUpgrade.Net: return "Rede (" + InputBindings.KeyName(InputBindings.Keyboard(GameAction.Net)) + ")";
             default: return upgrade.ToString();
         }
     }
@@ -221,7 +248,7 @@ public static class FrenyProgress {
     // weapons and moves bought with coins can be left at home (the menu's Inventário)
     public static bool IsEquipment(FrenyUpgrade upgrade) {
         return upgrade == FrenyUpgrade.DoubleJump || upgrade == FrenyUpgrade.Shotgun ||
-               upgrade == FrenyUpgrade.GreatSword || upgrade == FrenyUpgrade.Grenade;
+               upgrade == FrenyUpgrade.GreatSword || upgrade == FrenyUpgrade.Grenade || upgrade == FrenyUpgrade.Net;
     }
 
     public static bool IsEquipped(FrenyUpgrade upgrade) {
@@ -251,6 +278,7 @@ public static class FrenyProgress {
     public static bool HasShotgun => Carries(FrenyUpgrade.Shotgun);
     public static bool HasGreatSword => Carries(FrenyUpgrade.GreatSword);
     public static bool HasGrenade => Carries(FrenyUpgrade.Grenade);
+    public static bool HasNet => Carries(FrenyUpgrade.Net);
 
     // seconds between autopilot decisions: 0.6 s untrained, 0.1 s maxed
     public static float AutopilotReactionTime => 0.6f - 0.1f * GetLevel(FrenyUpgrade.Reaction);

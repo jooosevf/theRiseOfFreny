@@ -62,7 +62,7 @@ public class Sorcerer : Enemy {
         // sprites face left by default, so scale.x = -1 means looking right
         transform.localScale = new Vector3(offset.x > 0 ? -1 : 1, 1, 1);
 
-        if (Time.time >= nextCastTime) {
+        if (Time.time >= nextCastTime && !Netted) {   // caught in Freny's net: no casting
             anim.SetTrigger("Attack");
             PlaySound("cast");
             if (predictive && !laughed) {

@@ -93,6 +93,7 @@ public static class HelpScreen {
             case GameAction.Shotgun: return "Troca para a escopeta";
             case GameAction.Interact: return "Entra em portas e abre a loja";
             case GameAction.Pause: return "Pausa, ajuda e configurações";
+            case GameAction.Net: return "Joga a rede: prende inimigos";
             default: return "";
         }
     }
@@ -132,6 +133,7 @@ public static class HelpScreen {
             case GameAction.Shotgun: return "Arma (troca)";
             case GameAction.Interact: return "Direcional p/ cima";
             case GameAction.Pause: return "II no topo";
+            case GameAction.Net: return "Rede";
             default: return "-";
         }
     }

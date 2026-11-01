@@ -197,8 +197,25 @@ public class CombatHud : MonoBehaviour {
                 DrawMeter(new Rect(gx, y + size + 2f, size, 6f * scale), player.GrenadeCharge, Color.Lerp(Color.yellow, Color.red, player.GrenadeCharge));
             }
         }
+        // the Rede (NetThrower) and the Cajado do Mago (MageStaff) with the time it has left
+        if (nets == null) {
+            nets = player.GetComponent<NetThrower>();
+        }
+        if (nets != null && nets.Nets > 0) {
+            float nx = x;
+            DrawIcon(NetThrower.Icon, ref x, y, size);
+            ShadowLabel(new Rect(nx + 2f * scale, y - 2f * scale, 30f * scale, 26f * scale), Key(GameAction.Net));
+            ShadowLabel(new Rect(nx + size - 14f * scale, y + size + 10f * scale, 60f * scale, 26f * scale), $"x{nets.Nets}");
+        }
+        if (MageStaff.Held(player)) {
+            float mx = x;
+            DrawIcon(MageStaff.Icon, ref x, y, size);
+            DrawMeter(new Rect(mx, y + size + 2f, size, 6f * scale), MageStaff.Current.TimeLeft / MageStaff.Duration, new Color(0.7f, 0.45f, 1f));
+        }
         return x;
     }
+
+    private NetThrower nets;
 
     // the gun in hand: a bright frame around its icon, and its name for a moment after a switch
     private bool lastShotgun;
