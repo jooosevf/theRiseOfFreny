@@ -35,7 +35,7 @@ namespace Online {
         // The last arena run's record, for the "NOVO RECORDE" box of the end-of-run banner: a run
         // that beats the board's best can be saved with "Salvar recorde" (and is saved anyway
         // when the player moves on), or says why it can't (the autopilot played, no connection).
-        public enum RecordStatus { None, CanSave, Saving, Saved, CannotSave, Refused }
+        public enum RecordStatus { None, CanSave, Saving, Saved, CannotSave, Refused, InReview }
         public RecordStatus Record { get; private set; }
         public bool RecordOnlyToday { get; private set; }   // beats today's best, not the all-time one
         public long RecordScore { get; private set; }
@@ -91,9 +91,11 @@ namespace Online {
             SceneManager.sceneLoaded += OnSceneLoaded;
             UIManager.KillScored += OnKillScored;
             Achievements.Happened += OnAchievementMoment;
+            Player.Vital += OnVital;
         }
 
         private void OnDestroy() {
+            Player.Vital -= OnVital;
             SceneManager.sceneLoaded -= OnSceneLoaded;
             UIManager.KillScored -= OnKillScored;
             Achievements.Happened -= OnAchievementMoment;
@@ -105,6 +107,35 @@ namespace Online {
 
         private void OnAchievementMoment(string kind, int count) {
             if (_runLog != null && !_reported) _runLog.AddMoment(kind, count);
+        }
+
+        private void OnVital(string kind, int count) {
+            if (_runLog != null && !_reported) _runLog.AddVital(kind, count);
+        }
+
+        // Cheat Engine's speedhack makes the game's clock run faster or slower than the
+        // computer's: every couple of seconds both are compared, and several checks in a row more
+        // than 25% apart flag the run (the server also compares game time with its own clock)
+        private const double ClockCheckSeconds = 2.0;
+        private double _clockGame;
+        private DateTime _clockWall;
+        private int _clockOff;
+
+        private void CheckClock() {
+            double game = Time.realtimeSinceStartupAsDouble;
+            DateTime wall = DateTime.UtcNow;
+            if (_clockWall == default) {
+                _clockGame = game;
+                _clockWall = wall;
+                return;
+            }
+            double wallPassed = (wall - _clockWall).TotalSeconds;
+            if (wallPassed < ClockCheckSeconds) return;
+            double ratio = (game - _clockGame) / wallPassed;
+            _clockOff = ratio > 1.25 || ratio < 0.75 ? _clockOff + 1 : 0;
+            if (_clockOff >= 3) AntiCheat.Flag("speed");
+            _clockGame = game;
+            _clockWall = wall;
         }
 
         private void Start() {
@@ -277,6 +308,13 @@ namespace Online {
             string refused = null;
             yield return _api.FinishRun(run.log.ToJson(run.token, LeaderboardService.Collection(run.level), run.score),
                 (s, error) => { signed = s; refused = error; });
+            if (signed != null && signed.pending) {
+                // the server holds it for review: it reaches the board (written by the server) if approved
+                if (BestFor(run.level) == run.score) SetBest(run.level, run.previousBest);
+                if (RecordScore == run.score && RecordLevel == run.level) SetRecord(RecordStatus.InReview);
+                yield return RefreshLeaderboard();
+                yield break;
+            }
             if (signed != null) {
                 if (run.allTime) {
                     bool written = false;
@@ -375,7 +413,15 @@ namespace Online {
                 // goes straight to the arena); the ticket is asked for as soon as the game is online
                 if (!_sawAlive && _arenaRun) {
                     _runLog = new RunLog(Time.time);
+                    AntiCheat.Reset();
+                    _clockWall = default;
+                    _clockOff = 0;
+                    if (_player != null) {
+                        _runLog.AddVital("max", _player.MaxHealth);
+                        _runLog.AddVital("life", health);
+                    }
                 }
+                if (_runLog != null) CheckClock();
                 if (_runLog != null && !_tokenAsked && State == Status.Online) {
                     StartCoroutine(StartRankedRun(_runLevel));
                 }
@@ -385,6 +431,7 @@ namespace Online {
                 }
             } else if (_sawAlive) {
                 _reported = true;
+                _runLog?.Seal(AntiCheat.Flags);
                 long coins = _player != null ? Math.Max(0, _player.coins - _coinsAtStart) : 0;
                 ReportRun(CurrentScore(), coins, _assisted);
             }
