@@ -70,6 +70,7 @@ public class Tentacle : Enemy {
             sprite.transform.localPosition = new Vector3(0f, SpriteLift, 0f);
             sprite.transform.localScale = Vector3.one;
             sprite.transform.localRotation = Quaternion.identity;
+            sprite.sortingOrder = 43;   // just behind the pool's acid (44): its base is under the surface
         }
         spawn = FrameAnimator.Load(Sheets + "Spawn");
         idle = FrameAnimator.Load(Sheets + "Idle");
@@ -106,7 +107,10 @@ public class Tentacle : Enemy {
         PruneIncoming();
         float t = Time.time - stateStart;
 
-        // a hit that didn't kill it: back under the acid
+        // a hit that didn't kill it: back under the acid (the Lua de Sangue's healing raises the mark)
+        if (Health > lastHealth) {
+            lastHealth = Health;
+        }
         if (Health < lastHealth) {
             lastHealth = Health;
             if (state != State.Diving) {
