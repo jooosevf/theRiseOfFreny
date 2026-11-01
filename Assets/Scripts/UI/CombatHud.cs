@@ -77,6 +77,8 @@ public class CombatHud : MonoBehaviour {
             float size = 84f * scale;   // the sword and gun sprites are small inside their frames
             float barsBottom = head.yMax + 6f * scale + BarsHeight * scale;
             float rowEnd = DrawWeapons(head.xMin, barsBottom - size * 0.15f, size, scale);
+            // the Ciclope's key while he carries one (Arena)
+            rowEnd = ArenaBossLoot.DrawKeyIcon(rowEnd, barsBottom - size * 0.15f, size, scale, labelStyle);
             // the gun just switched: its name at the end of the row (above are the bars, under the counts)
             if (Time.time - switchedAt < 1.2f) {
                 ShadowLabel(new Rect(rowEnd + 12f * scale, gunLabelY, 160f * scale, 28f * scale), lastShotgun ? "Escopeta" : "Pistola");

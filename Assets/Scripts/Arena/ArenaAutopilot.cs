@@ -933,6 +933,23 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
                 Consider(item.transform, me, myPlatform, range + 2f, ref best, ref bestItem, ref bestPlatform, ref bestDist, ref what, item.Describe());
             }
         }
+        // the Ciclope's key and, with it, the golden chest (both wait forever, so only when no
+        // Ciclope is out; then they are worth a longer detour than anything else: the best loot)
+        if (Cyclops.Current == null) {
+            foreach (BossKey key in BossKey.Active) {
+                if (key && key.Landed) {
+                    Consider(key.transform, me, myPlatform, range + 6f, ref best, ref bestItem, ref bestPlatform, ref bestDist, ref what, "a chave do Ciclope");
+                }
+            }
+            if (BossKey.Carried > 0) {
+                foreach (GoldenChest chest in GoldenChest.Active) {
+                    if (chest && !chest.Opened) {
+                        // opens by touch: walking into it is enough
+                        Consider(chest.transform, me, myPlatform, range + 6f, ref best, ref bestItem, ref bestPlatform, ref bestDist, ref what, "o baú dourado");
+                    }
+                }
+            }
+        }
         if (bestDist == float.MaxValue) {
             return false;
         }

@@ -117,6 +117,14 @@ public static class GuideScreen {
             "Quebram com golpe, tiro ou granada. Na Arena surge um vaso novo a cada 12 s (até 3), e os " +
             "do cenário voltam 90 s depois de quebrados. Pode ter diamante 12%, poção 18%, balas 10%, " +
             "granada 8% ou armadura 3%.");
+        Entry(parent, BossKey.Icon, "Chave do Ciclope",
+            "O primeiro Ciclope da corrida sempre deixa a chave; os seguintes, " + Mathf.RoundToInt(ArenaBossLoot.KeyChance * 100f) + "% das vezes. " +
+            "Ela brilha no chão e não some: encoste para pegar. Aparece ao lado das armas enquanto o Freny a leva. " +
+            "Vale só nesta corrida: não vai para o Inventário.");
+        Entry(parent, GoldenChest.Icon, "Baú dourado",
+            "Surge por um portal dourado numa das plataformas mais altas quando a chave cai, e espera até ser aberto. " +
+            "Só abre com a chave (encoste ou bata). Dá cerca de 145 moedas (moedas e 2 diamantes), enche a vida, a armadura, " +
+            "as balas, os cartuchos e as granadas, solta a Fúria na hora e, se você não tem o Espadão, uns golpes com ele. Não dá pontos.");
     }
 
     private static void Shop(Transform parent, MenuArt art) {
@@ -163,7 +171,8 @@ public static class GuideScreen {
             "quem estiver no chão queima (os outros inimigos também, menos ele), então suba numa plataforma. " +
             "Na Lua de Sangue ele solta até 3 raios vermelhos do olho em direção ao Freny (3 corações), que desintegram tudo no caminho. " +
             "Na pancada ele dá um pulinho e a tela treme. Depois de cada golpe ele descansa " +
-            "3 s: é a hora de bater. Acertar o olho tira o dobro. Vale 5 000 pontos, 30 moedas e deixa um baú.");
+            "3 s: é a hora de bater. Acertar o olho tira o dobro. Vale 5 000 pontos, 30 moedas e deixa um baú " +
+            "(e às vezes a chave do baú dourado). Enquanto ele está vivo toca a música dele e as tochas tremem vermelhas.");
         Entry(parent, null, "Feiticeiro",
             "Fica parado e lança uma bola a cada 5 segundos (o Supremo a cada 3,5); ela tira 2 e empurra, e abaixar desvia " +
             "de um tiro reto. " +
@@ -193,6 +202,9 @@ public static class GuideScreen {
         Entry(parent, art ? art.rageHelmet : null, "Dificuldade",
             "Fácil, Médio, Difícil ou Freny: quanto maior, mais inimigos, mais rápidos e mais cedo. " +
             "Com o tempo e os pontos a Arena aperta, mas para de apertar no primeiro Ciclope (50 mil) e só volta em 1 milhão.");
+        Entry(parent, null, "Música do chefe",
+            "Quando o Ciclope chega, a música da Arena dá lugar à dele, mais pesada e rápida, e as tochas piscam " +
+            "rápido e ficam vermelhas. Quando ele cai, tudo volta ao normal.");
         Entry(parent, Achievements.Icon(Achievement.Cyclops), "Conquistas",
             "10 desafios (pausa > Conquistas). Só valem corridas manuais: depois que o piloto joga, a corrida não " +
             "dá mais conquistas. No fim da corrida, o servidor confere cada conquista nova e o site mostra quantos % " +

@@ -46,6 +46,12 @@ public static class ArenaBootstrap {
             SceneManager.MoveGameObjectToScene(dayNight, scene);
             dayNight.AddComponent<ArenaDayNight>();
         }
+        // the Ciclope's key, golden chest, music and red torches
+        if (!System.Array.Exists(FindCompat.All<ArenaBossLoot>(), l => l.gameObject.scene == scene)) {
+            GameObject loot = new GameObject("Boss Loot");
+            SceneManager.MoveGameObjectToScene(loot, scene);
+            loot.AddComponent<ArenaBossLoot>();
+        }
 
         GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
         if (playerObj == null || playerObj.GetComponent<Player>() == null) {
