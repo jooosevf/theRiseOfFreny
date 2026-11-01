@@ -124,7 +124,7 @@ public class ArenaHud : MonoBehaviour {
     // the help line follows Settings > Controls
     private static string ControlsLine() {
         string K(GameAction a) => InputBindings.KeyName(InputBindings.Keyboard(a)).Replace(" esq.", "").Replace(" dir.", "");
-        return $"Setas: andar  {K(GameAction.Jump)}: pular  {K(GameAction.Melee)}: espada  {K(GameAction.Ranged)}: atirar  " +
+        return $"{K(GameAction.Left)}/{K(GameAction.Right)}: andar  {K(GameAction.Jump)}: pular  {K(GameAction.Melee)}: espada  {K(GameAction.Ranged)}: atirar  " +
                $"{K(GameAction.Dash)}: dash  {K(GameAction.Run)}: correr  {K(GameAction.Grenade)}: granada (segure)  " +
                $"{K(GameAction.Pistol)}/{K(GameAction.Shotgun)}: arma";
     }
