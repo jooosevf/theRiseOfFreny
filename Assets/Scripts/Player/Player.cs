@@ -73,12 +73,20 @@ public class Player : MonoBehaviour, IDamageable {
 
     // ---- state --------------------------------------------------------------------------------
     public int coins;
-    public int Health { get; set; }
-    public int ShotgunShells { get; private set; }
-    public int RevolverBullets { get; private set; }
+    // GuardedInt: Cheat Engine can't find these by value, and an edit flags the run (AntiCheat)
+    public int Health { get => _health; set => _health = value; }
+    public int ShotgunShells { get => _shells; private set => _shells = value; }
+    public int RevolverBullets { get => _bullets; private set => _bullets = value; }
     public int RevolverCapacity => revolverCapacity;
-    public int RevolverReserve { get; private set; }       // spare bullets; reloading takes them from here
-    public int Grenades { get; private set; }
+    public int RevolverReserve { get => _reserve; private set => _reserve = value; }  // spare bullets; reloading takes them from here
+    public int Grenades { get => _grenades; private set => _grenades = value; }
+    private GuardedInt _health, _shells, _bullets, _reserve, _grenades, _armor;
+
+    // what happens to his life, for the ranked run's log (OnlineServices): the server replays it
+    // and refuses a run where he kept fighting after his hearts ran out.
+    //   "max" n: max health is now n · "hit" n: n points of damage the armor can take first
+    //   "fall" n: n points straight off his life · "heal" n: n hearts back · "armor" n: armor set to n
+    public static event System.Action<string, int> Vital;
     public bool ShotgunOwned { get; private set; }          // bought in the shop, or found in a chest this run
     public bool ShotgunEquipped { get; private set; } = true; // 1 = pistol, 2 = shotgun
     public bool IsRunning { get; private set; }
@@ -189,7 +197,7 @@ public class Player : MonoBehaviour, IDamageable {
     public float AttackReadyIn => Mathf.Max(0f, attackReadyAt - Time.time);
     public bool ComboContinues => ComboStep > 0 && ComboStep < 3 && Time.time - attackReadyAt <= ComboWindow;
     // armor hearts (the Berserker helmet): each one takes a hit before the life hearts
-    public int Armor { get; private set; }
+    public int Armor { get => _armor; private set => _armor = value; }
     // kills, sword hits and hits taken fill the Rage meter, calm drains it; full, it gives
     // RageSeconds of red helmet and harder sword hits
     public float Rage { get; private set; }
@@ -404,6 +412,9 @@ public class Player : MonoBehaviour, IDamageable {
             UIManager.Instance.EnsureBars(MaxHealth);
         }
         // a bought heart arrives full
+        if (MaxHealth != oldMax) {
+            Vital?.Invoke("max", MaxHealth);
+        }
         if (Health > 0 && MaxHealth > oldMax) {
             Health += MaxHealth - oldMax;
             if (UIManager.Instance) {
@@ -874,6 +885,7 @@ public class Player : MonoBehaviour, IDamageable {
         }
         invulnerableUntil = Time.time + InvulnerableTime;
         AddRage(RagePerHurt);
+        Vital?.Invoke(armorAbsorbs ? "hit" : "fall", Mathf.Max(1, amount));
         int toArmor = armorAbsorbs ? Mathf.Min(Armor, Mathf.Max(1, amount)) : 0;
         int toLife = Mathf.Max(1, amount) - toArmor;
         Armor -= toArmor;
@@ -941,6 +953,7 @@ public class Player : MonoBehaviour, IDamageable {
         int before = Health;
         Health = Mathf.Min(Health + amount, MaxHealth);
         if (Health > before) {
+            Vital?.Invoke("heal", Health - before);
             DamageNumbers.Show(HeadPoint + Vector3.up * 0.4f, "+" + (Health - before), DamageNumbers.Healed);
         }
         if (UIManager.Instance) {
@@ -963,6 +976,7 @@ public class Player : MonoBehaviour, IDamageable {
             return false;
         }
         Armor = ArmorMax;
+        Vital?.Invoke("armor", ArmorMax);
         return true;
     }
 

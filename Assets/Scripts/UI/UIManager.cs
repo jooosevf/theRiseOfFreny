@@ -22,7 +22,8 @@ public class UIManager : MonoBehaviour {
     public Image[] healthBars;
 
     // the score lives here; scoreCountHUD only displays it (before, the text itself was parsed back every time)
-    public int Score { get; private set; }
+    public int Score { get => _score; private set => _score = value; }
+    private GuardedInt _score;   // Cheat Engine can't find it by value (AntiCheat)
 
     private ComboManager comboManager;
 

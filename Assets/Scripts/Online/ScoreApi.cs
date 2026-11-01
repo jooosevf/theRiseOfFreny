@@ -25,6 +25,10 @@ namespace Online {
         private readonly List<Kill> _kills = new List<Kill>();
         // what the Conquistas need the API to see besides the kills (Achievements.Happened)
         private readonly List<Moment> _moments = new List<Moment>();
+        // his life over the run (Player.Vital), which the server replays
+        private readonly List<Moment> _vitals = new List<Moment>();
+        // what AntiCheat noticed, taken when the run ends (Seal)
+        private readonly List<string> _flags = new List<string>();
         private readonly float _start;
 
         public RunLog(float start) {
@@ -45,6 +49,15 @@ namespace Online {
             _moments.Add(new Moment { time = GameTime, kind = kind, count = count });
         }
 
+        public void AddVital(string kind, int count) {
+            _vitals.Add(new Moment { time = GameTime, kind = kind, count = count });
+        }
+
+        public void Seal(IEnumerable<string> flags) {
+            _flags.Clear();
+            _flags.AddRange(flags);
+        }
+
         // "Bug_Enemy(Clone)" -> "Bug_Enemy": the server knows each enemy by its prefab
         public static string PrefabName(string name) {
             int cut = name.IndexOf('(');
@@ -62,13 +75,22 @@ namespace Online {
                 json.Append('[').Append(_kills[i].time.ToString("0.###", CultureInfo.InvariantCulture))
                     .Append(",\"").Append(_kills[i].enemy).Append("\",").Append(_kills[i].combo).Append(']');
             }
-            json.Append("],\"events\":[");
-            for (int i = 0; i < _moments.Count; i++) {
+            AppendMoments(json.Append("],\"events\":["), _moments);
+            AppendMoments(json.Append("],\"vitals\":["), _vitals);
+            json.Append("],\"flags\":[");
+            for (int i = 0; i < _flags.Count; i++) {
                 if (i > 0) json.Append(',');
-                json.Append('[').Append(_moments[i].time.ToString("0.###", CultureInfo.InvariantCulture))
-                    .Append(",\"").Append(_moments[i].kind).Append("\",").Append(_moments[i].count).Append(']');
+                json.Append('"').Append(_flags[i]).Append('"');
             }
             return json.Append("]}").ToString();
+        }
+
+        private static void AppendMoments(StringBuilder json, List<Moment> moments) {
+            for (int i = 0; i < moments.Count; i++) {
+                if (i > 0) json.Append(',');
+                json.Append('[').Append(moments[i].time.ToString("0.###", CultureInfo.InvariantCulture))
+                    .Append(",\"").Append(moments[i].kind).Append("\",").Append(moments[i].count).Append(']');
+            }
         }
     }
 
