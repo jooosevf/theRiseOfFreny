@@ -249,7 +249,9 @@ public static class GuideScreen {
             "Matar dá XP, e cada nível pede mais XP que o anterior. Cada nível vale 1 ponto para o piloto no " +
             "Armeiro: reação (1 a 5 pontos por nível), esquiva com dash (3), poção sozinho (4) e melhor alvo (5). " +
             "O piloto abaixa das bolas de feitiço retas, bebe a poção no último coração (ou no penúltimo com um Golem perto), " +
-            "atira na mina-aranha de longe e foge quando ela chega perto, e usa a rede e o cajado quando tem.");
+            "atira na mina-aranha de longe e foge quando ela chega perto, e usa a rede e o cajado quando tem. " +
+            "Enquanto o piloto joga, cai 1/3 das moedas e as mortes dão metade do XP. Corridas no Automático " +
+            "têm ranking próprio e recomeçam sozinhas.");
     }
 
     // "Pistola nv. 2 · 2500": the price of a level (level = levels already bought)

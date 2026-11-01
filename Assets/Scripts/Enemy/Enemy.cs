@@ -1394,7 +1394,7 @@ public abstract class Enemy : MonoBehaviour, IDamageable
 
         if (byPlayer) {
             Killed?.Invoke(this);
-            FrenyProgress.AddXp(Mathf.Max(scoreToAdd, 10));
+            FrenyProgress.AddKillXp(Mathf.Max(scoreToAdd, 10));
             if (UIManager.Instance) {
                 UIManager.Instance.HandleComboManager(this);
             }
@@ -1426,13 +1426,15 @@ public abstract class Enemy : MonoBehaviour, IDamageable
     }
 
     private void DropCoin() {
-        if (coins <= 0 || coinPrefab == null) {
+        // byPlayer or not: the autopilot's kills drop fewer coins (FrenyProgress.CoinDrop)
+        int value = FrenyProgress.CoinDrop(coins);
+        if (value <= 0 || coinPrefab == null) {
             return;
         }
         GameObject dropped = Instantiate(coinPrefab, transform.position, Quaternion.identity);
         Coin coin = dropped.GetComponent<Coin>();
         if (coin) {
-            coin.coins = coins;
+            coin.coins = value;
             coin.Toss(new Vector2(Random.Range(-0.6f, 0.6f), 3.5f)); // a small hop, then falls to the floor (bats die mid-air)
         }
     }

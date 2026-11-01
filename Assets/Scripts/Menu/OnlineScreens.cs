@@ -26,6 +26,12 @@ public static class OnlineScreens {
             board = ArenaDifficulty.Ranked[i];
             fill();
         });
+        // the autopilot has its own board (José, 2026-11-01)
+        bool auto = false;
+        page.Choice("Modo", new[] { "Manual", "Automático" }, 0, i => {
+            auto = i == 1;
+            fill();
+        });
         Text status = page.Label("", MenuKit.SmallTextSize);
         Text[] names = new Text[OnlineServices.LeaderboardSize];
         Text[] scores = new Text[names.Length];
@@ -50,10 +56,11 @@ public static class OnlineScreens {
                 status.text = "O online está desligado nesta versão";
                 return;
             }
-            status.text = online.State == OnlineServices.Status.Online ? "Só valem corridas manuais · o oficial é o do Difícil"
+            status.text = online.State == OnlineServices.Status.Online
+                ? auto ? "Corridas começadas no Automático" : "Só valem corridas manuais · o oficial é o do Difícil"
                 : online.State == OnlineServices.Status.Connecting ? "Conectando..." : "Sem conexão: mostrando o último ranking";
             string self = online.Auth != null ? online.Auth.UserId : null;
-            List<LeaderboardEntry> top = online.TopFor(board);
+            List<LeaderboardEntry> top = auto ? online.AutoTopFor(board) : online.TopFor(board);
             for (int i = 0; i < names.Length; i++) {
                 if (i >= top.Count) {
                     names[i].text = i == 0 ? "Ninguém no ranking ainda" : "";
@@ -65,7 +72,8 @@ public static class OnlineScreens {
                 names[i].text = Mark((i + 1) + ". " + Rebirth.RankingName(PlayerTitles.Decorate(entry.name, entry.userId), entry.rebirths), me);
                 scores[i].text = Mark(entry.score.ToString(), me);
             }
-            best.text = "Seu recorde no " + ArenaDifficulty.Label(board) + ": " + online.BestFor(board) + " · corridas: " + online.Save.runsPlayed;
+            best.text = "Seu recorde no " + ArenaDifficulty.Label(board) + (auto ? " (automático)" : "") + ": " +
+                        online.BestFor(board, auto) + " · corridas: " + online.Save.runsPlayed;
         };
         fill();
         if (host != null && online != null) {

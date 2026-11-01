@@ -19,6 +19,12 @@ namespace Online {
     public class LeaderboardService {
         public static string Collection(ArenaLevel level) => "leaderboard_" + level.ToString().ToLowerInvariant();
 
+        // the autopilot's own board per difficulty, "auto_hard" etc. (José, 2026-11-01): runs started in
+        // Automático go here, never on the manual board above. No daily board for them.
+        public static string AutoCollection(ArenaLevel level) => "auto_" + level.ToString().ToLowerInvariant();
+
+        public static string Collection(ArenaLevel level, bool auto) => auto ? AutoCollection(level) : Collection(level);
+
         // today's board, daily_<level>_<yyyymmdd> by Brasília time (UTC-3), what the site's Diário
         // tab reads. The API says which day a run counts for (ScoreApi.FinishRun); this is the guess
         // for reading it.
@@ -85,7 +91,11 @@ namespace Online {
         }
 
         public IEnumerator GetTop(ArenaLevel level, int limit, Action<List<LeaderboardEntry>> done) {
-            string query = "{\"from\":[{\"collectionId\":\"" + Collection(level) + "\"}]," +
+            yield return GetTop(Collection(level), limit, done);
+        }
+
+        public IEnumerator GetTop(string collection, int limit, Action<List<LeaderboardEntry>> done) {
+            string query = "{\"from\":[{\"collectionId\":\"" + collection + "\"}]," +
                            "\"orderBy\":[{\"field\":{\"fieldPath\":\"score\"},\"direction\":\"DESCENDING\"}]," +
                            "\"limit\":" + limit + "}";
 

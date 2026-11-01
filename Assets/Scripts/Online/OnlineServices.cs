@@ -15,6 +15,7 @@ namespace Online {
         public const int MaxNameLength = 16;
         private const string LocalSavePref = "online.save";
         private const string LocalBestPref = "online.best.";   // + level, this account's best on each ranked board
+        private const string LocalAutoBestPref = "online.autoBest.";  // + level, best on the autopilot's board
         private const string LocalDailyPref = "online.daily.";  // + level, "<daily board>|<best>" for today's board
 
         public static OnlineServices Instance { get; private set; }
@@ -40,6 +41,7 @@ namespace Online {
         public bool RecordOnlyToday { get; private set; }   // beats today's best, not the all-time one
         public long RecordScore { get; private set; }
         public ArenaLevel RecordLevel { get; private set; }
+        public bool RecordAuto { get; private set; }        // on the autopilot's board
         public string RecordNote { get; private set; }   // why it can't be / wasn't saved
         public event Action RecordChanged;
         private PendingRecord _pending;
@@ -49,6 +51,7 @@ namespace Online {
             public long score;
             public long previousBest;
             public bool allTime;   // beats the all-time best too, not only today's
+            public bool auto;      // the autopilot's board (no daily board)
             public RunLog log;
             public string token;
         }
@@ -57,6 +60,7 @@ namespace Online {
         private LeaderboardService _leaderboard;
         private ScoreApi _api;
         private readonly Dictionary<ArenaLevel, List<LeaderboardEntry>> _boards = new Dictionary<ArenaLevel, List<LeaderboardEntry>>();
+        private readonly Dictionary<ArenaLevel, List<LeaderboardEntry>> _autoBoards = new Dictionary<ArenaLevel, List<LeaderboardEntry>>();
         private CloudSaveService _saves;
         private AchievementService _achievements;
 
@@ -71,6 +75,7 @@ namespace Online {
         private bool _assisted;
         private bool _arenaRun;
         private ArenaLevel _runLevel;
+        private bool _runAuto;       // started in Automático: its ticket and record are for the autopilot's board
         private int _coinsAtStart;
         private RunLog _runLog;      // the ranked run's kills, for the ranking API
         private string _runToken;    // its ticket from the API (null until it answers)
@@ -175,12 +180,16 @@ namespace Online {
             return _boards.TryGetValue(level, out List<LeaderboardEntry> top) ? top : new List<LeaderboardEntry>();
         }
 
-        public long BestFor(ArenaLevel level) {
-            return long.TryParse(PlayerPrefs.GetString(LocalBestPref + level, "0"), out long best) ? best : 0;
+        public List<LeaderboardEntry> AutoTopFor(ArenaLevel level) {
+            return _autoBoards.TryGetValue(level, out List<LeaderboardEntry> top) ? top : new List<LeaderboardEntry>();
         }
 
-        private static void SetBest(ArenaLevel level, long best) {
-            PlayerPrefs.SetString(LocalBestPref + level, best.ToString());
+        public long BestFor(ArenaLevel level, bool auto = false) {
+            return long.TryParse(PlayerPrefs.GetString((auto ? LocalAutoBestPref : LocalBestPref) + level, "0"), out long best) ? best : 0;
+        }
+
+        private static void SetBest(ArenaLevel level, long best, bool auto = false) {
+            PlayerPrefs.SetString((auto ? LocalAutoBestPref : LocalBestPref) + level, best.ToString());
             PlayerPrefs.Save();
         }
 
@@ -199,6 +208,7 @@ namespace Online {
         private static void ClearBests() {
             foreach (ArenaLevel level in ArenaDifficulty.Ranked) {
                 SetBest(level, 0);
+                SetBest(level, 0, true);
                 PlayerPrefs.DeleteKey(LocalDailyPref + level);
             }
         }
@@ -208,6 +218,9 @@ namespace Online {
             foreach (ArenaLevel level in ArenaDifficulty.Ranked) {
                 yield return _leaderboard.GetTop(level, LeaderboardSize, entries => {
                     if (entries != null) _boards[level] = entries;
+                });
+                yield return _leaderboard.GetTop(LeaderboardService.AutoCollection(level), LeaderboardSize, entries => {
+                    if (entries != null) _autoBoards[level] = entries;
                 });
             }
         }
@@ -287,6 +300,9 @@ namespace Online {
                 long? today = null;
                 yield return _leaderboard.GetOwn(daily, s => today = s);
                 if (today != null) SetDailyBest(level, daily, today.Value);
+                long? auto = null;
+                yield return _leaderboard.GetOwn(LeaderboardService.AutoCollection(level), s => auto = s);
+                if (auto != null) SetBest(level, auto.Value, true);
             }
         }
 
@@ -312,35 +328,36 @@ namespace Online {
             SetRecord(RecordStatus.Saving);
             ScoreApi.Signed signed = null;
             string refused = null;
-            yield return _api.FinishRun(run.log.ToJson(run.token, LeaderboardService.Collection(run.level), run.score),
+            string board = LeaderboardService.Collection(run.level, run.auto);
+            yield return _api.FinishRun(run.log.ToJson(run.token, board, run.score),
                 (s, error) => { signed = s; refused = error; });
+            // still the record the banner shows (no newer run ended since)
+            bool current = RecordScore == run.score && RecordLevel == run.level && RecordAuto == run.auto;
             if (signed != null && signed.pending) {
                 // the server holds it for review: it reaches the board (written by the server) if approved
-                if (BestFor(run.level) == run.score) SetBest(run.level, run.previousBest);
-                if (RecordScore == run.score && RecordLevel == run.level) SetRecord(RecordStatus.InReview);
+                if (BestFor(run.level, run.auto) == run.score) SetBest(run.level, run.previousBest, run.auto);
+                if (current) SetRecord(RecordStatus.InReview);
                 yield return RefreshLeaderboard();
                 yield break;
             }
             if (signed != null) {
                 if (run.allTime) {
                     bool written = false;
-                    yield return SubmitWithRetry(LeaderboardService.Collection(run.level), run.score, signed.sig, ok => written = ok);
+                    yield return SubmitWithRetry(board, run.score, signed.sig, ok => written = ok);
                     if (!written) refused = "o ranking não gravou";
                 }
                 // today's board too (the site's Diário); a lower score than today's best there is
                 // simply not taken
-                if (refused == null && !string.IsNullOrEmpty(signed.dailyBoard) && !string.IsNullOrEmpty(signed.dailySig)) {
+                if (refused == null && !run.auto && !string.IsNullOrEmpty(signed.dailyBoard) && !string.IsNullOrEmpty(signed.dailySig)) {
                     bool written = false;
                     yield return SubmitWithRetry(signed.dailyBoard, run.score, signed.dailySig, ok => written = ok);
                     if (written) SetDailyBest(run.level, signed.dailyBoard, run.score);
                     else if (!run.allTime) refused = "o ranking do dia não gravou";
                 }
             }
-            // still the record the banner shows (no newer run ended since)
-            bool current = RecordScore == run.score && RecordLevel == run.level;
             if (refused != null) {
                 Debug.LogWarning("[Online] Score " + run.score + " not ranked: " + refused);
-                if (BestFor(run.level) == run.score) SetBest(run.level, run.previousBest);
+                if (BestFor(run.level, run.auto) == run.score) SetBest(run.level, run.previousBest, run.auto);
                 RankingRefused?.Invoke(run.score, refused);
                 if (current) SetRecord(RecordStatus.Refused, refused);
             } else if (current) {
@@ -360,10 +377,10 @@ namespace Online {
             done?.Invoke(written);
         }
 
-        private IEnumerator StartRankedRun(ArenaLevel level) {
+        private IEnumerator StartRankedRun(ArenaLevel level, bool auto) {
             RunLog log = _runLog;
             _tokenAsked = true;
-            yield return _api.StartRun(LeaderboardService.Collection(level), token => {
+            yield return _api.StartRun(LeaderboardService.Collection(level, auto), token => {
                 if (_runLog == log) _runToken = token;   // still the same run
             });
         }
@@ -373,6 +390,7 @@ namespace Online {
             foreach (ArenaLevel level in ArenaDifficulty.Ranked) {
                 if (BestFor(level) > 0) yield return _leaderboard.Rename(level, Save.playerName, null);
                 if (DailyBestFor(level) > 0) yield return _leaderboard.Rename(LeaderboardService.DailyCollection(level), Save.playerName, null);
+                if (BestFor(level, true) > 0) yield return _leaderboard.Rename(LeaderboardService.AutoCollection(level), Save.playerName, null);
             }
             yield return RefreshLeaderboard();
         }
@@ -390,6 +408,7 @@ namespace Online {
             // only arena runs are ranked, on the board of the difficulty picked in the menu
             _arenaRun = scene.name == GameMenus.ArenaScene;
             _runLevel = ArenaDifficulty.Current;
+            _runAuto = _arenaRun && !ArenaDifficulty.Manual;   // Automático or Manual, as picked in the menu
             _runLog = null;
             _runToken = null;
             _tokenAsked = false;
@@ -429,7 +448,7 @@ namespace Online {
                 }
                 if (_runLog != null) CheckClock();
                 if (_runLog != null && !_tokenAsked && State == Status.Online) {
-                    StartCoroutine(StartRankedRun(_runLevel));
+                    StartCoroutine(StartRankedRun(_runLevel, _runAuto));
                 }
                 _sawAlive = true;
                 if (_input != null && _input.IsAutopilotDriving) {
@@ -450,22 +469,27 @@ namespace Online {
         }
 
         // Every run counts for the stats, but only an arena run played by hand from start to end
-        // goes to the board of its difficulty. The GDD keeps
-        // idle play out of the manual "Freny Arena Online" ranking.
+        // goes to the board of its difficulty. The GDD keeps idle play out of the manual "Freny
+        // Arena Online" ranking; a run started in Automático goes to the autopilot's own board
+        // (José, 2026-11-01), even if the player took control for a while. A run started in Manual
+        // where the autopilot then played goes on neither.
         private void ReportRun(long score, long coins, bool assisted) {
-            string unranked = !_arenaRun ? "só a Arena tem ranking"
-                : assisted ? "corridas com o piloto automático não valem para o ranking"
+            bool auto = _runAuto;
+            bool mixed = assisted && !auto;
+            string unranked = !_arenaRun ? "não vale para o ranking (só a Arena tem)"
+                : mixed ? "não vale para o ranking (o piloto jogou numa corrida manual)"
+                : auto ? "ranking do automático"
                 : null;
-            long previousBest = BestFor(_runLevel);
+            long previousBest = BestFor(_runLevel, auto);
             // beats the board's best (all-time, or today's), even if it can't go there: the
             // banner says so and why
             bool allTime = score > previousBest;
-            bool record = _arenaRun && score > 0 && (allTime || score > DailyBestFor(_runLevel));
-            bool newBest = record && allTime && unranked == null;
+            bool record = _arenaRun && score > 0 && (allTime || (!auto && score > DailyBestFor(_runLevel)));
+            bool newBest = record && allTime && !mixed;
             Save.runsPlayed++;
             Save.totalCoins += coins;
             if (!assisted && score > Save.bestScore) Save.bestScore = score;
-            if (newBest) SetBest(_runLevel, score);
+            if (newBest) SetBest(_runLevel, score, auto);
             SaveLocal();
 
             // an older record still waiting for its click goes now, before this one replaces it
@@ -473,23 +497,24 @@ namespace Online {
             _pending = null;
             RecordScore = score;
             RecordLevel = _runLevel;
+            RecordAuto = auto;
             RecordOnlyToday = !allTime;
             if (!record) {
                 SetRecord(RecordStatus.None);
-            } else if (assisted) {
-                SetRecord(RecordStatus.CannotSave, "o piloto automático jogou");
+            } else if (mixed) {
+                SetRecord(RecordStatus.CannotSave, "o piloto automático jogou numa corrida manual");
             } else if (State != Status.Online) {
                 SetRecord(RecordStatus.CannotSave, "sem conexão com o servidor");
             } else if (_runLog == null || _runToken == null) {
                 SetRecord(RecordStatus.CannotSave, "sem ticket do servidor");
             } else {
-                _pending = new PendingRecord { level = _runLevel, score = score, previousBest = previousBest, allTime = allTime, log = _runLog, token = _runToken };
+                _pending = new PendingRecord { level = _runLevel, score = score, previousBest = previousBest, allTime = allTime, auto = auto, log = _runLog, token = _runToken };
                 SetRecord(RecordStatus.CanSave);
             }
-            if (newBest && Record == RecordStatus.CannotSave) SetBest(_runLevel, previousBest);
+            if (newBest && Record == RecordStatus.CannotSave) SetBest(_runLevel, previousBest, auto);
 
             // the Conquistas of a manual run go to the API, which checks them against the run's log
-            if (_arenaRun && !assisted && State == Status.Online && _runLog != null && _runToken != null && Achievements.NeedsClaim) {
+            if (_arenaRun && !assisted && !auto && State == Status.Online && _runLog != null && _runToken != null && Achievements.NeedsClaim) {
                 StartCoroutine(_achievements.Claim(_runLog, _runToken, LeaderboardService.Collection(_runLevel), score));
             }
 
@@ -505,7 +530,7 @@ namespace Online {
         // unless it is going to the ranking anyway, checked by the ranking API without writing a
         // score, so the API can be tested and tuned with autopilot runs.
         private IEnumerator EditorCheckRun(long score, RunLog log, string token, bool ranked) {
-            string board = LeaderboardService.Collection(_runLevel);
+            string board = LeaderboardService.Collection(_runLevel, _runAuto);
             System.IO.File.WriteAllText(System.IO.Path.Combine(Application.dataPath, "..", "Logs", "arena-run.json"),
                 log.ToJson(token ?? "", board, score));
             if (ranked || token == null) yield break;

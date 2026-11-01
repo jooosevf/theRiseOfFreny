@@ -49,6 +49,30 @@ public static class FrenyProgress {
         set => PlayerPrefs.SetFloat(BestWaveKey, value);
     }
 
+    // ---- the autopilot earns less ----
+    // José, 2026-11-01: the autopilot farms on its own, so while it drives the enemies and chests
+    // drop about a third of the coins (fewer coins on the floor, not cheaper ones) and kills give
+    // half the XP. Playing by hand earns everything.
+    public const float AutoCoinShare = 1f / 3f;
+    public const float AutoXpShare = 0.5f;
+
+    public static float CoinShare => FrenyInput.AutopilotDrivingNow ? AutoCoinShare : 1f;
+
+    // one coin drop: dropped or not (a big pile, like the Ciclope's, shrinks instead)
+    public static int CoinDrop(int coins) {
+        if (!FrenyInput.AutopilotDrivingNow || coins <= 0) {
+            return coins;
+        }
+        if (coins >= 10) {
+            return Mathf.Max(1, Mathf.RoundToInt(coins * AutoCoinShare));
+        }
+        return UnityEngine.Random.value < AutoCoinShare ? coins : 0;
+    }
+
+    public static void AddKillXp(int amount) {
+        AddXp(FrenyInput.AutopilotDrivingNow ? Mathf.Max(1, Mathf.RoundToInt(amount * AutoXpShare)) : amount);
+    }
+
     // ---- XP and levels ----
 
     public static int Xp => PlayerPrefs.GetInt(XpKey, 0);
