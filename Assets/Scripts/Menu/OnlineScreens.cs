@@ -62,7 +62,7 @@ public static class OnlineScreens {
                 }
                 LeaderboardEntry entry = top[i];
                 bool me = entry.userId == self;
-                names[i].text = Mark((i + 1) + ". " + PlayerTitles.Decorate(entry.name, entry.userId), me);
+                names[i].text = Mark((i + 1) + ". " + Rebirth.RankingName(PlayerTitles.Decorate(entry.name, entry.userId), entry.rebirths), me);
                 scores[i].text = Mark(entry.score.ToString(), me);
             }
             best.text = "Seu recorde no " + ArenaDifficulty.Label(board) + ": " + online.BestFor(board) + " · corridas: " + online.Save.runsPlayed;

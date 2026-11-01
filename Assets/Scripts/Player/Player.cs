@@ -168,14 +168,15 @@ public class Player : MonoBehaviour, IDamageable {
     public bool RevolverDry => RevolverBullets <= 0 && RevolverReserve <= 0 && !Reloading;
     // the gun can fire: not on its own cooldown and, for the revolver, loaded and not reloading
     public bool GunReady => GunReadyFor(UsingShotgun);
+    // (the week's "Só espada" holsters both guns, RunModifiers.NoGuns, but not the staff's spells)
     // with the Cajado do Mago (MageStaff) the shots are spells: no ammo needed
-    public bool GunReadyFor(bool shotgun) => Time.time >= gunReadyAt && (MageStaff.Held(this) || (shotgun
+    public bool GunReadyFor(bool shotgun) => Time.time >= gunReadyAt && (MageStaff.Held(this) || (!RunModifiers.NoGuns && (shotgun
         ? ShotgunOwned && ShotgunShells > 0
-        : !Reloading && RevolverBullets > 0));
+        : !Reloading && RevolverBullets > 0)));
     // a dropped potion only heals: at full health it stays on the floor until needed or it expires
     public bool WantsPotion => !isDead && Health < MaxHealth;
-    public bool WantsBullets => RevolverReserve < revolverReserveMax;
-    public bool WantsShells => ShotgunOwned && ShotgunShells < shellsMax;
+    public bool WantsBullets => !RunModifiers.NoGuns && RevolverReserve < revolverReserveMax;
+    public bool WantsShells => !RunModifiers.NoGuns && ShotgunOwned && ShotgunShells < shellsMax;
     public bool WantsGrenades => Grenades < grenadesMax;
     public bool WantsArmor => !isDead && Armor < ArmorMax;
     // a dropped great sword is no use with the bought one, or with a fresh one still in hand
@@ -405,9 +406,10 @@ public class Player : MonoBehaviour, IDamageable {
     public void ApplyUpgrades() {
         GrantUpgradeLoadout();
         int oldMax = MaxHealth;
-        MaxHealth = _baseMaxHealth + FrenyProgress.BonusMaxHealth;
-        _speed = _baseSpeed * FrenyProgress.SpeedMultiplier;
-        attackCooldown = _baseAttackCooldown * FrenyProgress.AttackCooldownMultiplier;
+        // and the run's blessing and mutator on top (RunModifiers; 1 / 0 outside an arena run)
+        MaxHealth = _baseMaxHealth + FrenyProgress.BonusMaxHealth + RunModifiers.BonusMaxHealth;
+        _speed = _baseSpeed * FrenyProgress.SpeedMultiplier * RunModifiers.SpeedMultiplier;
+        attackCooldown = _baseAttackCooldown * FrenyProgress.AttackCooldownMultiplier * RunModifiers.AttackCooldownMultiplier;
 
         // the bought hearts stay in the row for good, empty when lost
         if (UIManager.Instance) {

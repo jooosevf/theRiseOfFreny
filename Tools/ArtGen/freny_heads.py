@@ -199,4 +199,6 @@ def main():
 
 
 
-main()
+# freny_cosmetics.py imports the helmet finder without rebuilding these sheets
+if __name__ == '__main__':
+    main()

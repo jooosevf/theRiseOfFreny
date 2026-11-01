@@ -100,6 +100,9 @@ public class MainMenu : MonoBehaviour {
         Button arena = page.Button("Arena", () => stack.Push(ArenaPage()), Application.CanStreamedLevelBeLoaded(GameMenus.ArenaScene));
         page.Button("Inventário", () => stack.Push(InventoryScreens.Inventory(stack)));
         page.Button("Armeiro", () => stack.Push(InventoryScreens.Armory(stack)));
+        // Freny's looks and Renascer (VarietyScreens)
+        page.Button("Visual", () => stack.Push(VarietyScreens.Visual(stack)));
+        page.Button(VarietyScreens.RebirthButtonLabel, () => stack.Push(VarietyScreens.RebirthPage(stack)));
         page.Button("Voltar", stack.Back);
         page.SelectFirst = CampaignOpen ? null : arena;
         return page;
@@ -164,6 +167,7 @@ public class MainMenu : MonoBehaviour {
         page.Choice("Controle", new[] { "Automático", "Manual" }, ArenaDifficulty.Manual ? 1 : 0,
             i => ArenaDifficulty.Manual = i == 1);
         page.Label("Só corridas manuais do começo ao fim valem para o ranking. O oficial é o do Difícil.");
+        page.Label(WeeklyMutators.MenuText);   // the same rule for everyone this week
         Button current = null;
         foreach (ArenaLevel level in System.Enum.GetValues(typeof(ArenaLevel))) {
             ArenaLevel chosen = level;

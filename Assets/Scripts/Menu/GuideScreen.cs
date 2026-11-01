@@ -8,7 +8,8 @@ using UnityEngine.UI;
 public static class GuideScreen {
 
     private const float IconBox = 34f;
-    private static readonly string[] Topics = { "Armas", "Fúria e defesa", "Itens", "Onde achar", "Armeiro", "Inimigos", "Arena", "Missões e títulos" };
+    private static readonly string[] Topics = { "Armas", "Fúria e defesa", "Itens", "Onde achar", "Armeiro", "Inimigos", "Arena",
+                                                "Missões e títulos", "Bênçãos", "Mutadores", "Renascer e visual" };
     private static int lastTopic;
 
     public static MenuPage Guide(MenuStack stack) {
@@ -48,7 +49,10 @@ public static class GuideScreen {
             case 4: Shop(entries, art); break;
             case 5: Enemies(entries, art); break;
             case 6: Arena(entries, art); break;
-            default: Missions(entries, art); break;
+            case 7: Missions(entries, art); break;
+            case 8: BlessingsTopic(entries); break;
+            case 9: MutatorsTopic(entries); break;
+            default: RebirthTopic(entries, art); break;
         }
     }
 
@@ -279,6 +283,49 @@ public static class GuideScreen {
             "Em Conquistas > Estatísticas: corridas, tempo de jogo, melhor combo, recorde de cada dificuldade " +
             "e inimigos derrotados de cada tipo, Ciclopes também. Contam todas as corridas do save, com o piloto " +
             "automático também, e vão para a nuvem com o save.");
+    }
+
+    // ---- cada corrida diferente (Blessings, WeeklyMutators, Rebirth, FrenyLook) ----
+
+    private static void BlessingsTopic(Transform parent) {
+        Entry(parent, null, "Bênçãos",
+            "No começo de cada corrida da Arena o jogo para e mostra 3 bênçãos sorteadas: escolha uma (clique, " +
+            "toque, setas e Enter, ou 1, 2, 3). Ela vale a corrida toda e aparece embaixo das armas. " +
+            "No automático o piloto escolhe sozinho. Nenhuma mexe nos pontos, então a corrida vale para o ranking.");
+        // two per row, so the ten fit on a 720p screen
+        for (int i = 0; i < Blessings.All.Length; i += 2) {
+            Blessings.Info a = Blessings.All[i];
+            Blessings.Info b = i + 1 < Blessings.All.Length ? Blessings.All[i + 1] : null;
+            Entry(parent, Blessings.Icon(a.id), a.name + (b != null ? " · " + b.name : ""),
+                a.name + ": " + a.what + (b != null ? "\n" + b.name + ": " + b.what : ""));
+        }
+    }
+
+    private static void MutatorsTopic(Transform parent) {
+        Entry(parent, null, "Mutador da semana",
+            "Toda semana (segunda-feira, horário de Brasília) entra uma regra nova na Arena, a mesma para todo " +
+            "mundo, e vale para o ranking normal. A da semana aparece em Jogar > Arena e no começo da corrida. " +
+            "Esta semana: " + WeeklyMutators.Of(WeeklyMutators.ThisWeek).name + ".");
+        foreach (WeeklyMutators.Info info in WeeklyMutators.All) {
+            Entry(parent, null, info.name, info.what);
+        }
+    }
+
+    private static void RebirthTopic(Transform parent, MenuArt art) {
+        Entry(parent, null, "Renascer " + Rebirth.Star(1),
+            "Com tudo do Armeiro comprado e no nível máximo, Jogar > Renascer troca todas as melhorias (as do " +
+            "Armeiro e as do piloto automático) e o nível, que volta ao 1, por um bônus para sempre: +5% de dano " +
+            "e +5% de moedas a cada renascimento, somando, e uma estrela ★ ao lado do nome no ranking (no jogo " +
+            "e no site). Moedas, recordes, conquistas e o visual ficam. Alguns visuais só abrem renascendo.");
+        Entry(parent, art ? art.berserkerHelmet : null, "Visual",
+            "Em Jogar > Visual o Freny troca de elmo, de capa e de cor da roupa. Uns se compram com moedas, " +
+            "outros abrem com uma conquista ou renascendo. Só muda o visual, não a luta. Na Fúria e com " +
+            "armadura ele ainda mostra os capacetes deles.");
+        foreach (FrenyLook.Item item in FrenyLook.All) {
+            if (item.unlock != FrenyLook.Unlock.Free && item.unlock != FrenyLook.Unlock.Coins) {
+                Entry(parent, null, item.name, FrenyLook.HowToGet(item) + ".");
+            }
+        }
     }
 
     // icon | name over what it does

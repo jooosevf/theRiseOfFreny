@@ -21,6 +21,9 @@ public class SaveData {
     public List<string> gear = new List<string>();         // Armeiro items that aren't upgrades (Loadout)
     public string stats;      // AccountStats' JSON (the Estatísticas); empty in older saves
     public string missions;   // DailyMissions' JSON (today's progress); empty in older saves
+    public int rebirths;                                   // Renascer (Rebirth)
+    public List<string> looks = new List<string>();        // looks bought with coins (FrenyLook)
+    public List<string> lookWorn = new List<string>();     // the helmet, cape and colour worn
 
     [Serializable]
     public class Entry {
@@ -30,6 +33,7 @@ public class SaveData {
 
     public bool HasProgress =>
         coins > 0 || xp > 0 || campaignUnlocked > 0 || upgrades.Count > 0 || bestTimes.Count > 0 || (gear != null && gear.Count > 0) ||
+        rebirths > 0 || (looks != null && looks.Count > 0) ||
         !string.IsNullOrEmpty(lastScene);
 
     public DateTime SavedAt => new DateTime(savedAtTicks, DateTimeKind.Utc);
@@ -214,6 +218,9 @@ public static class SaveSystem {
             campaignUnlocked = PlayerPrefs.GetInt(CampaignProgress.UnlockedKey, 0),
             stats = PlayerPrefs.GetString(AccountStats.Key, ""),
             missions = PlayerPrefs.GetString(DailyMissions.Key, ""),
+            rebirths = Rebirth.Count,
+            looks = FrenyLook.BoughtIds,
+            lookWorn = FrenyLook.WornIds(),
         };
         foreach (FrenyUpgrade upgrade in Enum.GetValues(typeof(FrenyUpgrade))) {
             int level = PlayerPrefs.GetInt(FrenyProgress.LevelKeyPrefix + upgrade, 0);
@@ -251,6 +258,8 @@ public static class SaveSystem {
         SetOrDelete(CampaignProgress.UnlockedKey, data.campaignUnlocked);
         SetOrDelete(AccountStats.Key, data.stats);
         SetOrDelete(DailyMissions.Key, data.missions);
+        Rebirth.Count = data.rebirths;
+        FrenyLook.Load(data.looks, data.lookWorn);   // old saves: none
 
         foreach (FrenyUpgrade upgrade in Enum.GetValues(typeof(FrenyUpgrade))) {
             SaveData.Entry entry = data.upgrades.Find(e => e.id == upgrade.ToString());
