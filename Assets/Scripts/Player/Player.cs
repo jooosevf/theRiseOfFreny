@@ -1003,6 +1003,11 @@ public class Player : MonoBehaviour, IDamageable {
         }
     }
 
+    // the golden chest (GoldenChest): the Fúria right away, as if the meter had just filled
+    public void StartRage() {
+        AddRage(1f);
+    }
+
     public void AddCoins(int amount) {
         coins = Mathf.Max(0, coins + amount);
         FrenyProgress.Coins = coins;
