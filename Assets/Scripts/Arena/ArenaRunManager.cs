@@ -3,8 +3,9 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 // One arena run lasts until Freny dies (GDD). In automatic mode nobody is there to press
-// Space, so this restarts the scene a few seconds after death, unless the run made
-// AskAboveScore points: then it asks first, so a good score isn't gone before anyone saw it.
+// Space, so this restarts the scene a few seconds after death, always: the autopilot is left
+// farming (José, 2026-11-01; it used to stop and ask after 10k points). A record of the
+// autopilot's board is saved on its own when the next run starts.
 // In manual mode the next run waits for the jump key (Space), so the player can look at the
 // score first. Coins, XP and
 // upgrades live in FrenyProgress (PlayerPrefs), so they survive the reload.
@@ -12,7 +13,6 @@ public class ArenaRunManager : MonoBehaviour {
 
     // the automatic run starts again after this (José, 2026-10-29: 10 s, with "Jogar agora" to skip it)
     private const float restartDelay = 10f;
-    [SerializeField] private int askAboveScore = 10000;
     [SerializeField] private float minDeathTime = 1f;   // a jump held while dying does not skip the score
 
     private Player player;
@@ -49,7 +49,7 @@ public class ArenaRunManager : MonoBehaviour {
             if (RunSeconds > FrenyProgress.BestRunSeconds) {
                 FrenyProgress.BestRunSeconds = RunSeconds;
             }
-            asking = input != null && input.AutoEnabled && UIManager.Instance != null && UIManager.Instance.Score >= askAboveScore;
+            asking = false;
             PlayerPrefs.Save();
         }
         if (!RunOver || GameMenus.Paused) {
@@ -117,10 +117,10 @@ public class ArenaRunManager : MonoBehaviour {
         if (AutoRun) {
             int score = UIManager.Instance != null ? UIManager.Instance.Score : 0;
             banner.text = RecordText() +
-                          "<color=#EE8FFC>AUTOPILOTO - PONTUAÇÃO NÃO RANKEADA</color>\n" +
+                          "<color=#EE8FFC>AUTOPILOTO - RANKING DO AUTOMÁTICO</color>\n" +
                           "<size=12>" + score + " pontos · Freny caiu após " + RunSeconds.ToString("0") + "s\n" +
-                          "(Autopiloto: habilitado)</size>\n" +
-                          "<size=12>Desabilite o autopiloto para ter ranking</size>" +
+                          "No automático caem menos moedas e menos XP</size>\n" +
+                          "<size=12>Jogue no Manual para o ranking principal</size>" +
                           (asking ? "" : "\n<size=12>Nova corrida em " + Mathf.CeilToInt(SecondsUntilRestart) + "s</size>");
             return;
         }
@@ -153,7 +153,8 @@ public class ArenaRunManager : MonoBehaviour {
             default: status = "<color=#FF7A7A>Não vai para o ranking: " + online.RecordNote + "</color>"; break;
         }
         return "<size=30><color=#FFD84A>" + (online.RecordOnlyToday ? "RECORDE DO DIA!" : "NOVO RECORDE!") + "</color></size>\n" +
-               "<size=16>" + online.RecordScore + " pontos no " + ArenaDifficulty.Label(online.RecordLevel) + "</size>\n" +
+               "<size=16>" + online.RecordScore + " pontos no " + ArenaDifficulty.Label(online.RecordLevel) +
+               (online.RecordAuto ? " (automático)" : "") + "</size>\n" +
                "<size=14>" + status + "</size>\n";
     }
 

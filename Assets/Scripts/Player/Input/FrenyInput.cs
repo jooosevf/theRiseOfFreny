@@ -21,6 +21,20 @@ public class FrenyInput : MonoBehaviour {
     public bool AutoEnabled => autoEnabled;
     public bool HasAutopilot => autopilot != null;
 
+    // the Freny on screen, for loot and XP that pay less while the autopilot plays (FrenyProgress)
+    public static FrenyInput Active { get; private set; }
+    public static bool AutopilotDrivingNow => Active != null && Active.IsAutopilotDriving;
+
+    private void OnEnable() {
+        Active = this;
+    }
+
+    private void OnDisable() {
+        if (Active == this) {
+            Active = null;
+        }
+    }
+
     // seconds until the autopilot takes back control, 0 when it is already driving
     public float SecondsUntilAutopilot =>
         Mathf.Max(0f, lastHumanInputTime + takeoverDelay - Time.time);
