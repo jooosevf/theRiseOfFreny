@@ -70,6 +70,18 @@ public static class GuideScreen {
             "Explode em 1 s, ao tocar um inimigo ou ao cair no chão: 3 de dano em todos num raio " +
             "grande (mata quase todos; o Golem Vermelho aguenta uma) e quebra baús e vasos. Cuidado: perto demais, o Freny " +
             "também leva 2 de dano e é arremessado. Até 6.");
+        Entry(parent, NetThrower.Icon, "Rede",
+            "Comprada no Armeiro: " + NetThrower.NetsPerStage + " por fase (até " + NetThrower.MaxNets + "), botão Rede. Voa em arco e abre no " +
+            "primeiro inimigo ou no chão: todos embaixo dela ficam presos " + NetTrap.Seconds + " s, parados e sem atacar (o morcego " +
+            "fica pendurado no ar). O Ciclope é grande demais: só fica mais lento por " + NetTrap.CyclopsSeconds + " s. Não tira vida.");
+        Entry(parent, MageStaff.Icon, "Cajado do Mago",
+            "Às vezes (" + Mathf.RoundToInt(MageStaff.DropChance * 100f) + "%) um feiticeiro morto na Arena deixa o cajado. Com ele, por " +
+            MageStaff.Duration + " s, o botão Atirar lança bolas de feitiço sem gastar munição: " + MageStaff.Damage +
+            " de dano, ferem os inimigos (até o Ciclope) e nunca o Freny. O cajado aparece nas costas dele e no HUD, " +
+            "e pisca nos últimos segundos. Pegar outro recomeça o tempo.");
+        Entry(parent, art ? art.revolver : null, "Níveis do Armeiro",
+            "Pistola, escopeta, espadão e granada têm níveis 2 e 3 no Armeiro (veja Armeiro). Só a arma comprada e " +
+            "equipada sobe de nível: a escopeta do baú e o espadão do chão ficam no nível 1.");
     }
 
     private static void Defense(Transform parent, MenuArt art) {
@@ -116,19 +128,32 @@ public static class GuideScreen {
             "Quebram com golpe, tiro ou granada. Na Arena surge um vaso novo a cada 12 s (até 3), e os " +
             "do cenário voltam 90 s depois de quebrados. Pode ter diamante 12%, poção 18%, balas 10%, " +
             "granada 8% ou armadura 3%.");
+        Entry(parent, MageStaff.Icon, "Feiticeiros (Arena)",
+            "Cada feiticeiro que morre tem " + Mathf.RoundToInt(MageStaff.DropChance * 100f) + "% de chance de deixar o Cajado do Mago.");
     }
 
     private static void Shop(Transform parent, MenuArt art) {
-        Entry(parent, art ? art.jump : null, "Pulo duplo · " + FrenyProgress.Cost(FrenyUpgrade.DoubleJump),
+        Entry(parent, art ? art.jump : null, "Pulo duplo · " + FrenyProgress.CostAt(FrenyUpgrade.DoubleJump, 0),
             "Um segundo pulo no ar.");
-        Entry(parent, art ? art.grenade : null, "Granada · " + FrenyProgress.Cost(FrenyUpgrade.Grenade),
+        Entry(parent, art ? art.grenade : null, "Granada · " + FrenyProgress.CostAt(FrenyUpgrade.Grenade, 0),
             "Começa cada fase com 2 granadas.");
-        Entry(parent, art ? art.greatSword : null, "Espadão · " + FrenyProgress.Cost(FrenyUpgrade.GreatSword),
+        Entry(parent, art ? art.greatSword : null, "Espadão · " + FrenyProgress.CostAt(FrenyUpgrade.GreatSword, 0),
             "A espada fica 1,8x maior para sempre.");
-        Entry(parent, art ? art.shotgun : null, "Escopeta · " + FrenyProgress.Cost(FrenyUpgrade.Shotgun),
+        Entry(parent, art ? art.shotgun : null, "Escopeta · " + FrenyProgress.CostAt(FrenyUpgrade.Shotgun, 0),
             "Começa cada fase com a escopeta e 6 cartuchos.");
         Entry(parent, art ? art.berserkerHelmet : null, "Capacete Berserker · " + Loadout.HelmetCost,
             "Começa cada fase com " + Player.ArmorMax + " de armadura.");
+        Entry(parent, art ? art.revolver : null, "Pistola nv. 2 · " + Price(FrenyUpgrade.Pistol, 0) + " · nv. 3 · " + Price(FrenyUpgrade.Pistol, 1),
+            "Nv. 2: atira 25% mais rápido e recarrega 30% mais rápido. Nv. 3: atira 40% mais rápido e recarrega na metade do tempo.");
+        Entry(parent, art ? art.shotgun : null, "Escopeta nv. 2 · " + Price(FrenyUpgrade.Shotgun, 1) + " · nv. 3 · " + Price(FrenyUpgrade.Shotgun, 2),
+            "Nv. 2: 5 balas no leque em vez de 3. Nv. 3: atira 30% mais rápido e começa a fase com 4 cartuchos a mais.");
+        Entry(parent, art ? art.greatSword : null, "Espadão nv. 2 · " + Price(FrenyUpgrade.GreatSword, 1) + " · nv. 3 · " + Price(FrenyUpgrade.GreatSword, 2),
+            "Nv. 2: corte 2,2x maior (em vez de 1,8x). Nv. 3: +1 de dano em todo golpe.");
+        Entry(parent, art ? art.grenade : null, "Granada nv. 2 · " + Price(FrenyUpgrade.Grenade, 1) + " · nv. 3 · " + Price(FrenyUpgrade.Grenade, 2),
+            "Nv. 2: explosão 30% maior e 1 granada a mais por fase. Nv. 3: 4 de dano (mata o Golem Vermelho em duas) e 2 a mais por fase. " +
+            "Cuidado: a explosão maior também pega o Freny de mais longe.");
+        Entry(parent, NetThrower.Icon, "Rede · " + FrenyProgress.NetCost,
+            "Começa cada fase com " + NetThrower.NetsPerStage + " redes (veja Armas).");
         Entry(parent, art ? art.heart : null, "Vida, Velocidade e Recarga",
             "+1 coração, +8% de velocidade, -10% de recarga por nível. Vida: 1.500, 3.000, 6.000 e 10.000. " +
             "Velocidade e Recarga: 800, 1.500, 2.500, 4.000 e 6.000. O Inventário deixa armas compradas em casa.");
@@ -151,6 +176,12 @@ public static class GuideScreen {
             "ou 36 tiros); nas costas, 2 espadadas ou 6 tiros matam. Tudo que vem da frente bate no escudo, até de cima. " +
             "Ele vira rápido (0,4 s, até 0,15 s no difícil) e se afasta se o Freny chega por trás: pule por cima e bata logo. " +
             "6 de vida, 300 pontos.");
+        Entry(parent, SpiderMineIcon(), "Mina-aranha",
+            "Uma mina com seis pernas: anda e pula entre as plataformas atrás do Freny, e a luz vermelha pisca e apita " +
+            "mais rápido quanto mais perto ela chega. Encostada nele, para, arma por " + SpiderMine.ArmTime.ToString("0.0") + " s e explode: " +
+            "2 corações, empurrão, e fere os outros inimigos em volta (outra mina-aranha explode junto). Morre com um golpe, " +
+            "mas explode sempre que morre: de longe (tiro, granada) não pega o Freny; de espada, ele leva 1 coração. " +
+            "Vale 250 pontos. Na Arena, a partir do meio da curva de dificuldade.");
         Entry(parent, null, "Ciclope",
             "O chefe gigante: prefere ficar no meio, embaixo da primeira plataforma (bom para pular no olho). Chega no centro do chão aos 50 mil pontos e cada próximo 150 mil pontos depois de o anterior morrer; " +
             "dois de uma vez só a partir de 1 milhão, com as barras embaixo, uma de cada lado. Cada luta traz mais " +
@@ -198,7 +229,24 @@ public static class GuideScreen {
             "dos jogadores têm cada uma.");
         Entry(parent, art ? art.run : null, "XP e piloto automático",
             "Matar dá XP, e cada nível pede mais XP que o anterior. Cada nível vale 1 ponto para o piloto no " +
-            "Armeiro: reação (1 a 5 pontos por nível), esquiva com dash (3), poção sozinho (4) e melhor alvo (5).");
+            "Armeiro: reação (1 a 5 pontos por nível), esquiva com dash (3), poção sozinho (4) e melhor alvo (5). " +
+            "O piloto abaixa das bolas de feitiço retas, bebe a poção no último coração (ou no penúltimo com um Golem perto), " +
+            "atira na mina-aranha de longe e foge quando ela chega perto, e usa a rede e o cajado quando tem.");
+    }
+
+    // "Pistola nv. 2 · 2500": the price of a level (level = levels already bought)
+    private static string Price(FrenyUpgrade weapon, int level) {
+        return FrenyProgress.CostAt(weapon, level).ToString();
+    }
+
+    private static Sprite spiderIcon;
+
+    private static Sprite SpiderMineIcon() {
+        if (spiderIcon == null) {
+            Sprite[] idle = FrameAnimator.Load("SpiderMine/SpiderMine Idle");
+            spiderIcon = idle.Length > 0 ? idle[0] : null;
+        }
+        return spiderIcon;
     }
 
     // icon | name over what it does
