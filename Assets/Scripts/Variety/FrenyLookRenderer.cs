@@ -12,6 +12,7 @@ public class FrenyLookRenderer : MonoBehaviour {
 
     private Player player;
     private FrenyMotion motion;
+    private FrenyRig rig;          // when it draws him from parts, it owns the helmet and the shirt
     private Rigidbody2D rb;
     private SpriteRenderer body;
     private SpriteRenderer helmet, shirt;
@@ -26,6 +27,7 @@ public class FrenyLookRenderer : MonoBehaviour {
     private void Start() {
         player = GetComponent<Player>();
         motion = GetComponent<FrenyMotion>();
+        rig = GetComponent<FrenyRig>();
         rb = GetComponent<Rigidbody2D>();
         Animator anim = GetComponentInChildren<Animator>();
         body = anim ? anim.GetComponent<SpriteRenderer>() : GetComponentInChildren<SpriteRenderer>();
@@ -81,19 +83,20 @@ public class FrenyLookRenderer : MonoBehaviour {
             return;
         }
         bool shown = body.enabled && body.gameObject.activeInHierarchy && (player == null || !player.IsDead);
+        bool rigged = rig != null && rig.Drawing;
         Sprite frame = body.sprite;
         string frameName = frame != null ? frame.name : "";
 
         // the helmet: not while FrenyMotion shows Rage's or the armor's
         bool buffHead = motion != null && motion.HeadRenderer != null && motion.HeadRenderer.enabled;
         Sprite top = null;
-        if (shown && !buffHead && helmetSheet != null) {
+        if (shown && !rigged && !buffHead && helmetSheet != null) {
             helmetSheet.TryGetValue(frameName, out top);
         }
         Show(helmet, top);
 
         Sprite mask = null;
-        if (shown && colorItem != null) {
+        if (shown && !rigged && colorItem != null) {
             FrenyLook.ShirtSheet.TryGetValue(frameName, out mask);
         }
         Show(shirt, mask);
@@ -114,7 +117,8 @@ public class FrenyLookRenderer : MonoBehaviour {
 
     private void UpdateCape(bool shown, Sprite frame) {
         bool on = shown && capeItem != null && cape[0].sprite != null;
-        if (on && CapeArt.Anchor(frame, body.flipX, out Vector2 anchor)) {
+        Vector2 anchor;
+        if (on && (rig != null && rig.CapeAnchor(out anchor) || CapeArt.Anchor(frame, body.flipX, out anchor))) {
             capeAnchor = anchor;
             hasAnchor = true;
         }

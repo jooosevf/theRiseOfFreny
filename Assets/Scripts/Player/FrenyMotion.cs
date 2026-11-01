@@ -118,6 +118,7 @@ public class FrenyMotion : MonoBehaviour {
     private SpriteRenderer head;
     private Dictionary<string, Sprite> rageHeads, berserkerHeads, rageBerserkerHeads;
     public SpriteRenderer HeadRenderer => head;
+    public SpriteRenderer SwordRenderer => sword;   // FrenyRig hides it while it draws its own
 
     // poses the Animator has no state for, drawn over its frame: crouching (and slashing or
     // shooting crouched) and shooting in the air. Tools/ArtGen/freny_poses.py builds them.
