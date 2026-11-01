@@ -36,6 +36,7 @@ atribuição obrigatória), cortados, convertidos para mono 44,1 kHz e normaliza
 | `freny_hurt_1` | Timothy McHugh - Gorification [HD] / gore - wood beating flesh wet blood splat - soft - 14.wav (0–0.46 s) |
 | `freny_hurt_2` | Soundopolis - Gore Toolkit HD / Punch_Spurt Blood_Fienup_001.wav (0–0.25 s) |
 | `freny_death` | SoundMorph - Bloody Nightmare / Bloody Nightmare - Death Pacts_32.wav (0–2.2 s) |
+| `freny_rage` | o grito da Fúria (tecla F): `freny_death` 0–1,5 s 8% mais grave, com `supreme_scream` 0,3–1,9 s baixo e abafado por baixo (2026-11-01) |
 | `freny_land` | Timothy McHugh -  Barefoot on Metal / FOOTSTEP - Metal Plate Land Barefoot Male - 1.wav (0–0.5 s) |
 | `freny_step_1` | Timothy McHugh -  Barefoot on Metal / FOOTSTEP - Metal Plate Walk Barefoot Male - 1.wav (0–0.3 s) |
 | `freny_step_2` | Timothy McHugh -  Barefoot on Metal / FOOTSTEP - Metal Plate Walk Barefoot Male - 2.wav (0–0.3 s) |

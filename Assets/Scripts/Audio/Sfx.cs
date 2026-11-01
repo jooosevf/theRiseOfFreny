@@ -33,6 +33,7 @@ public static class Sfx {
         { "grenade_explode", (0.85f, 0.05f) },
         { "freny_hurt", (0.7f, 0.1f) },
         { "freny_death", (0.8f, 0.5f) },
+        { "freny_rage", (0.85f, 0.5f) },
         { "freny_stun", (0.6f, 0.2f) },
         { "potion", (0.6f, 0.1f) },
         { "pickup_ammo", (0.45f, 0.1f) },

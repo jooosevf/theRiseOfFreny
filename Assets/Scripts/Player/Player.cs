@@ -1069,7 +1069,8 @@ public class Player : MonoBehaviour, IDamageable {
         Rage = 0f;
         rageUntil = Time.time + RageSeconds;
         Fx.Burst(transform.position + Vector3.up * 0.4f, new Color(1f, 0.25f, 0.2f), 30, 3.5f, 0.12f, 0.7f);
-        Sfx.Play("level_up", transform.position);
+        Sfx.Play("freny_rage", transform.position);   // José, 2026-11-01: a war cry
+        ScreenKick.Kick(0.12f, 0.3f);
         return true;
     }
 
