@@ -361,6 +361,7 @@ public class GameMenus : MonoBehaviour {
     private MenuPage NewRunPage() {
         MenuPage page = new MenuPage(pauseStack.transform, "Nova corrida", 560f, new Vector2(0.5f, 0.5f));
         page.Label("Dificuldade: " + ArenaDifficulty.Label(ArenaDifficulty.Current), MenuKit.TextSize);
+        ArenaVariant.AddChoice(page);   // Clássica or Poço de Ácido, once it is open
         Button auto = page.BigButton("Automática", "O piloto joga quando você para. Não vale para o ranking", () => StartArena(false));
         Button manual = page.BigButton("Manual", "Só você joga. Vale para o ranking", () => StartArena(true));
         page.Button("Voltar", pauseStack.Back);

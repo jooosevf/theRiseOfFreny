@@ -169,6 +169,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
                 frame.move = 0f;
             }
         }
+        AcidPitPilot.Hop(player, ref frame, currentTarget, ref nextJumpTime, jumpCooldown);   // the Poço's pools are jumped
         planIsFresh = false;
         return frame;
     }
@@ -272,6 +273,11 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
 
         // 1b. the red Golem's mines, the Ciclope's shockwave and acid: get away or jump over
         if (AvoidHazards(ref frame, me, myFeet)) {
+            return frame;
+        }
+        // 1b'. the Poço de Ácido: a spit, a spike or a Rastejante coming down on him
+        if (AcidPitPilot.Dodge(player, ref frame, out string dodging)) {
+            action = dodging;
             return frame;
         }
 
@@ -424,8 +430,8 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         }
         retreating = false;
 
-        // 2b. a flyer right over his head: shoot straight up
-        if (target is Bat && Mathf.Abs(target.Center.x - me.x) <= 0.7f && target.Center.y - me.y > 0.9f
+        // 2b. a flyer (or a Rastejante on the ceiling) right over his head: shoot straight up
+        if ((target is Bat || target is Crawler) && Mathf.Abs(target.Center.x - me.x) <= 0.7f && target.Center.y - me.y > 0.9f
             && target.Center.y - me.y <= Tuning.AutoShootRange.Value && player.GunReadyFor(false)) {
             frame.aimUpHeld = true;
             frame.selectPistol = true;
@@ -653,8 +659,8 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         float me = transform.position.x;
         float myFeet = FeetY;
         foreach (AcidPuddle puddle in AcidPuddle.Active) {
-            if (puddle == null || puddle.IsFlood) {
-                continue;
+            if (puddle == null || puddle.IsFlood || AcidPitArena.IsPool(puddle)) {
+                continue;   // (the Poço de Ácido's pools never dry up: AcidPitPilot jumps them)
             }
             Vector2 at = puddle.transform.position;
             float half = puddle.Width / 2f;

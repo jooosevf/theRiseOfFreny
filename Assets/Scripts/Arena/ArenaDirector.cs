@@ -151,6 +151,8 @@ public class ArenaDirector : MonoBehaviour {
             enemies = list.ToArray();
         }
         cyclopsTemplate = EnemyTemplates.Make<Cyclops>(golem, "Cyclops_Boss", new Vector2(1.9f * Cyclops.Size, 2.45f * Cyclops.Size), new Vector2(0f, Cyclops.Size * 1.225f - 1.585f));
+        // the Poço de Ácido has a list of its own (no-op in the classic arena)
+        enemies = AcidPitArena.EnemyTable(enemies, golem);
     }
 
     public const float SpiderMineUnlockAt = 0.45f;
@@ -660,6 +662,7 @@ public class ArenaDirector : MonoBehaviour {
         if (entry.flying) {
             position += Vector3.up * Random.Range(1.5f, 2.5f);
         }
+        AcidPitArena.SpawnSpot(entry.prefab, ref floorPoint, ref position);   // a Tentáculo comes out of an acid pool
 
         pendingSpawns++;
         pendingPoints.Add(floorPoint);
