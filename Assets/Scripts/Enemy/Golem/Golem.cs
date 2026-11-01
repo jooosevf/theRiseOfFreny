@@ -46,6 +46,8 @@ public class Golem : Enemy {
         nextThrow = Time.time + FirstThrowDelay;
         if (armored) {
             attackWindup = 0.6f;   // a longer charge, the dash comes in its last third
+        } else {
+            GolemRig.Attach(this, sprite, attackWindup);   // the skeletal prototype, when its flag is on
         }
     }
 
