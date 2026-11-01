@@ -8,7 +8,7 @@ using UnityEngine.UI;
 public static class GuideScreen {
 
     private const float IconBox = 34f;
-    private static readonly string[] Topics = { "Armas", "Fúria e defesa", "Itens", "Onde achar", "Armeiro", "Inimigos", "Arena" };
+    private static readonly string[] Topics = { "Armas", "Fúria e defesa", "Itens", "Onde achar", "Armeiro", "Inimigos", "Arena", "Missões e títulos" };
     private static int lastTopic;
 
     public static MenuPage Guide(MenuStack stack) {
@@ -47,7 +47,8 @@ public static class GuideScreen {
             case 3: Drops(entries, art); break;
             case 4: Shop(entries, art); break;
             case 5: Enemies(entries, art); break;
-            default: Arena(entries, art); break;
+            case 6: Arena(entries, art); break;
+            default: Missions(entries, art); break;
         }
     }
 
@@ -199,6 +200,25 @@ public static class GuideScreen {
         Entry(parent, art ? art.run : null, "XP e piloto automático",
             "Matar dá XP, e cada nível pede mais XP que o anterior. Cada nível vale 1 ponto para o piloto no " +
             "Armeiro: reação (1 a 5 pontos por nível), esquiva com dash (3), poção sozinho (4) e melhor alvo (5).");
+    }
+
+    // the daily missions, the titles and the stats (DailyMissions, PlayerTitles, AccountStats)
+    private static void Missions(Transform parent, MenuArt art) {
+        Entry(parent, art ? art.coin : null, "Missões do dia",
+            "3 missões por dia (fácil, média e difícil), as mesmas para todos os jogadores; mudam à meia-noite " +
+            "de Brasília. Pagam " + DailyMissions.Rewards[0] + ", " + DailyMissions.Rewards[1] + " e " +
+            DailyMissions.Rewards[2] + " moedas, na hora em que você cumpre. Só valem corridas manuais da Arena: " +
+            "depois que o piloto joga, a corrida não conta mais. \"Numa corrida\" pede tudo na mesma corrida; " +
+            "as outras somam as corridas do dia. Veja o progresso em Missões do dia, no menu.");
+        Entry(parent, Achievements.Icon(Achievement.Supreme), "Títulos",
+            "Escolha um em Conquistas > Títulos e ele aparece ao lado do seu nome no ranking do jogo e do site. " +
+            "Cada conquista confirmada pelo servidor libera um (o Ciclope dá Matador de Gigantes, o Supremo " +
+            "Caçador de Magos...), e terminar uma corrida manual libera Gladiador. Rei da Arena só aparece " +
+            "enquanto você for o 1º do Difícil, no geral ou no do dia.");
+        Entry(parent, art ? art.run : null, "Estatísticas",
+            "Em Conquistas > Estatísticas: corridas, tempo de jogo, melhor combo, recorde de cada dificuldade " +
+            "e inimigos derrotados de cada tipo, Ciclopes também. Contam todas as corridas do save, com o piloto " +
+            "automático também, e vão para a nuvem com o save.");
     }
 
     // icon | name over what it does

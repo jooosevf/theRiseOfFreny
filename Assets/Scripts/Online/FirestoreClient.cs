@@ -20,6 +20,9 @@ namespace Online {
             _auth = auth;
         }
 
+        // "projects/<id>/databases/(default)/documents", what a query's referenceValue starts with
+        public string DocRoot => _docRoot;
+
         // done(ok, json). A missing document counts as ok with a null body.
         public IEnumerator Get(string path, Action<bool, string> done) {
             yield return Send("GET", "/" + path, null, (code, body) => {

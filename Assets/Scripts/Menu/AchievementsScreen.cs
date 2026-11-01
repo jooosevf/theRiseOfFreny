@@ -26,6 +26,9 @@ public static class AchievementsScreen {
         }
 
         page.Space(4f);
+        // the titles come from the achievements; the stats sit next to them
+        page.ButtonRow("", new[] { 300f, 300f }, new[] { "Títulos", "Estatísticas" }, i =>
+            stack.Push(i == 0 ? ProfileScreens.Titles(stack) : ProfileScreens.Stats(stack)));
         page.Button("Voltar", stack.Back);
         return page;
     }

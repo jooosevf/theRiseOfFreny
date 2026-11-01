@@ -62,7 +62,7 @@ public static class OnlineScreens {
                 }
                 LeaderboardEntry entry = top[i];
                 bool me = entry.userId == self;
-                names[i].text = Mark((i + 1) + ". " + entry.name, me);
+                names[i].text = Mark((i + 1) + ". " + PlayerTitles.Decorate(entry.name, entry.userId), me);
                 scores[i].text = Mark(entry.score.ToString(), me);
             }
             best.text = "Seu recorde no " + ArenaDifficulty.Label(board) + ": " + online.BestFor(board) + " · corridas: " + online.Save.runsPlayed;
@@ -81,6 +81,7 @@ public static class OnlineScreens {
     private static IEnumerator Refresh(OnlineServices online, MenuPage page, Action fill) {
         if (online.State == OnlineServices.Status.Online) {
             yield return online.RefreshLeaderboard();
+            yield return PlayerTitles.Refresh(online);
         }
         if (page.Root != null) {   // still open
             fill();
