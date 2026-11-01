@@ -280,7 +280,7 @@ public class ArenaDayNight : MonoBehaviour {
         if (bloodNight && night != announcedNight && Blood > 0.5f) {
             announcedNight = night;
             bloodAnnounced = Time.time;
-            Sfx.Play("supreme_laugh", cam.transform.position, 0.9f, 0.6f);
+            Sfx.Play("blood_moon", cam.transform.position);   // wolves howl, then the slow laugh (José, 2026-11-01)
         }
         float dusk = Mathf.Clamp01(1f - Mathf.Abs(sunHeight - 0.02f) / 0.22f);
 
