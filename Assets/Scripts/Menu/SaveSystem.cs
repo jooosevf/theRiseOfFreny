@@ -281,6 +281,13 @@ public static class SaveSystem {
         if (Has(data.gear, Loadout.Helmet)) {
             PlayerPrefs.SetInt(Loadout.GearKeyPrefix + Loadout.Helmet, 1);
         }
+        // and one saved when the cosmetic helmet was Armeiro gear: it stays his, as a look
+        if (Has(data.gear, Loadout.CosmeticHelmet)) {
+            PlayerPrefs.SetInt(Loadout.GearKeyPrefix + Loadout.CosmeticHelmet, 1);
+            if (Has(data.unequipped, Loadout.CosmeticHelmet)) {
+                PlayerPrefs.SetInt(FrenyProgress.UnequippedKeyPrefix + Loadout.CosmeticHelmet, 1);
+            }
+        }
         FrenyProgress.MigrateShop();
     }
 

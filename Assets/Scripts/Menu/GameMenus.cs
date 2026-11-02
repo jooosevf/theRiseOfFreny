@@ -31,6 +31,10 @@ public class GameMenus : MonoBehaviour {
     private int lastScreenHeight;
     private readonly List<Canvas> hiddenHuds = new List<Canvas>();
     private MenuPage deathRanking;   // the ranking opened after a manual run: Space starts the next one
+    // how this arena run started (Automático or Manual, read when the scene loads) and whether the
+    // autopilot has played in it: switching mode in the pause only changes the ranking from the next run
+    private bool runStartedAuto;
+    private bool runAssisted;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void Bootstrap() {
@@ -145,6 +149,8 @@ public class GameMenus : MonoBehaviour {
         }
         Resume();
         gameplayScene = IsGameplayScene(scene.name);
+        runStartedAuto = scene.name == ArenaScene && !ArenaDifficulty.Manual;
+        runAssisted = false;
         if (CampaignLevels.IsStage(scene.name) || scene.name == ArenaScene) {
             SaveSystem.SetLastScene(scene.name);
             StartCoroutine(Loadout.ApplyAtStageStart());
@@ -172,8 +178,11 @@ public class GameMenus : MonoBehaviour {
             return;
         }
         if (!paused) {
+            if (FrenyInput.AutopilotDrivingNow) {
+                runAssisted = true;
+            }
             SaveSystem.AddPlayTime(Time.unscaledDeltaTime);
-            if (InputBindings.GetDown(GameAction.Pause)) {
+            if (InputBindings.GetDown(GameAction.Pause) || GameCursor.LockLost()) {
                 Pause();
             }
         } else if (deathRanking != null && pauseStack.Top == deathRanking && InputBindings.GetDown(GameAction.Jump)) {
@@ -300,6 +309,10 @@ public class GameMenus : MonoBehaviour {
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
             });
         }
+        // José, 2026-11-01: straight to the shop, without going through the main menu; what is bought
+        // counts right away (FrenyProgress.Changed reaches Player)
+        page.Button("Armeiro", () => pauseStack.Push(InventoryScreens.Armory(pauseStack)));
+        page.Button("Inventário", () => pauseStack.Push(InventoryScreens.Inventory(pauseStack)));
         page.Button("Ajuda", () => pauseStack.Push(HelpScreen.Help(pauseStack)));
         page.Button("Guia", () => pauseStack.Push(GuideScreen.Guide(pauseStack)));
         page.Button("Conquistas", () => pauseStack.Push(AchievementsScreen.Page(pauseStack)));
@@ -332,14 +345,18 @@ public class GameMenus : MonoBehaviour {
         Online.OnlineServices online = Online.OnlineServices.Instance;
         bool ranked = online != null && online.State != Online.OnlineServices.Status.Disabled;
         Text note = null;
+        // José, 2026-11-01: the mode is fixed when each run starts; turning Auto off here always says
+        // that only the next run counts for the manual ranking (online or not)
         System.Action<bool> explain = on => {
+            bool assisted = runStartedAuto || runAssisted || (online != null && online.RunAssisted);
             if (on) {
-                note.text = ranked ? "Modo automático ligado: esta corrida não vale para o ranking se o piloto jogar" : "Modo automático ligado";
-            } else if (ranked && online.RunAssisted) {
-                note.text = "Modo manual: só vai contar para o ranking a partir da próxima corrida";
+                note.text = runStartedAuto ? "Modo automático ligado" : "Modo automático ligado: esta corrida não vale mais para o ranking manual se o piloto jogar";
+            } else if (assisted) {
+                note.text = "Atenção: só a PRÓXIMA corrida vale para o ranking manual (esta começou no automático ou o piloto jogou)";
             } else {
-                note.text = ranked ? "Modo manual: esta corrida vale para o ranking" : "Modo manual";
+                note.text = "Modo manual: esta corrida vale para o ranking";
             }
+            note.color = !on && assisted ? new Color(1f, 0.8f, 0.35f) : MenuKit.DimTextColor;
         };
         bool auto = input != null ? input.AutoEnabled : !ArenaDifficulty.Manual;
         page.Choice("Modo automático", new[] { "Ligado", "Desligado" }, auto ? 0 : 1, i => {

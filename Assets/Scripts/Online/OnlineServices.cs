@@ -12,6 +12,8 @@ namespace Online {
         public enum Status { Disabled, Connecting, Online, Offline }
 
         public const int LeaderboardSize = 10;
+        // a board shown again within this many seconds is not read again (Firestore's free tier counts reads)
+        private const float BoardFreshSeconds = 60f;
         public const int MaxNameLength = 16;
         private const string LocalSavePref = "online.save";
         private const string LocalBestPref = "online.best.";   // + level, this account's best on each ranked board
@@ -61,6 +63,7 @@ namespace Online {
         private ScoreApi _api;
         private readonly Dictionary<ArenaLevel, List<LeaderboardEntry>> _boards = new Dictionary<ArenaLevel, List<LeaderboardEntry>>();
         private readonly Dictionary<ArenaLevel, List<LeaderboardEntry>> _autoBoards = new Dictionary<ArenaLevel, List<LeaderboardEntry>>();
+        private readonly Dictionary<string, float> _boardFetchedAt = new Dictionary<string, float>();
         private CloudSaveService _saves;
         private AchievementService _achievements;
 
@@ -172,7 +175,6 @@ namespace Online {
             yield return SyncSave();
             yield return _achievements.Load();
             State = Status.Online;
-            yield return RefreshLeaderboard();
         }
 
         // The top of one ranked board (ArenaDifficulty.Ranked), as last fetched.
@@ -213,16 +215,25 @@ namespace Online {
             }
         }
 
-        public IEnumerator RefreshLeaderboard() {
+        // Reads only the board on screen, at most once a minute (10 reads instead of 80 for all eight boards).
+        public IEnumerator RefreshBoard(ArenaLevel level, bool auto) {
             if (_leaderboard == null || !Auth.IsSignedIn) yield break;
-            foreach (ArenaLevel level in ArenaDifficulty.Ranked) {
-                yield return _leaderboard.GetTop(level, LeaderboardSize, entries => {
-                    if (entries != null) _boards[level] = entries;
-                });
-                yield return _leaderboard.GetTop(LeaderboardService.AutoCollection(level), LeaderboardSize, entries => {
-                    if (entries != null) _autoBoards[level] = entries;
-                });
-            }
+            string collection = LeaderboardService.Collection(level, auto);
+            if (_boardFetchedAt.TryGetValue(collection, out float at) && Time.realtimeSinceStartup - at < BoardFreshSeconds) yield break;
+            _boardFetchedAt[collection] = Time.realtimeSinceStartup;
+            yield return _leaderboard.GetTop(collection, LeaderboardSize, entries => {
+                if (entries == null) {
+                    _boardFetchedAt.Remove(collection);
+                    return;
+                }
+                if (auto) _autoBoards[level] = entries;
+                else _boards[level] = entries;
+            });
+        }
+
+        // this account wrote to a board (or changed account), so the next view reads it again
+        private void ForgetBoards() {
+            _boardFetchedAt.Clear();
         }
 
         public void SetPlayerName(string newName) {
@@ -264,7 +275,7 @@ namespace Online {
                 Save = NewSave();
                 ClearBests();
                 yield return SyncSave();
-                yield return RefreshLeaderboard();
+                ForgetBoards();
             }
             done?.Invoke(error);
         }
@@ -308,7 +319,6 @@ namespace Online {
 
         private IEnumerator PushRun() {
             yield return _saves.Save(Save, null);
-            yield return RefreshLeaderboard();
         }
 
         // "Salvar recorde" on the end-of-run banner
@@ -337,7 +347,6 @@ namespace Online {
                 // the server holds it for review: it reaches the board (written by the server) if approved
                 if (BestFor(run.level, run.auto) == run.score) SetBest(run.level, run.previousBest, run.auto);
                 if (current) SetRecord(RecordStatus.InReview);
-                yield return RefreshLeaderboard();
                 yield break;
             }
             if (signed != null) {
@@ -363,7 +372,8 @@ namespace Online {
             } else if (current) {
                 SetRecord(RecordStatus.Saved);
             }
-            yield return RefreshLeaderboard();
+            ForgetBoards();
+            yield return RefreshBoard(run.level, run.auto);
         }
 
         private IEnumerator SubmitWithRetry(string board, long score, string sig, Action<bool> done) {
@@ -392,7 +402,7 @@ namespace Online {
                 if (DailyBestFor(level) > 0) yield return _leaderboard.Rename(LeaderboardService.DailyCollection(level), Save.playerName, null);
                 if (BestFor(level, true) > 0) yield return _leaderboard.Rename(LeaderboardService.AutoCollection(level), Save.playerName, null);
             }
-            yield return RefreshLeaderboard();
+            ForgetBoards();
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode) {

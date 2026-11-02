@@ -64,6 +64,9 @@ public static class InventoryScreens {
                 page.Button(ItemName(item) + ": no Armeiro", null, false, ItemRow);
             }
         }
+        // the looks live on one page (VarietyScreens.Visual), the Berserker helmet among them
+        Button looks = page.Button("Visual", () => stack.Push(VarietyScreens.Visual(stack)), true, ItemRow);
+        Hover(looks, () => freny.Say("Elmo, capa e cor da roupa. Só para ficar bonito."));
 
         page.Space(4f);
         page.Label("O que cai dos inimigos (espadão, capacete, munição) vale só na fase em que caiu.");
@@ -116,7 +119,8 @@ public static class InventoryScreens {
         }
 
         public void Refresh() {
-            body.OverlaySprites = Loadout.IsEquipped(Loadout.Helmet) ? BerserkerHeads() : null;
+            body.OverlaySprites = Loadout.IsEquipped(Loadout.Helmet) ? BerserkerHeads()
+                : Loadout.WearsCosmeticHelmet ? Heads(ref brokenHeads, "FrenyHeads/berserker_broken") : null;
             foreach (Action slot in slots) {
                 slot();
             }
@@ -128,17 +132,21 @@ public static class InventoryScreens {
         }
     }
 
-    private static Dictionary<string, Sprite> berserkerHeads;
+    private static Dictionary<string, Sprite> berserkerHeads, brokenHeads;
 
     // the same helmet layer the game puts on Freny (FrenyMotion)
     private static Dictionary<string, Sprite> BerserkerHeads() {
-        if (berserkerHeads == null) {
-            berserkerHeads = new Dictionary<string, Sprite>();
-            foreach (Sprite head in Resources.LoadAll<Sprite>("FrenyHeads/berserker")) {
-                berserkerHeads[head.name] = head;
+        return Heads(ref berserkerHeads, "FrenyHeads/berserker");
+    }
+
+    private static Dictionary<string, Sprite> Heads(ref Dictionary<string, Sprite> cache, string path) {
+        if (cache == null) {
+            cache = new Dictionary<string, Sprite>();
+            foreach (Sprite head in Resources.LoadAll<Sprite>(path)) {
+                cache[head.name] = head;
             }
         }
-        return berserkerHeads;
+        return cache;
     }
 
     // one equipment slot: lit when equipped, dim when stored, almost gone when not bought
@@ -192,18 +200,7 @@ public static class InventoryScreens {
     public static MenuPage Armory(MenuStack stack) {
         MenuPage page = new MenuPage(stack.transform, "Armeiro", 600f, new Vector2(0.5f, 0.5f), 6f);
         MenuArt art = MenuArt.Get;
-        RectTransform side = SidePanel(page, "Armeira");
-        RectTransform frame = MenuKit.MakeRect("Portrait", side);
-        MenuKit.Size(frame, 200f, 279f);
-        Image face = MenuKit.MakeImage("Face", frame, Color.white);
-        MenuKit.Stretch(face.rectTransform);
-        face.raycastTarget = false;
-        MenuPortrait merchant = face.gameObject.AddComponent<MenuPortrait>();
-        Sprite[] faces = art != null ? art.merchantFace : null;
-        bool canBlink = faces != null && faces.Length > 5;
-        merchant.Init(canBlink ? new[] { faces[4], faces[0], faces[2], faces[1], faces[3] } : faces,
-            canBlink ? faces[5] : null, 9f, 3f);
-        MenuSpeech speech = SpeechBox(side, null, merchant, 96f);
+        MenuSpeech speech = MerchantSide(page);
 
         Text coins = page.Label("", MenuKit.TextSize);
         List<Action> refresh = new List<Action>();
@@ -223,6 +220,8 @@ public static class InventoryScreens {
             refresh.Add(() => label.text = current.title + " · " + Progress(current.rows));
         }
         page.Space(4f);
+        Button looks = page.Button("Cosméticos", () => stack.Push(VarietyScreens.Visual(stack)), true, ItemRow);
+        Hover(looks, () => speech.Say("Coisas só para ficar bonito, querido. Não dão força nenhuma."));
         Button brain = page.Button("", () => stack.Push(BrainPage(stack)), true, ItemRow);
         Hover(brain, () => speech.Say("O piloto automático da Arena aprende com pontos de nível, não com moedas."));
         Text brainText = brain.GetComponentInChildren<Text>();
@@ -233,6 +232,23 @@ public static class InventoryScreens {
         refreshAll();
         speech.Say(Greetings[UnityEngine.Random.Range(0, Greetings.Length)]);
         return page;
+    }
+
+    // the merchant beside a shop page, with her speech box
+    private static MenuSpeech MerchantSide(MenuPage page) {
+        MenuArt art = MenuArt.Get;
+        RectTransform side = SidePanel(page, "Armeira");
+        RectTransform frame = MenuKit.MakeRect("Portrait", side);
+        MenuKit.Size(frame, 200f, 279f);
+        Image face = MenuKit.MakeImage("Face", frame, Color.white);
+        MenuKit.Stretch(face.rectTransform);
+        face.raycastTarget = false;
+        MenuPortrait merchant = face.gameObject.AddComponent<MenuPortrait>();
+        Sprite[] faces = art != null ? art.merchantFace : null;
+        bool canBlink = faces != null && faces.Length > 5;
+        merchant.Init(canBlink ? new[] { faces[4], faces[0], faces[2], faces[1], faces[3] } : faces,
+            canBlink ? faces[5] : null, 9f, 3f);
+        return SpeechBox(side, null, merchant, 96f);
     }
 
     // "3/12 níveis" on a shelf's button

@@ -30,6 +30,7 @@ public static class FrenyLook {
         public int price;                // coins, or rebirths needed
         public Achievement achievement;
         public string art;               // helmet sheet (helmet_<art>)
+        public string sheet;             // or a sheet from elsewhere in Resources
         public Color color = Color.white;   // shirt tint, or the cape's cloth
         public Color shade = Color.gray;    // the cape's folds
         public Color trim = Color.white;    // the cape's hem
@@ -40,6 +41,9 @@ public static class FrenyLook {
     // the first item of each slot is "as he is" (free); prices against the Armeiro's ~67,600 coins
     public static readonly Item[] All = {
         new Item { id = "helmet.none", slot = LookSlot.Helmet, name = "Original", unlock = Unlock.Free },
+        // José, 2026-11-01: the Berserker helmet just for the look, one horn snapped; with armor on,
+        // FrenyMotion draws it whole
+        new Item { id = BerserkerId, slot = LookSlot.Helmet, name = "Capacete Berserker", unlock = Unlock.Coins, price = 1000, sheet = "FrenyHeads/berserker_broken" },
         new Item { id = "helmet.gold", slot = LookSlot.Helmet, name = "Elmo dourado", unlock = Unlock.Coins, price = 2500, art = "gold" },
         new Item { id = "helmet.ice", slot = LookSlot.Helmet, name = "Elmo de gelo", unlock = Unlock.Coins, price = 2500, art = "ice" },
         new Item { id = "helmet.viking", slot = LookSlot.Helmet, name = "Elmo viking", unlock = Unlock.Coins, price = 4000, art = "viking" },
@@ -168,6 +172,31 @@ public static class FrenyLook {
         return item != null && item.slot == slot && item.unlock != Unlock.Free && Owns(item) ? item : null;
     }
 
+    public const string BerserkerId = "helmet.berserker";
+    public static bool WearsBerserker => WornId(LookSlot.Helmet) == BerserkerId;
+
+    // whoever bought the cosmetic helmet when it was gear of the Armeiro (Loadout.CosmeticHelmet)
+    // keeps it, and keeps it on unless it was taken off or another helmet is on
+    public static void MigrateBerserker() {
+        string key = Loadout.GearKeyPrefix + Loadout.CosmeticHelmet;
+        string off = FrenyProgress.UnequippedKeyPrefix + Loadout.CosmeticHelmet;
+        if (PlayerPrefs.GetInt(key, 0) <= 0) {
+            return;
+        }
+        List<string> bought = BoughtIds;
+        if (!bought.Contains(BerserkerId)) {
+            bought.Add(BerserkerId);
+            SetBoughtIds(bought);
+        }
+        if (PlayerPrefs.GetInt(off, 0) == 0 && WornId(LookSlot.Helmet) == "") {
+            SetWornId(LookSlot.Helmet, BerserkerId);
+        }
+        PlayerPrefs.DeleteKey(key);
+        PlayerPrefs.DeleteKey(off);
+        PlayerPrefs.Save();
+        Changed?.Invoke();
+    }
+
     public static bool Wear(Item item) {
         if (item == null || !Owns(item)) {
             return false;
@@ -195,7 +224,7 @@ public static class FrenyLook {
     }
 
     public static Dictionary<string, Sprite> HelmetSheet(Item helmet) =>
-        helmet != null && helmet.art != null ? Sheet("FrenyLook/helmet_" + helmet.art) : null;
+        helmet == null ? null : helmet.sheet != null ? Sheet(helmet.sheet) : helmet.art != null ? Sheet("FrenyLook/helmet_" + helmet.art) : null;
 
     public static Dictionary<string, Sprite> ShirtSheet => Sheet("FrenyLook/shirt");
 

@@ -12,7 +12,7 @@ using UnityEngine;
 //   portal on one of the highest platforms Freny can reach. The key belongs to the run, not to the
 //   inventory: the Arena stays self-contained, nothing new goes into the save, the cloud save or the
 //   ranked run's log, and a key can't be farmed in one run and spent in another.
-// - The music: the Ciclope's own track ("ciclope", Tools/MusicGen/boss_music.py) while one is alive,
+// - The music: the Ciclope's own track ("ciclope", Tools/MusicGen/dark_fantasy.py) while one is alive,
 //   crossfaded by MusicPlayer, then back to the Arena's.
 // - The torches flicker faster and burn redder while it is out (BossTorches).
 // It also draws the short texts over the loot (Say) and the key next to the weapons (CombatHud

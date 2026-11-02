@@ -1,0 +1,1928 @@
+fileFormatVersion: 2
+guid: ff28d2dbd4f94b4da59fcbc44f4870b9
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -849458939898236135
+    second: Player idle 1_0
+  - first:
+      213: -3488881151244484338
+    second: Player idle 1_1
+  - first:
+      213: -877404882636636528
+    second: Player idle_0
+  - first:
+      213: -2577069761284006029
+    second: Player walk 1_0
+  - first:
+      213: 104309338839384094
+    second: Player walk 1_1
+  - first:
+      213: 3659126063958624049
+    second: Player walk 1_2
+  - first:
+      213: 3576026209285404047
+    second: Player walk 1_3
+  - first:
+      213: 2090046048335320479
+    second: Player walk 1_4
+  - first:
+      213: -2268974264248578215
+    second: Player walk 1_5
+  - first:
+      213: -2974579534497758499
+    second: Player jump 1_0
+  - first:
+      213: 1402467533350898463
+    second: Player jump 1_1
+  - first:
+      213: 4409326339427215633
+    second: Player jump 1_2
+  - first:
+      213: 1914313094316618166
+    second: Player jump 1_3
+  - first:
+      213: -3622506762785648618
+    second: Player jump 1_4
+  - first:
+      213: -3132041174054569498
+    second: Player jump 1_5
+  - first:
+      213: -3951716347743994171
+    second: Player jump ranged_0
+  - first:
+      213: 179107665922364935
+    second: Player jump ranged_1
+  - first:
+      213: -4048041815805251873
+    second: Player jump ranged_2
+  - first:
+      213: 237874576506012898
+    second: Player jump ranged_3
+  - first:
+      213: 801928424339356492
+    second: Player jump ranged_4
+  - first:
+      213: -399414497679686797
+    second: Player hit_1
+  - first:
+      213: 2653968245796543123
+    second: Player hit_3
+  - first:
+      213: 279309562866302237
+    second: Player crouched
+  - first:
+      213: -2807912880310758753
+    second: Player dash_0
+  - first:
+      213: 3641503700706214670
+    second: Player dash_1
+  - first:
+      213: 2833639432811804063
+    second: Player dash_2
+  - first:
+      213: -1215782021406708774
+    second: Player dash_3
+  - first:
+      213: -2179444090198023797
+    second: Player dash_4
+  - first:
+      213: 2267207213686626179
+    second: Player dash_5
+  - first:
+      213: -3089889325949713601
+    second: Player kick_0
+  - first:
+      213: -4380773213235565825
+    second: Player kick_1
+  - first:
+      213: 1328485086735819907
+    second: Player kick_2
+  - first:
+      213: 1579435358383684921
+    second: Player kick_3
+  - first:
+      213: -2363663193124381490
+    second: Player kick_4
+  - first:
+      213: -3605890871462802749
+    second: Player ranged_0
+  - first:
+      213: -662236986393554509
+    second: Player ranged_1
+  - first:
+      213: -1239124953928482790
+    second: Player ranged_2
+  - first:
+      213: -1122763804447577876
+    second: Player ranged_3
+  - first:
+      213: 4281929620648928474
+    second: Player ranged_4
+  - first:
+      213: -1068511728262054714
+    second: Player melee long_0
+  - first:
+      213: -1567739539645162411
+    second: Player melee long_1
+  - first:
+      213: 4493405202283243460
+    second: Player melee long_2
+  - first:
+      213: 962216338332564946
+    second: Player melee long_3
+  - first:
+      213: -231436435236975358
+    second: Player melee long_4
+  - first:
+      213: 4303738893271446272
+    second: Player slash_0
+  - first:
+      213: -2977597260824020246
+    second: Player slash_1
+  - first:
+      213: -2245779470766871299
+    second: Player slash_2
+  - first:
+      213: 1789211121051631370
+    second: Player slash_3
+  - first:
+      213: 3075582424948521638
+    second: Player slash_4
+  - first:
+      213: 659119977802562497
+    second: Freny crouch_0
+  - first:
+      213: -1730478190608192112
+    second: Freny crouch ranged_0
+  - first:
+      213: -2835978280718437370
+    second: Freny crouch ranged_1
+  - first:
+      213: -1743313472418965487
+    second: Freny crouch ranged_2
+  - first:
+      213: 2430256272022822212
+    second: Freny air ranged_0
+  - first:
+      213: -1097225313257831204
+    second: Freny air ranged_1
+  - first:
+      213: -245174128963985879
+    second: Freny air ranged_2
+  - first:
+      213: -3855203588394380819
+    second: Freny air ranged_3
+  - first:
+      213: 1221521704643276254
+    second: Freny air ranged_4
+  - first:
+      213: -2920647339288353012
+    second: Freny climb_0
+  - first:
+      213: -782133375592519302
+    second: Freny climb_1
+  - first:
+      213: 290397334282582424
+    second: Freny swing_-60
+  - first:
+      213: 2466063019111961457
+    second: Freny swing_-45
+  - first:
+      213: -1702140081166850267
+    second: Freny swing_-30
+  - first:
+      213: 938618460261105220
+    second: Freny swing_-15
+  - first:
+      213: -4490795317400667228
+    second: Freny swing_0
+  - first:
+      213: -2824672726547265180
+    second: Freny swing_15
+  - first:
+      213: 4252634043082521662
+    second: Freny swing_30
+  - first:
+      213: -4190571628781896061
+    second: Freny swing_45
+  - first:
+      213: -3977553480082075273
+    second: Freny swing_60
+  - first:
+      213: -3565698800944404133
+    second: Freny swing_75
+  - first:
+      213: 2654093222095302504
+    second: Freny swing_90
+  externalObjects: {}
+  serializedVersion: 12
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 1
+  platformSettings:
+  - serializedVersion: 3
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Server
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Player idle 1_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 732
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.222222}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 92cc8bbcd9cc4cf892d5fcfb173e80b3
+      internalID: -849458939898236135
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player idle 1_1
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 732
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 39060b014d5440bfb7e757a90c6479e9
+      internalID: -3488881151244484338
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player idle_0
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 732
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1eabeb5617234e9eabc88a8caa78c4a7
+      internalID: -877404882636636528
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player walk 1_0
+      rect:
+        serializedVersion: 2
+        x: 288
+        y: 732
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.222222}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cac1995084f54cfdb2a6f9f60fdb727f
+      internalID: -2577069761284006029
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player walk 1_1
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 732
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cdc8e3f513e044d39ca21d72bdbd5b0b
+      internalID: 104309338839384094
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player walk 1_2
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 732
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2dc26ceef43b41a4a54743b5e917f51b
+      internalID: 3659126063958624049
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player walk 1_3
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 732
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.222222}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ad83fc6307124364a3077d44d22fdf1c
+      internalID: 3576026209285404047
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player walk 1_4
+      rect:
+        serializedVersion: 2
+        x: 672
+        y: 732
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c43888508f7f444a8d431ec1c078e700
+      internalID: 2090046048335320479
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player walk 1_5
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 732
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 858a9488876b4a33a7578a05fe04abd7
+      internalID: -2268974264248578215
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player jump 1_0
+      rect:
+        serializedVersion: 2
+        x: 864
+        y: 732
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a7ce3d7235174fafa47b4fe60495dadf
+      internalID: -2974579534497758499
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player jump 1_1
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 636
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1f09083f20a9465d98df6b0be959e587
+      internalID: 1402467533350898463
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player jump 1_2
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 636
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.777778}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fb1578315b904e60ad2567c2683c468c
+      internalID: 4409326339427215633
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player jump 1_3
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 636
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 1.555556}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5530e8a06fa14ce7b2a26923b49f762e
+      internalID: 1914313094316618166
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player jump 1_4
+      rect:
+        serializedVersion: 2
+        x: 288
+        y: 636
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 1.222222}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b2300585c9b74ca09beb0df37c2a292a
+      internalID: -3622506762785648618
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player jump 1_5
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 636
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.777778}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 53c4edbd541d4c4d829a5e164fac5f0a
+      internalID: -3132041174054569498
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player jump ranged_0
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 636
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.615385, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ca65dd24579742f79fcb34a7b15ca743
+      internalID: -3951716347743994171
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player jump ranged_1
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 636
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.615385, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d6ec7086c63e4848a3019ecac86ed2d3
+      internalID: 179107665922364935
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player jump ranged_2
+      rect:
+        serializedVersion: 2
+        x: 672
+        y: 636
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ec0e6d0c63304ac79d6730d8d8c98071
+      internalID: -4048041815805251873
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player jump ranged_3
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 636
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e7ce5ba02841497694b30002871603b7
+      internalID: 237874576506012898
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player jump ranged_4
+      rect:
+        serializedVersion: 2
+        x: 864
+        y: 636
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 86ebb773cff74f4a99ab1e92968c0b61
+      internalID: 801928424339356492
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player hit_1
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 540
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.615385, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: aad1978abe5043679cc03340dcbf2515
+      internalID: -399414497679686797
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player hit_3
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 540
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.615385, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 246de4c603ed469a8cee552054bfddb3
+      internalID: 2653968245796543123
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player crouched
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 540
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 1.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4ad78e9cc9bf4c04a0f9e2ebc85ea3b2
+      internalID: 279309562866302237
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player dash_0
+      rect:
+        serializedVersion: 2
+        x: 288
+        y: 540
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f6b3c62356d2408281c8b2a9dd1c3939
+      internalID: -2807912880310758753
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player dash_1
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 540
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.615385, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f30efc70c4c44e0a837aab54fcc2b6a8
+      internalID: 3641503700706214670
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player dash_2
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 540
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.615385, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 800ed938995e49ddbc223fc35c792ba2
+      internalID: 2833639432811804063
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player dash_3
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 540
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.615385, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 95b9b9b594164f7aad9596a8fc98531c
+      internalID: -1215782021406708774
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player dash_4
+      rect:
+        serializedVersion: 2
+        x: 672
+        y: 540
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.615385, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6a6b50a4c8504585b5ba4e6c94caf60e
+      internalID: -2179444090198023797
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player dash_5
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 540
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.615385, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 03db52bbdee149a4b6d2bc41ed8b617d
+      internalID: 2267207213686626179
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player kick_0
+      rect:
+        serializedVersion: 2
+        x: 864
+        y: 540
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.307692, y: 0.222222}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b670a4b2ef3b400490f841c220c2ecda
+      internalID: -3089889325949713601
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player kick_1
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 444
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.769231, y: 0.222222}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d07fa7e79ecf4ce9beeebf57bedb4c07
+      internalID: -4380773213235565825
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player kick_2
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 444
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.692308, y: 0.222222}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 889e35a91ee8437da6b5a836ac2aecaf
+      internalID: 1328485086735819907
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player kick_3
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 444
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.692308, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 573f21c4db0a4901ae555106da243555
+      internalID: 1579435358383684921
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player kick_4
+      rect:
+        serializedVersion: 2
+        x: 288
+        y: 444
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c76a8130bf484b939f1cab36f5d5358a
+      internalID: -2363663193124381490
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player ranged_0
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 444
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.615385, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: dcd9f15ea2cd480fa35653e0128a4bf8
+      internalID: -3605890871462802749
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player ranged_1
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 444
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.615385, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f127b3cb37fc4c2399a5d3b6207714ac
+      internalID: -662236986393554509
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player ranged_2
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 444
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 044c6a0d3b4a43bd8b5f2a152370aabf
+      internalID: -1239124953928482790
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player ranged_3
+      rect:
+        serializedVersion: 2
+        x: 672
+        y: 444
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 15045b413c834c59b47bcaf37da92022
+      internalID: -1122763804447577876
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player ranged_4
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 444
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ec38db8834e74b48897bb86a4582b35d
+      internalID: 4281929620648928474
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player melee long_0
+      rect:
+        serializedVersion: 2
+        x: 864
+        y: 444
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.461538, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d9f20fe6e1444cd9bd05529083255414
+      internalID: -1068511728262054714
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player melee long_1
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 348
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.461538, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0cb359a5395e42638d8d78fbd0b9a943
+      internalID: -1567739539645162411
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player melee long_2
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 348
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8a6161a4335c4f4fb9393451067ce637
+      internalID: 4493405202283243460
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player melee long_3
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 348
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 60dae99de4e04869847c59aba0792f26
+      internalID: 962216338332564946
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player melee long_4
+      rect:
+        serializedVersion: 2
+        x: 288
+        y: 348
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 565e7a173df045d49d71317f249b49b5
+      internalID: -231436435236975358
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player slash_0
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 348
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 634365a1c50e49038a1b4226887d88e7
+      internalID: 4303738893271446272
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player slash_1
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 348
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b0865b644afc4f2e80cb83e6611baa1e
+      internalID: -2977597260824020246
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player slash_2
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 348
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: de5af83f1ec6420489a7b9629e7c4902
+      internalID: -2245779470766871299
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player slash_3
+      rect:
+        serializedVersion: 2
+        x: 672
+        y: 348
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fe8d87bda56d4bedb3fa417393994d8b
+      internalID: 1789211121051631370
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Player slash_4
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 348
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9fa57bb40d9b43e687c3d4327c9d9559
+      internalID: 3075582424948521638
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny crouch_0
+      rect:
+        serializedVersion: 2
+        x: 864
+        y: 348
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 1.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9205c722d8e34103bb8b0168c807aced
+      internalID: 659119977802562497
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny crouch ranged_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 252
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 1.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8abb7993d18e459fbac3fc55b96c0baf
+      internalID: -1730478190608192112
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny crouch ranged_1
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 252
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 1.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6a999a5aa96f4973a7d67a71c32b5b1c
+      internalID: -2835978280718437370
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny crouch ranged_2
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 252
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 1.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 61a9f08cf2654a70afa88063ddcf7c8e
+      internalID: -1743313472418965487
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny air ranged_0
+      rect:
+        serializedVersion: 2
+        x: 288
+        y: 252
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.615385, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 848bcde6f30f43dc815f554f649dae2d
+      internalID: 2430256272022822212
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny air ranged_1
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 252
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.615385, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9766bcb011104cb392e9526e6458bc51
+      internalID: -1097225313257831204
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny air ranged_2
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 252
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4599a41fec1b40389517321dfdba99d7
+      internalID: -245174128963985879
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny air ranged_3
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 252
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 524075d0338b4758bf28bbad6687fa3a
+      internalID: -3855203588394380819
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny air ranged_4
+      rect:
+        serializedVersion: 2
+        x: 672
+        y: 252
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 332a7bf721bb4519b322a21805042a4d
+      internalID: 1221521704643276254
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny climb_0
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 252
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.615385, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a52cc547d3fe425fa11b25112d49ee42
+      internalID: -2920647339288353012
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny climb_1
+      rect:
+        serializedVersion: 2
+        x: 864
+        y: 252
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0115496f349140a5bd13723881064716
+      internalID: -782133375592519302
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny swing_-60
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 156
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8a0470e6c7764b0b8716c173a9c49a26
+      internalID: 290397334282582424
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny swing_-45
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 156
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 68d3f07e14694fef88bb4980024775c8
+      internalID: 2466063019111961457
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny swing_-30
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 156
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a57a38d94964441496dce1b1eea9c19b
+      internalID: -1702140081166850267
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny swing_-15
+      rect:
+        serializedVersion: 2
+        x: 288
+        y: 156
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2b9594d774d946b5acff8d13738f43da
+      internalID: 938618460261105220
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny swing_0
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 156
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2faf7dcf573b433d9bf02c08590d4498
+      internalID: -4490795317400667228
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny swing_15
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 156
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8825a65c1cb140dbac4b44a58aead21b
+      internalID: -2824672726547265180
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny swing_30
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 156
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b6897ef8abbe41f9a8997d78af18ec37
+      internalID: 4252634043082521662
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny swing_45
+      rect:
+        serializedVersion: 2
+        x: 672
+        y: 156
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5ad8f66239a346f0ba495bcdb5084966
+      internalID: -4190571628781896061
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny swing_60
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 156
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3a2687eb4cd8411d85b735c4efacff66
+      internalID: -3977553480082075273
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny swing_75
+      rect:
+        serializedVersion: 2
+        x: 864
+        y: 156
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 501cb517b7384ac2bafb40faaa69619a
+      internalID: -3565698800944404133
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny swing_90
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 60
+        width: 52
+        height: 36
+      alignment: 9
+      pivot: {x: 0.538462, y: 0.333333}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9a8924e9ffc749f5b3d6c1fc7e77108d
+      internalID: 2654093222095302504
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    nameFileIdTable:
+      Player idle 1_0: -849458939898236135
+      Player idle 1_1: -3488881151244484338
+      Player idle_0: -877404882636636528
+      Player walk 1_0: -2577069761284006029
+      Player walk 1_1: 104309338839384094
+      Player walk 1_2: 3659126063958624049
+      Player walk 1_3: 3576026209285404047
+      Player walk 1_4: 2090046048335320479
+      Player walk 1_5: -2268974264248578215
+      Player jump 1_0: -2974579534497758499
+      Player jump 1_1: 1402467533350898463
+      Player jump 1_2: 4409326339427215633
+      Player jump 1_3: 1914313094316618166
+      Player jump 1_4: -3622506762785648618
+      Player jump 1_5: -3132041174054569498
+      Player jump ranged_0: -3951716347743994171
+      Player jump ranged_1: 179107665922364935
+      Player jump ranged_2: -4048041815805251873
+      Player jump ranged_3: 237874576506012898
+      Player jump ranged_4: 801928424339356492
+      Player hit_1: -399414497679686797
+      Player hit_3: 2653968245796543123
+      Player crouched: 279309562866302237
+      Player dash_0: -2807912880310758753
+      Player dash_1: 3641503700706214670
+      Player dash_2: 2833639432811804063
+      Player dash_3: -1215782021406708774
+      Player dash_4: -2179444090198023797
+      Player dash_5: 2267207213686626179
+      Player kick_0: -3089889325949713601
+      Player kick_1: -4380773213235565825
+      Player kick_2: 1328485086735819907
+      Player kick_3: 1579435358383684921
+      Player kick_4: -2363663193124381490
+      Player ranged_0: -3605890871462802749
+      Player ranged_1: -662236986393554509
+      Player ranged_2: -1239124953928482790
+      Player ranged_3: -1122763804447577876
+      Player ranged_4: 4281929620648928474
+      Player melee long_0: -1068511728262054714
+      Player melee long_1: -1567739539645162411
+      Player melee long_2: 4493405202283243460
+      Player melee long_3: 962216338332564946
+      Player melee long_4: -231436435236975358
+      Player slash_0: 4303738893271446272
+      Player slash_1: -2977597260824020246
+      Player slash_2: -2245779470766871299
+      Player slash_3: 1789211121051631370
+      Player slash_4: 3075582424948521638
+      Freny crouch_0: 659119977802562497
+      Freny crouch ranged_0: -1730478190608192112
+      Freny crouch ranged_1: -2835978280718437370
+      Freny crouch ranged_2: -1743313472418965487
+      Freny air ranged_0: 2430256272022822212
+      Freny air ranged_1: -1097225313257831204
+      Freny air ranged_2: -245174128963985879
+      Freny air ranged_3: -3855203588394380819
+      Freny air ranged_4: 1221521704643276254
+      Freny climb_0: -2920647339288353012
+      Freny climb_1: -782133375592519302
+      Freny swing_-60: 290397334282582424
+      Freny swing_-45: 2466063019111961457
+      Freny swing_-30: -1702140081166850267
+      Freny swing_-15: 938618460261105220
+      Freny swing_0: -4490795317400667228
+      Freny swing_15: -2824672726547265180
+      Freny swing_30: 4252634043082521662
+      Freny swing_45: -4190571628781896061
+      Freny swing_60: -3977553480082075273
+      Freny swing_75: -3565698800944404133
+      Freny swing_90: 2654093222095302504
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

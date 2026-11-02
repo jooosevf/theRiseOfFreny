@@ -98,6 +98,8 @@ public class Cyclops : Enemy {
     // from 150k points two come at once (José, 2026-10-29), each with its own bar
     public static readonly System.Collections.Generic.List<Cyclops> Alive = new System.Collections.Generic.List<Cyclops>();
     public static Cyclops Current => Alive.Count > 0 ? Alive[0] : null;
+    // one still fighting (a fallen one stays in Alive for its last second)
+    public static bool AnyFighting => Alive.Exists(c => c != null && !c.IsDead);
 
     public override void Init() {
         health = Life;

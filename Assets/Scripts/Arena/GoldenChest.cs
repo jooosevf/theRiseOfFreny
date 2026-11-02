@@ -216,7 +216,7 @@ public class GoldenChest : MonoBehaviour, IDamageable {
         }
         player.CollectPotion(player.MaxHealth);   // false at full life
         player.GiveArmor();
-        player.StartRage();
+        player.GiftRage();
         player.AddBullets(999);
         player.AddShells(999);
         player.AddGrenades(999);

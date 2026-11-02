@@ -286,6 +286,7 @@ public static class FrenyProgress {
     }
 
     public static void MigrateShop() {
+        FrenyLook.MigrateBerserker();
         int coins = 0;
         bool changed = false;
         foreach (FrenyUpgrade upgrade in Enum.GetValues(typeof(FrenyUpgrade))) {
