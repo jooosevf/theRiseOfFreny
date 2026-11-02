@@ -119,6 +119,14 @@ public static class GuideScreen {
             "+3 para a escopeta. Só caem se você já tem a escopeta.");
         Entry(parent, art ? art.diamond : null, "Diamante",
             "Vale " + ItemPickup.DiamondValue + " moedas.");
+        Entry(parent, ArenaPowerUps.Icon(ItemPickup.Kind.InstaKill), "Insta-kill",
+            "Raro. Por " + ArenaPowerUps.InstaKillSeconds + " s todos os inimigos ficam com 1 coração, inclusive os que chegarem: " +
+            "qualquer golpe mata, até no escudo do Escudeiro. Não pega no Ciclope, e não cai enquanto ele está vivo.");
+        Entry(parent, ArenaPowerUps.Icon(ItemPickup.Kind.Nuke), "Nuke",
+            "Raro. Mata na hora todos os inimigos da tela, menos o Ciclope, e valem pontos e moedas. " +
+            "Nada surge por " + ArenaPowerUps.NukeSpawnPause + " s, e os portais abertos fecham vazios.");
+        Entry(parent, ArenaPowerUps.Icon(ItemPickup.Kind.Magnet), "Ímã",
+            "Raro. Por " + ArenaPowerUps.MagnetSeconds + " s moedas, diamantes e os itens de que o Freny precisa voam até ele, de qualquer lugar da tela.");
         Entry(parent, art ? art.coin : null, "Moedas",
             "Caem de todo inimigo e ficam salvas. Compram melhorias no Armeiro (Jogar > Armeiro, ou direto da pausa no meio da partida).");
     }
@@ -149,6 +157,9 @@ public static class GuideScreen {
             "E tem " + Mathf.RoundToInt(FrenyLook.ChestLookChance * 100f) + "% de chance de trazer um visual que só ele dá " +
             "(Elmo do Ciclope ou Capa dourada), um que você ainda não tem. Ao abrir, escolha 1 de 3 bênçãos. " +
             "Cada chave traz um baú novo, então dá para ter vários na mesma corrida.");
+        Entry(parent, ArenaPowerUps.Icon(ItemPickup.Kind.Nuke), "Insta-kill, Nuke e Ímã",
+            "Inimigos que o Freny mata na Arena têm cerca de " + (ArenaPowerUps.DropChance * 100f).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',') +
+            "% de chance de deixar um deles (o Ímã é o mais comum, o Nuke o mais raro). Só um por vez no chão; os mortos pelo Nuke não deixam nenhum.");
         Entry(parent, MageStaff.Icon, "Feiticeiros (Arena)",
             "Cada feiticeiro que morre tem " + Mathf.RoundToInt(MageStaff.DropChance * 100f) + "% de chance de deixar o Cajado do Mago.");
     }
