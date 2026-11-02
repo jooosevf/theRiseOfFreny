@@ -41,7 +41,35 @@ public static class RunModifiers {
 
     // ---- enemies ----
 
-    public static float EnemySpeedMultiplier => WeeklyMutators.Active(Mutator.FastEnemies) ? 1.3f : 1f;
+    public static float EnemySpeedMultiplier =>
+        (WeeklyMutators.Active(Mutator.FastEnemies) ? 1.3f : 1f) * (1f + SlainSpeed * Mathf.Min(CyclopsSlain, SlainSpeedCap));
+
+    // José, 2026-11-02: every Ciclope killed in the run leaves the others tougher, on the curve of
+    // Call of Duty Zombies' rounds: +25% each for the first 4 (2x), then +10% compounding, up to 3x so
+    // a combo still fits its 10 s. A little more speed too. Kill values, the combo and the spawns
+    // stay, so the ranking API's checks hold
+    public const float MaxHealthMultiplier = 3f;
+    private const float SlainSpeed = 0.03f;
+    private const int SlainSpeedCap = 5;         // +15%
+    private const int SmallFryMaxHealth = 2;     // what had 1 of life: a sword combo must not stall
+    public static int CyclopsSlain { get; set; }
+    private static readonly HashSet<Enemy> toughened = new HashSet<Enemy>();
+
+    public static float HealthMultiplier(int slain) {
+        float multiplier = slain <= 4 ? 1f + 0.25f * slain : 2f * Mathf.Pow(1.1f, slain - 4);
+        return Mathf.Min(multiplier, MaxHealthMultiplier);
+    }
+
+    private static void Toughen(Enemy enemy) {
+        if (CyclopsSlain <= 0 || enemy == null || enemy is Cyclops) {
+            return;
+        }
+        toughened.RemoveWhere(e => e == null);
+        if (toughened.Add(enemy)) {
+            int health = Mathf.CeilToInt(enemy.Health * HealthMultiplier(CyclopsSlain));
+            enemy.Health = enemy.Health <= 1 ? Mathf.Min(health, SmallFryMaxHealth) : health;
+        }
+    }
 
     private const float GiantScale = 1.3f;
     private const float GiantHealth = 1.5f;
@@ -51,6 +79,7 @@ public static class RunModifiers {
     // the sprite grows (the root's scale is the facing flip, reset all the time), lifted so the feet
     // stay on the floor; the bosses and the one-hit enemies are left as they are
     public static void OnEnemyInit(Enemy enemy) {
+        Toughen(enemy);
         if (!WeeklyMutators.Active(Mutator.Giants) || enemy == null || enemy is Cyclops || enemy.Health <= 1) {
             return;
         }

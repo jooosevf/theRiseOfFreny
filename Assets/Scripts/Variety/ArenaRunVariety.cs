@@ -5,10 +5,9 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 // One arena run's blessing and mutator (ArenaVariety adds it to Freny):
-//  - at the start, the game waits while the player picks any of the ten blessings:
-//    cards, clicked, touched, or picked with the arrows / d-pad and Enter / A, or 1-9 and 0.
-//    A run the autopilot starts gets Blessings.AutopilotChoice at once (nobody is there to pick:
-//    José, 2026-11-01, the idle arena keeps going on its own);
+//  - when a golden chest opens (OfferBlessing), the game waits while the player picks one of three
+//    blessings: cards, clicked, touched, or picked with the arrows / d-pad and Enter / A, or 1-2-3.
+//    The autopilot picks by Blessings.AutopilotOrder, without stopping the game;
 //  - the blessing's effects that are not plain stats (RunModifiers covers those): the potion that
 //    comes back, the armor every 2 minutes, the heart every 20 kills, the coin magnet, the dash;
 //  - the mutator's start (Arsenal, Pés de vento);
@@ -35,6 +34,8 @@ public class ArenaRunVariety : MonoBehaviour {
     public static bool PickerOpen { get; private set; }   // CombatHud draws over canvases: it waits
     private bool picking;
     private float announcedAt = -100f;
+    private float blessingAt = -100f;
+    private Blessing lastTaken;
 
     private float potionBackAt = -1f;
     private float nextArmorAt;
@@ -52,16 +53,27 @@ public class ArenaRunVariety : MonoBehaviour {
         gameManager = FindAnyObjectByType<GameManager>();
         Enemy.Killed += OnKilled;
         GameCursor.ShowWhile(this, () => picking);
-        offered = System.Array.ConvertAll(Blessings.All, info => info.id);
-        if (input == null || !input.AutoEnabled) {
-            OpenPicker();   // at once, before the first frame of play
-        }
         yield return null;  // the Player's Start (loadout, the Armeiro's helmet) has run
         yield return null;
         StartMutator();
-        if (!picking && !Blessings.Current.HasValue) {
-            Choose(Blessings.AutopilotChoice);
+        announcedAt = Time.time;   // this week's rule
+    }
+
+    // the golden chest was opened: one more blessing for this run, if any is left
+    public void OfferBlessing() {
+        offered = Blessings.Draw();
+        if (offered.Length == 0 || player == null || player.IsDead) {
+            return;
         }
+        if (input != null && input.AutoEnabled) {
+            foreach (Blessing blessing in Blessings.AutopilotOrder) {
+                if (System.Array.IndexOf(offered, blessing) >= 0) {
+                    Choose(blessing);
+                    return;
+                }
+            }
+        }
+        OpenPicker();
     }
 
     private void OnDestroy() {
@@ -93,7 +105,8 @@ public class ArenaRunVariety : MonoBehaviour {
 
     private void Choose(Blessing blessing) {
         Blessings.Choose(blessing);
-        announcedAt = Time.time;
+        blessingAt = Time.time;
+        lastTaken = blessing;
         if (player == null) {
             return;
         }
@@ -139,7 +152,7 @@ public class ArenaRunVariety : MonoBehaviour {
             KeepPaused();
             return;
         }
-        if (player == null || player.IsDead || !Blessings.Current.HasValue) {
+        if (player == null || player.IsDead || Blessings.Held.Count == 0) {
             return;
         }
         if (Blessings.Has(Blessing.FullFlask) && gameManager != null) {
@@ -215,43 +228,35 @@ public class ArenaRunVariety : MonoBehaviour {
         Image panel = MenuKit.MakeImage("Panel", pickerCanvas.transform, MenuKit.PanelColor);
         RectTransform rect = panel.rectTransform;
         rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.sizeDelta = new Vector2(1180f, 560f);
-        rect.anchoredPosition = new Vector2(0f, -20f);   // under the score
+        rect.sizeDelta = new Vector2(760f, 400f);
         Outline edge = panel.gameObject.AddComponent<Outline>();
         edge.effectColor = MenuKit.ButtonColor;
         edge.effectDistance = new Vector2(3f, -3f);
 
         Text title = MenuKit.MakeText(panel.transform, "Escolha uma bênção", MenuKit.TitleSize, MenuKit.TitleColor, TextAnchor.MiddleCenter);
-        Place(title.rectTransform, new Vector2(0f, 250f), new Vector2(1000f, 50f));
-        Mutator mutator = WeeklyMutators.ThisRun ?? WeeklyMutators.ThisWeek;
-        Text sub = MenuKit.MakeText(panel.transform,
-            "Vale a corrida toda. " + WeeklyMutators.Title(mutator) + ": " + WeeklyMutators.Of(mutator).what,
+        Place(title.rectTransform, new Vector2(0f, 160f), new Vector2(720f, 50f));
+        Text sub = MenuKit.MakeText(panel.transform, "Vale até o fim da corrida e soma com as outras.",
             MenuKit.SmallTextSize, MenuKit.DimTextColor, TextAnchor.MiddleCenter);
-        Place(sub.rectTransform, new Vector2(0f, 205f), new Vector2(1100f, 44f));
+        Place(sub.rectTransform, new Vector2(0f, 122f), new Vector2(720f, 24f));
 
         cards = new Button[offered.Length];
         cardEdges.Clear();
         for (int i = 0; i < offered.Length; i++) {
-            int column = i % CardColumns, row = i / CardColumns;
-            cards[i] = Card(panel.transform, i, offered[i], new Vector2((column - (CardColumns - 1) / 2f) * 228f, 76f - row * 200f));
+            cards[i] = Card(panel.transform, i, offered[i], new Vector2((i - (offered.Length - 1) / 2f) * 228f, -10f));
         }
         for (int i = 0; i < cards.Length; i++) {
             Navigation nav = new Navigation { mode = Navigation.Mode.Explicit };
             nav.selectOnLeft = cards[(i - 1 + cards.Length) % cards.Length];
             nav.selectOnRight = cards[(i + 1) % cards.Length];
-            nav.selectOnUp = cards[(i - CardColumns + cards.Length) % cards.Length];
-            nav.selectOnDown = cards[(i + CardColumns) % cards.Length];
             cards[i].navigation = nav;
         }
-        Text hint = MenuKit.MakeText(panel.transform, "Clique, toque ou use as setas e Enter (ou as teclas de 1 a 9 e 0)",
+        Text hint = MenuKit.MakeText(panel.transform, "Clique, toque ou use as setas e Enter (ou 1, 2, 3)",
             MenuKit.SmallTextSize - 2, MenuKit.DimTextColor, TextAnchor.MiddleCenter);
-        Place(hint.rectTransform, new Vector2(0f, -250f), new Vector2(1000f, 24f));
+        Place(hint.rectTransform, new Vector2(0f, -150f), new Vector2(720f, 24f));
         if (EventSystem.current != null) {
             EventSystem.current.SetSelectedGameObject(cards[0].gameObject);
         }
     }
-
-    private const int CardColumns = 5;
 
     private Button Card(Transform parent, int index, Blessing blessing, Vector2 position) {
         Blessings.Info info = Blessings.Of(blessing);
@@ -284,7 +289,7 @@ public class ArenaRunVariety : MonoBehaviour {
         Text what = MenuKit.MakeText(card.transform, info.what, MenuKit.SmallTextSize, MenuKit.TextColor, TextAnchor.UpperCenter);
         Place(what.rectTransform, new Vector2(0f, -46f), new Vector2(204f, 92f));
 
-        Text key = MenuKit.MakeText(card.transform, ((index + 1) % 10).ToString(), MenuKit.SmallTextSize, MenuKit.DimTextColor, TextAnchor.UpperLeft);
+        Text key = MenuKit.MakeText(card.transform, (index + 1).ToString(), MenuKit.SmallTextSize, MenuKit.DimTextColor, TextAnchor.UpperLeft);
         Place(key.rectTransform, new Vector2(-92f, 78f), new Vector2(30f, 24f));
         return card;
     }
@@ -308,8 +313,7 @@ public class ArenaRunVariety : MonoBehaviour {
             return;
         }
         for (int i = 0; i < cards.Length; i++) {
-            // 1..9, then 0 for the tenth
-            if (Input.GetKeyDown(i < 9 ? KeyCode.Alpha1 + i : KeyCode.Alpha0) || Input.GetKeyDown(i < 9 ? KeyCode.Keypad1 + i : KeyCode.Keypad0)) {
+            if (Input.GetKeyDown(KeyCode.Alpha1 + i) || Input.GetKeyDown(KeyCode.Keypad1 + i)) {
                 Pick(i);
                 return;
             }
@@ -345,6 +349,8 @@ public class ArenaRunVariety : MonoBehaviour {
     private void ClosePicker() {
         picking = false;
         PickerOpen = false;
+        cards = null;   // gone with the canvas: the next chest's picker must not touch them
+        cardEdges.Clear();
         if (pickerCanvas != null) {
             Destroy(pickerCanvas.gameObject);
         }
@@ -357,49 +363,53 @@ public class ArenaRunVariety : MonoBehaviour {
     // ==== the badge and the announcement ======================================================
 
     private void OnGUI() {
-        if (picking || GameMenus.Paused || player == null || !Blessings.Current.HasValue) {
+        Mutator? mutator = WeeklyMutators.ThisRun;
+        if (picking || GameMenus.Paused || player == null || (Blessings.Held.Count == 0 && !mutator.HasValue)) {
             return;
         }
         float scale = Screen.width / 1920f;
         if (textStyle == null) {
             textStyle = new GUIStyle(GUI.skin.label) { font = MenuKit.Font, wordWrap = false, clipping = TextClipping.Overflow };
         }
-        Blessing blessing = Blessings.Current.Value;
-        Mutator? mutator = WeeklyMutators.ThisRun;
 
         if (!player.IsDead) {
-            // under the weapons row of CombatHud, at the portrait's left edge
-            float x = 74f * scale, y = 300f * scale, box = 46f * scale;
-            GUI.color = new Color(0.04f, 0.02f, 0.08f, 0.7f);
-            GUI.DrawTexture(new Rect(x, y, box, box), Texture2D.whiteTexture);
-            GUI.color = Color.white;
-            Sprite icon = Blessings.Icon(blessing);
-            if (icon != null) {
-                DrawSprite(new Rect(x + 4f * scale, y + 4f * scale, box - 8f * scale, box - 8f * scale), icon);
+            // under the weapons row of CombatHud, at the portrait's left edge: every blessing he holds
+            float x = 74f * scale, y = 300f * scale, box = 40f * scale, gap = 4f * scale;
+            for (int i = 0; i < Blessings.Held.Count; i++) {
+                Rect slot = new Rect(x + i * (box + gap), y, box, box);
+                GUI.color = new Color(0.04f, 0.02f, 0.08f, 0.7f);
+                GUI.DrawTexture(slot, Texture2D.whiteTexture);
+                GUI.color = Color.white;
+                Sprite icon = Blessings.Icon(Blessings.Held[i]);
+                if (icon != null) {
+                    DrawSprite(new Rect(slot.x + 4f * scale, slot.y + 4f * scale, box - 8f * scale, box - 8f * scale), icon);
+                }
             }
-            textStyle.fontSize = Mathf.Max(7, Mathf.RoundToInt(12f * scale));
-            Label(new Rect(x + box + 8f * scale, y + 2f * scale, 400f * scale, 20f * scale), Blessings.Of(blessing).name, MenuKit.TitleColor);
             if (mutator.HasValue) {
                 textStyle.fontSize = Mathf.Max(6, Mathf.RoundToInt(10f * scale));
-                Label(new Rect(x + box + 8f * scale, y + 24f * scale, 400f * scale, 18f * scale), WeeklyMutators.Of(mutator.Value).name, MenuKit.DimTextColor);
+                float below = Blessings.Held.Count > 0 ? box + gap : 0f;
+                Label(new Rect(x, y + below, 400f * scale, 18f * scale), WeeklyMutators.Of(mutator.Value).name, MenuKit.DimTextColor);
             }
         }
 
-        float since = Time.time - announcedAt;
-        if (since >= 0f && since < AnnounceSeconds) {
-            float alpha = Mathf.Clamp01((AnnounceSeconds - since) / 0.8f);
-            TextAnchor old = textStyle.alignment;
-            textStyle.alignment = TextAnchor.MiddleCenter;
-            float y = Screen.height * 0.24f;
+        TextAnchor old = textStyle.alignment;
+        textStyle.alignment = TextAnchor.MiddleCenter;
+        float line = Screen.height * 0.24f;
+        float sinceBlessing = Time.time - blessingAt;
+        if (sinceBlessing >= 0f && sinceBlessing < AnnounceSeconds) {
             textStyle.fontSize = Mathf.Max(9, Mathf.RoundToInt(22f * scale));
-            Label(new Rect(0f, y, Screen.width, 40f * scale), "Bênção: " + Blessings.Of(blessing).name, Fade(MenuKit.TitleColor, alpha));
-            if (mutator.HasValue) {
-                Label(new Rect(0f, y + 44f * scale, Screen.width, 36f * scale), WeeklyMutators.Title(mutator.Value), Fade(new Color(1f, 0.85f, 0.29f), alpha));
-                textStyle.fontSize = Mathf.Max(7, Mathf.RoundToInt(13f * scale));
-                Label(new Rect(0f, y + 84f * scale, Screen.width, 28f * scale), WeeklyMutators.Of(mutator.Value).what, Fade(Color.white, alpha));
-            }
-            textStyle.alignment = old;
+            Label(new Rect(0f, line, Screen.width, 40f * scale), "Bênção: " + Blessings.Of(lastTaken).name,
+                Fade(MenuKit.TitleColor, Mathf.Clamp01((AnnounceSeconds - sinceBlessing) / 0.8f)));
         }
+        float since = Time.time - announcedAt;
+        if (mutator.HasValue && since >= 0f && since < AnnounceSeconds) {
+            float alpha = Mathf.Clamp01((AnnounceSeconds - since) / 0.8f);
+            textStyle.fontSize = Mathf.Max(9, Mathf.RoundToInt(22f * scale));
+            Label(new Rect(0f, line + 44f * scale, Screen.width, 36f * scale), WeeklyMutators.Title(mutator.Value), Fade(new Color(1f, 0.85f, 0.3f), alpha));
+            textStyle.fontSize = Mathf.Max(7, Mathf.RoundToInt(13f * scale));
+            Label(new Rect(0f, line + 84f * scale, Screen.width, 28f * scale), WeeklyMutators.Of(mutator.Value).what, Fade(Color.white, alpha));
+        }
+        textStyle.alignment = old;
     }
 
     private static Color Fade(Color c, float alpha) => new Color(c.r, c.g, c.b, c.a * alpha);
