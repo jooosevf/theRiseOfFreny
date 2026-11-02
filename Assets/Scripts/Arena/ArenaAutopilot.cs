@@ -149,6 +149,12 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         if (!cooking) {
             return;
         }
+        if (!Features.GrenadeFuse) {
+            cooking = false;   // no fuse to burn: thrown at once
+            frame.grenadePressed = true;
+            frame.grenadeCharge = cookCharge;
+            return;
+        }
         if (player.ChargingGrenade) {
             cookSeen = true;
         } else if (cookSeen || Time.time > cookReleaseAt + 0.5f) {

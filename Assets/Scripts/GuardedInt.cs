@@ -48,7 +48,6 @@ public static class AntiCheat {
     private static uint _state = (uint)System.Environment.TickCount | 1u;
 
     public static IEnumerable<string> Flags => _flags;
-    public static bool Tampered => _flags.Count > 0;
 
     public static void Flag(string kind) {
         if (_flags.Add(kind)) {

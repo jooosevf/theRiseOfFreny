@@ -138,7 +138,15 @@ public class ArenaPowerUps : MonoBehaviour {
         } else {
             return;
         }
+        if (!Switched(kind)) {
+            return;
+        }
         ItemPickup.Spawn(kind, 1, enemy.Center, new Vector2(Random.Range(-1.2f, 1.2f), Random.Range(4f, 5.5f)));
+    }
+
+    // one switched off (Features) just doesn't drop: the others keep their chances
+    private static bool Switched(ItemPickup.Kind kind) {
+        return kind == ItemPickup.Kind.Magnet ? Features.Magnet : kind == ItemPickup.Kind.Nuke ? Features.Nuke : Features.InstaKill;
     }
 
     private static bool OneOnTheFloor() {

@@ -44,8 +44,6 @@ public class ArenaRunVariety : MonoBehaviour {
 
     private GUIStyle textStyle;
 
-    public bool Picking => picking;
-
     private IEnumerator Start() {
         player = GetComponent<Player>();
         input = GetComponent<FrenyInput>();
@@ -61,6 +59,9 @@ public class ArenaRunVariety : MonoBehaviour {
 
     // the golden chest was opened: one more blessing for this run, if any is left
     public void OfferBlessing() {
+        if (!Features.Blessings) {
+            return;
+        }
         offered = Blessings.Draw();
         if (offered.Length == 0 || player == null || player.IsDead) {
             return;

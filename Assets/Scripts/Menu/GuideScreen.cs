@@ -24,9 +24,18 @@ public static class GuideScreen {
         column.childForceExpandWidth = true;
         column.childForceExpandHeight = false;
 
-        page.Choice("Assunto", Topics, lastTopic, i => {
-            lastTopic = i;
-            Fill(entries, i);
+        List<int> shown = new List<int>();
+        List<string> names = new List<string>();
+        for (int i = 0; i < Topics.Length; i++) {
+            if (TopicOn(i)) {
+                shown.Add(i);
+                names.Add(i == 1 && !Features.Fury ? "Defesa" : Topics[i]);
+            }
+        }
+        lastTopic = shown[Mathf.Max(0, shown.IndexOf(lastTopic))];
+        page.Choice("Assunto", names.ToArray(), shown.IndexOf(lastTopic), i => {
+            lastTopic = shown[i];
+            Fill(entries, lastTopic);
         });
         // the picker is created after the entries' container but goes above it
         entries.SetAsLastSibling();
@@ -35,6 +44,17 @@ public static class GuideScreen {
         page.Space(6f);
         page.Button("Voltar", stack.Back);
         return page;
+    }
+
+    // a mechanic switched off (Features) has no page here
+    private static bool TopicOn(int topic) {
+        switch (topic) {
+            case 7: return Features.AcidPit;
+            case 9: return Features.Blessings;
+            case 10: return Features.WeeklyMutators;
+            case 11: return Features.Rebirth || Features.Looks;
+            default: return true;
+        }
     }
 
     private static void Fill(RectTransform entries, int topic) {
@@ -74,21 +94,23 @@ public static class GuideScreen {
             "e inimigos da Arena. Até 30 cartuchos (40 ou 50 com o Armeiro).");
         Entry(parent, art ? art.grenade : null, "Granada",
             "Aperte para lançar em arco, sempre à mesma distância (uns 6 m); sem espera entre uma e outra. " +
+            (Features.GrenadeFuse ?
             "Ela quica, rola e só explode 5 s depois de puxar o pino, onde estiver (os segundos aparecem em cima dela). " +
             "Segurar o botão já puxa o pino: o pavio queima na mão e, ao soltar, ela vai com o tempo que sobrou; " +
-            "segurou 5 s, explode na mão. 3 de dano em todos num raio " +
+            "segurou 5 s, explode na mão. " : "Ela explode onde bater. ") +
+            "3 de dano em todos num raio " +
             "grande (mata quase todos; o Golem Vermelho aguenta uma) e quebra baús e vasos. Cuidado: perto demais, o Freny " +
             "também leva 2 de dano e é arremessado. Até 6 (8 ou 10 com o Armeiro).");
-        Entry(parent, NetThrower.Icon, "Rede",
+        if (Features.Net) Entry(parent, NetThrower.Icon, "Rede",
             "Comprada no Armeiro: " + NetThrower.NetsPerStage + " por fase (até " + NetThrower.MaxNets + "), botão Rede. Voa em arco e abre no " +
             "primeiro inimigo ou no chão: todos embaixo dela ficam presos " + NetTrap.Seconds + " s, parados e sem atacar (o morcego " +
             "fica pendurado no ar). O Ciclope é grande demais: só fica mais lento por " + NetTrap.CyclopsSeconds + " s. Não tira vida.");
-        Entry(parent, MageStaff.Icon, "Cajado do Mago",
+        if (Features.MageStaff) Entry(parent, MageStaff.Icon, "Cajado do Mago",
             "Às vezes (" + Mathf.RoundToInt(MageStaff.DropChance * 100f) + "%) um feiticeiro morto na Arena deixa o cajado. Com ele, por " +
             MageStaff.Duration + " s, o botão Atirar lança bolas de feitiço sem gastar munição: " + MageStaff.Damage +
             " de dano, ferem os inimigos (até o Ciclope) e nunca o Freny. O cajado aparece nas costas dele e no HUD, " +
             "e pisca nos últimos segundos. Pegar outro recomeça o tempo.");
-        Entry(parent, art ? art.revolver : null, "Melhorias do Armeiro",
+        if (Features.WeaponBuffs) Entry(parent, art ? art.revolver : null, "Melhorias do Armeiro",
             "O Armeiro não vende armas: vende melhorias para elas (dano, munição, recarga, crítico). Elas valem " +
             "para sempre e para a arma que cair do chão também (veja Armeiro).");
     }
@@ -97,7 +119,7 @@ public static class GuideScreen {
         Entry(parent, art ? art.heart : null, "Vida",
             "4 corações. Golpe comum tira 1; Golem e a bola do Feiticeiro tiram 2. Depois de " +
             "apanhar ele pisca 1,2 s sem levar dano. Queda alta também tira vida.");
-        Entry(parent, art ? art.rageHelmet : null, "Fúria",
+        if (Features.Fury) Entry(parent, art ? art.rageHelmet : null, "Fúria",
             "A barra Fúria enche lutando: matar, acertar a espada e apanhar. Parada 2 s, ela " +
             "esvazia. Cheia, ela espera: aperte F (troque em Configurações > Controles) na hora certa para " +
             "20 s de FÚRIA (25 ou 30 com o Armeiro): a espada tira 2 de dano. O piloto automático ativa sozinho com um inimigo perto.");
@@ -119,14 +141,14 @@ public static class GuideScreen {
             "+3 para a escopeta. Só caem se você já tem a escopeta.");
         Entry(parent, art ? art.diamond : null, "Diamante",
             "Vale " + ItemPickup.DiamondValue + " moedas.");
-        Entry(parent, ArenaPowerUps.Icon(ItemPickup.Kind.InstaKill), "Insta-kill",
+        if (Features.InstaKill) Entry(parent, ArenaPowerUps.Icon(ItemPickup.Kind.InstaKill), "Insta-kill",
             "Raro. Por " + ArenaPowerUps.InstaKillSeconds + " s todos os inimigos ficam com 1 coração, inclusive os que chegarem: " +
             "qualquer golpe mata, até no escudo do Escudeiro. Não pega no Ciclope, e não cai enquanto ele está vivo.");
-        Entry(parent, ArenaPowerUps.Icon(ItemPickup.Kind.Nuke), "Nuke",
+        if (Features.Nuke) Entry(parent, ArenaPowerUps.Icon(ItemPickup.Kind.Nuke), "Nuke",
             "Raro. Mata na hora todos os inimigos da tela, menos o Ciclope. Dá moedas e, no máximo, " +
             ArenaPowerUps.NukeMaxPoints.ToString("N0", System.Globalization.CultureInfo.InvariantCulture).Replace(",", ".") + " pontos. " +
             "Nada surge por " + ArenaPowerUps.NukeSpawnPause + " s, e os portais abertos fecham vazios.");
-        Entry(parent, ArenaPowerUps.Icon(ItemPickup.Kind.Magnet), "Ímã",
+        if (Features.Magnet) Entry(parent, ArenaPowerUps.Icon(ItemPickup.Kind.Magnet), "Ímã",
             "Raro. Por " + ArenaPowerUps.MagnetSeconds + " s moedas, diamantes e os itens de que o Freny precisa voam até ele, de qualquer lugar da tela.");
         Entry(parent, art ? art.coin : null, "Moedas",
             "Caem de todo inimigo e ficam salvas. Compram melhorias no Armeiro (Jogar > Armeiro, ou direto da pausa no meio da partida).");
@@ -147,26 +169,38 @@ public static class GuideScreen {
             "Quebram com golpe, tiro ou granada. Na Arena surge um vaso novo a cada 12 s (até 3), e os " +
             "do cenário voltam 90 s depois de quebrados. Pode ter diamante 12%, poção 18%, balas 10%, " +
             "granada 8% ou armadura 3%.");
-        Entry(parent, BossKey.Icon, "Chave do Ciclope",
+        if (Features.GoldenChest) Entry(parent, BossKey.Icon, "Chave do Ciclope",
             "O primeiro Ciclope da corrida sempre deixa a chave; os seguintes, " + Mathf.RoundToInt(ArenaBossLoot.KeyChance * 100f) + "% das vezes. " +
             "Ela brilha no chão e não some: encoste para pegar. Aparece ao lado das armas enquanto o Freny a leva. " +
             "Vale só nesta corrida: não vai para o Inventário.");
-        Entry(parent, GoldenChest.Icon, "Baú dourado",
+        if (Features.GoldenChest) Entry(parent, GoldenChest.Icon, "Baú dourado",
             "Surge por um portal dourado numa das plataformas mais altas quando a chave cai, e espera até ser aberto. " +
             "Só abre com a chave (encoste ou bata). Dá cerca de 145 moedas (moedas e 2 diamantes), enche a vida, a armadura, " +
-            "as balas, os cartuchos e as granadas, solta a Fúria na hora e, se você não tem o Espadão, uns golpes com ele. Não dá pontos. " +
+            "as balas, os cartuchos e as granadas, " + (Features.Fury ? "solta a Fúria na hora " : "") + "e, se você não tem o Espadão, uns golpes com ele. Não dá pontos. " +
             "E tem " + Mathf.RoundToInt(FrenyLook.ChestLookChance * 100f) + "% de chance de trazer um visual que só ele dá " +
-            "(Elmo do Ciclope ou Capa dourada), um que você ainda não tem. Ao abrir, escolha 1 de 3 bênçãos. " +
+            "(Elmo do Ciclope ou Capa dourada), um que você ainda não tem." + (Features.Blessings ? " Ao abrir, escolha 1 de 3 bênçãos." : "") + " " +
             "Cada chave traz um baú novo, então dá para ter vários na mesma corrida.");
-        Entry(parent, ArenaPowerUps.Icon(ItemPickup.Kind.Nuke), "Insta-kill, Nuke e Ímã",
+        if (Features.InstaKill || Features.Nuke || Features.Magnet) Entry(parent, ArenaPowerUps.Icon(ItemPickup.Kind.Nuke), "Insta-kill, Nuke e Ímã",
             "Inimigos que o Freny mata na Arena têm cerca de " + (ArenaPowerUps.DropChance * 100f).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',') +
             "% de chance de deixar um deles (o Ímã é o mais comum, o Nuke o mais raro). Só um por vez no chão; os mortos pelo Nuke não deixam nenhum.");
-        Entry(parent, MageStaff.Icon, "Feiticeiros (Arena)",
+        if (Features.MageStaff) Entry(parent, MageStaff.Icon, "Feiticeiros (Arena)",
             "Cada feiticeiro que morre tem " + Mathf.RoundToInt(MageStaff.DropChance * 100f) + "% de chance de deixar o Cajado do Mago.");
     }
 
     // the Armeiro's buffs (2026-11-01), prices read from FrenyProgress
     private static void Shop(Transform parent, MenuArt art) {
+        if (Features.WeaponBuffs) ShopBuffs(parent, art);
+        if (Features.Looks) Entry(parent, art ? art.berserkerHelmet : null, "Visual",
+            "Elmos (o Capacete Berserker custa 1.000 e só muda o visual: um chifre quebrado, inteiro quando ele tem armadura), " +
+            "capas e cores ficam em Armeiro > Cosméticos ou Inventário > Visual. O Armeiro e o Inventário também abrem direto da pausa.");
+        Entry(parent, art ? art.heart : null, "Freny",
+            "Vida máxima +1 (" + Prices(FrenyUpgrade.MaxHealth) + "), velocidade +5% (" + Prices(FrenyUpgrade.MoveSpeed) +
+            "), pulo duplo (" + Prices(FrenyUpgrade.DoubleJump) + ")" +
+            (Features.Net ? ", Rede (" + Prices(FrenyUpgrade.Net) + ", " + NetThrower.NetsPerStage + " por fase)" : "") +
+            ". Espadão, escopeta, granada e capacete só caem do chão.");
+    }
+
+    private static void ShopBuffs(Transform parent, MenuArt art) {
         Entry(parent, art ? art.revolver : null, "Pistola",
             "Dano +25% por nível (" + Prices(FrenyUpgrade.PistolDamage) + "), tambor 4→5→6 (" + Prices(FrenyUpgrade.PistolDrum) +
             "), reserva 16→24→32 (" + Prices(FrenyUpgrade.PistolReserve) + "), recarga 20% mais rápida por nível (" + Prices(FrenyUpgrade.PistolReload) + ").");
@@ -180,15 +214,8 @@ public static class GuideScreen {
             "Explosão 30% maior (" + Prices(FrenyUpgrade.GrenadeBlast) + "), 4 de dano (" + Prices(FrenyUpgrade.GrenadePower) +
             "), carrega 8→10 (" + Prices(FrenyUpgrade.GrenadeCarry) + "). Cuidado: a explosão maior também pega o Freny de mais longe.");
         Entry(parent, art ? art.sword : null, "Crítico e Fúria",
-            "Crítico: +5% de chance por nível de um golpe ou tiro tirar o dobro (" + Prices(FrenyUpgrade.Critical) +
-            "). Fúria: +5 s por nível (" + Prices(FrenyUpgrade.RageTime) + ").");
-        Entry(parent, art ? art.berserkerHelmet : null, "Visual",
-            "Elmos (o Capacete Berserker custa 1.000 e só muda o visual: um chifre quebrado, inteiro quando ele tem armadura), " +
-            "capas e cores ficam em Armeiro > Cosméticos ou Inventário > Visual. O Armeiro e o Inventário também abrem direto da pausa.");
-        Entry(parent, art ? art.heart : null, "Freny",
-            "Vida máxima +1 (" + Prices(FrenyUpgrade.MaxHealth) + "), velocidade +5% (" + Prices(FrenyUpgrade.MoveSpeed) +
-            "), pulo duplo (" + Prices(FrenyUpgrade.DoubleJump) + "), Rede (" + Prices(FrenyUpgrade.Net) + ", " +
-            NetThrower.NetsPerStage + " por fase). Espadão, escopeta, granada e capacete só caem do chão.");
+            "Crítico: +5% de chance por nível de um golpe ou tiro tirar o dobro (" + Prices(FrenyUpgrade.Critical) + ")." +
+            (Features.Fury ? " Fúria: +5 s por nível (" + Prices(FrenyUpgrade.RageTime) + ")." : ""));
     }
 
     // "1.500 / 3.000 / 6.000"
@@ -217,25 +244,27 @@ public static class GuideScreen {
             "ou 36 tiros); nas costas, 2 espadadas ou 6 tiros matam. Tudo que vem da frente bate no escudo, até de cima. " +
             "Ele vira rápido (0,4 s, até 0,15 s no difícil) e se afasta se o Freny chega por trás: pule por cima e bata logo. " +
             "6 de vida, 300 pontos.");
-        Entry(parent, SpiderMineIcon(), "Mina-aranha",
+        if (Features.SpiderMine) Entry(parent, SpiderMineIcon(), "Mina-aranha",
             "Uma mina com seis pernas: anda e pula entre as plataformas atrás do Freny, e a luz vermelha pisca e apita " +
             "mais rápido quanto mais perto ela chega. Encostada nele, para, arma por " + SpiderMine.ArmTime.ToString("0.0") + " s e explode: " +
             "2 corações, empurrão, e fere os outros inimigos em volta (outra mina-aranha explode junto). Morre com um golpe, " +
             "mas explode sempre que morre: de longe (tiro, granada) não pega o Freny; de espada, ele leva 1 coração. " +
             "Vale 250 pontos. Na Arena, a partir do meio da curva de dificuldade.");
-        Entry(parent, null, "Ciclope",
+        if (Features.Cyclops) Entry(parent, null, "Ciclope",
             "O chefe gigante: prefere ficar no meio, embaixo da primeira plataforma (bom para pular no olho). Chega no centro do chão aos 50 mil pontos e cada próximo 150 mil pontos depois de o anterior morrer; " +
-            "dois de uma vez só a partir de 1 milhão, com as barras embaixo, uma de cada lado. Cada luta traz mais " +
+            "dois de uma vez só a partir de 1 milhão, com as barras embaixo, uma de cada lado. " +
+            (Features.BossEscalation ? "Cada luta traz mais " +
             "ajuda: 2 feiticeiros comuns na primeira, um a mais em cada uma seguinte (até 5), e a partir da segunda " +
-            "os outros inimigos também continuam vindo. Sempre vem um morcego e um inseto atrás do Freny, para manter o combo vivo. O feitiço dos feiticeiros não fere o Ciclope. 100 de " +
+            "os outros inimigos também continuam vindo. " : "Cada luta traz 2 feiticeiros comuns. ") + "Sempre vem um morcego e um inseto atrás do Freny, para manter o combo vivo. O feitiço dos feiticeiros não fere o Ciclope. 100 de " +
             "vida e barra de chefe. Não pula: fica no chão. Soco: 1 coração e arremessa o Freny longe. " +
             "Pancada no chão: uma onda pelo piso, 2 corações e o mesmo arremesso (pule!). Bomba: de longe, uma mina " +
             "3 vezes maior jogada com força, 2 corações. Vômito: ele vomita no chão e alaga o andar de baixo inteiro por 4 s; " +
             "quem estiver no chão queima (os outros inimigos também, menos ele), então suba numa plataforma. " +
             "Na Lua de Sangue ele solta até 3 raios vermelhos do olho em direção ao Freny (3 corações), que desintegram tudo no caminho. " +
             "Na pancada ele dá um pulinho e a tela treme. Depois de cada golpe ele descansa " +
-            "3 s: é a hora de bater. Acertar o olho tira o dobro. Vale 5 000 pontos, 30 moedas e deixa um baú " +
-            "(e às vezes a chave do baú dourado). Enquanto um Ciclope estiver vivo, os outros inimigos valem só 1 ponto cada (com ou sem combo), " +
+            "3 s: é a hora de bater. Acertar o olho tira o dobro. Vale 5 000 pontos, 30 moedas e deixa um baú" +
+            (Features.GoldenChest ? " (e às vezes a chave do baú dourado)" : "") + ". " +
+            (Features.CyclopsFlatScore ? "Enquanto um Ciclope estiver vivo, os outros inimigos valem só 1 ponto cada (com ou sem combo), " : "Enquanto um Ciclope estiver vivo, ") +
             "toca a música dele e as tochas tremem vermelhas.");
         Entry(parent, null, "Feiticeiro",
             "Fica parado e lança uma bola a cada 5 segundos (o Supremo a cada 3,5); ela tira 2 e empurra, e abaixar desvia " +
@@ -268,10 +297,10 @@ public static class GuideScreen {
             "e ficam de olhos vermelhos, deixando um rastro vermelho.");
         Entry(parent, art ? art.rageHelmet : null, "Dificuldade",
             "Fácil, Médio ou Freny: quanto maior, mais inimigos, mais rápidos e mais cedo. " +
-            "Com o tempo e os pontos a Arena aperta, mas para de apertar no primeiro Ciclope (50 mil) e só volta em 1 milhão. " +
-            "E cada Ciclope derrotado deixa os outros inimigos mais fortes até o fim da corrida: +25% de vida nos 4 primeiros, depois +10% por Ciclope, " +
-            "até o máximo de 3x (quem tinha 1 de vida vai no máximo a 2), e um pouco mais rápidos.");
-        Entry(parent, null, "Música do chefe",
+            "Com o tempo e os pontos a Arena aperta, mas para de apertar no primeiro Ciclope (50 mil) e só volta em 1 milhão." +
+            (Features.EnemyToughening ? " E cada Ciclope derrotado deixa os outros inimigos mais fortes até o fim da corrida: +25% de vida nos 4 primeiros, depois +10% por Ciclope, " +
+            "até o máximo de 3x (quem tinha 1 de vida vai no máximo a 2), e um pouco mais rápidos." : ""));
+        if (Features.Cyclops) Entry(parent, null, "Música do chefe",
             "Quando o Ciclope chega, a música da Arena dá lugar à dele, mais pesada e rápida, e as tochas piscam " +
             "rápido e ficam vermelhas. Quando ele cai, tudo volta ao normal.");
         Entry(parent, Achievements.Icon(Achievement.Cyclops), "Conquistas",
@@ -288,11 +317,6 @@ public static class GuideScreen {
             "têm ranking próprio e recomeçam sozinhas.");
     }
 
-    // "Pistola nv. 2 · 2500": the price of a level (level = levels already bought)
-    private static string Price(FrenyUpgrade weapon, int level) {
-        return FrenyProgress.CostAt(weapon, level).ToString();
-    }
-
     private static Sprite spiderIcon;
 
     private static Sprite SpiderMineIcon() {
@@ -305,7 +329,7 @@ public static class GuideScreen {
 
     // the daily missions, the titles and the stats (DailyMissions, PlayerTitles, AccountStats)
     private static void Missions(Transform parent, MenuArt art) {
-        Entry(parent, art ? art.coin : null, "Missões do dia",
+        if (Features.DailyMissions) Entry(parent, art ? art.coin : null, "Missões do dia",
             "3 missões por dia (fácil, média e difícil), as mesmas para todos os jogadores; mudam à meia-noite " +
             "de Brasília. Pagam " + DailyMissions.Rewards[0] + ", " + DailyMissions.Rewards[1] + " e " +
             DailyMissions.Rewards[2] + " moedas, na hora em que você cumpre. Só valem corridas manuais da Arena: " +
@@ -349,17 +373,20 @@ public static class GuideScreen {
     }
 
     private static void RebirthTopic(Transform parent, MenuArt art) {
-        Entry(parent, null, "Renascer " + Rebirth.Star(1),
+        if (Features.Rebirth) Entry(parent, null, "Renascer " + Rebirth.Star(1),
             "Com tudo do Armeiro comprado e no nível máximo, Jogar > Renascer troca todas as melhorias (as do " +
             "Armeiro e as do piloto automático) e o nível, que volta ao 1, por um bônus para sempre: +5% de dano " +
             "e +5% de moedas a cada renascimento, somando, e uma estrela ★ ao lado do nome no ranking (no jogo " +
             "e no site). Moedas, recordes, conquistas e o visual ficam. Alguns visuais só abrem renascendo.");
+        if (!Features.Looks) {
+            return;
+        }
         Entry(parent, art ? art.berserkerHelmet : null, "Visual",
             "Em Jogar > Visual o Freny troca de elmo, de capa e de cor da roupa. Uns se compram com moedas, " +
             "outros abrem com uma conquista, renascendo ou só no baú dourado do Ciclope. Só muda o visual, não a luta. Na Fúria e com " +
             "armadura ele ainda mostra os capacetes deles.");
         foreach (FrenyLook.Item item in FrenyLook.All) {
-            if (item.unlock != FrenyLook.Unlock.Free && item.unlock != FrenyLook.Unlock.Coins) {
+            if (item.unlock != FrenyLook.Unlock.Free && item.unlock != FrenyLook.Unlock.Coins && FrenyLook.Reachable(item)) {
                 Entry(parent, null, item.name, FrenyLook.HowToGet(item) + ".");
             }
         }

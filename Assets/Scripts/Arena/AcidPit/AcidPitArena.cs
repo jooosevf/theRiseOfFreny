@@ -208,15 +208,6 @@ public class AcidPitArena : MonoBehaviour {
     }
 
     // the pool under x at floor height (the autopilot and the Tentáculos ask)
-    public AcidPuddle PoolAt(float x, float margin = 0f) {
-        foreach (AcidPuddle pool in Pools) {
-            if (pool != null && Mathf.Abs(pool.transform.position.x - x) < pool.Width / 2f + margin) {
-                return pool;
-            }
-        }
-        return null;
-    }
-
     public float FloorY => floorY;
 
     // one of the Poço's own pools (not a puddle someone threw up)

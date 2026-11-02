@@ -35,7 +35,7 @@ public static class InputBindings {
     private const string GamepadPrefix = "freny.bind.pad.";
     private const float StickUpThreshold = 0.6f;
 
-    public static readonly GameAction[] All = (GameAction[])Enum.GetValues(typeof(GameAction));
+    public static readonly GameAction[] All = Array.FindAll((GameAction[])Enum.GetValues(typeof(GameAction)), Features.HasAction);
 
     // while a menu is open (and for a frame after it closes) Freny ignores the controls, so the
     // button that closed the menu does not also jump or dash

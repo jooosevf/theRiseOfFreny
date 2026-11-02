@@ -77,13 +77,15 @@ public class ArenaBossLoot : MonoBehaviour {
             return;
         }
         cyclopsKilled++;
-        RunModifiers.CyclopsSlain++;
-        Camera cam = Camera.main;
-        Vector3 banner = (cam != null ? cam.transform.position : enemy.Center) + Vector3.up * 3f;
-        Color red = new Color(1f, 0.35f, 0.3f);
-        Say("Os inimigos ficaram mais fortes", banner, red, 3.5f);
-        Say("Inimigos: vida x" + RunModifiers.HealthMultiplier(RunModifiers.CyclopsSlain).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ','), banner + Vector3.down * 0.9f, red, 3.5f);
-        if (cyclopsKilled == 1 || Random.value < KeyChance) {
+        if (Features.EnemyToughening) {
+            RunModifiers.CyclopsSlain++;
+            Camera cam = Camera.main;
+            Vector3 banner = (cam != null ? cam.transform.position : enemy.Center) + Vector3.up * 3f;
+            Color red = new Color(1f, 0.35f, 0.3f);
+            Say("Os inimigos ficaram mais fortes", banner, red, 3.5f);
+            Say("Inimigos: vida x" + RunModifiers.HealthMultiplier(RunModifiers.CyclopsSlain).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ','), banner + Vector3.down * 0.9f, red, 3.5f);
+        }
+        if (Features.GoldenChest && (cyclopsKilled == 1 || Random.value < KeyChance)) {
             DropKey(enemy.Center, enemy.coinPrefab);
         }
     }

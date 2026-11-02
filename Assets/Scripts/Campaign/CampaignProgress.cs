@@ -14,10 +14,6 @@ public static class CampaignProgress {
         return index >= 0 && index <= UnlockedIndex;
     }
 
-    public static bool IsCompleted(string stageId) {
-        return BestTime(stageId) > 0f;
-    }
-
     // 0 when the stage was never finished
     public static float BestTime(string stageId) {
         return PlayerPrefs.GetFloat(BestTimeKeyPrefix + stageId, 0f);

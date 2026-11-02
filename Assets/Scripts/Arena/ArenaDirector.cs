@@ -144,13 +144,15 @@ public class ArenaDirector : MonoBehaviour {
         }
         // the Mina-aranha (2026-11-01): from the middle of the curve, as often as the others; its
         // name, score and unlockAt are in the API's rules.js (SpiderMine_Enemy)
-        GameObject spider = SpiderMine.MakeTemplate(golem);
+        GameObject spider = Features.SpiderMine ? SpiderMine.MakeTemplate(golem) : null;
         if (spider != null) {
             List<Entry> list = new List<Entry>(enemies);
             list.Add(new Entry { prefab = spider, unlockAt = SpiderMineUnlockAt, weight = 1f });
             enemies = list.ToArray();
         }
-        cyclopsTemplate = EnemyTemplates.Make<Cyclops>(golem, "Cyclops_Boss", new Vector2(1.9f * Cyclops.Size, 2.45f * Cyclops.Size), new Vector2(0f, Cyclops.Size * 1.225f - 1.585f));
+        if (Features.Cyclops) {
+            cyclopsTemplate = EnemyTemplates.Make<Cyclops>(golem, "Cyclops_Boss", new Vector2(1.9f * Cyclops.Size, 2.45f * Cyclops.Size), new Vector2(0f, Cyclops.Size * 1.225f - 1.585f));
+        }
         // the Poço de Ácido has a list of its own (no-op in the classic arena)
         enemies = AcidPitArena.EnemyTable(enemies, golem);
     }
@@ -177,8 +179,8 @@ public class ArenaDirector : MonoBehaviour {
     // from the towers (José, 2026-10-29)
     // 2 plain sorcerers with the first Ciclope, one more with each next one, up to 5; from the
     // second Ciclope (150k) the usual enemies keep coming too, 2 more at once with each fight
-    private int BossHelpers => Mathf.Min(5, 1 + bossesCalled);
-    private int BossCompany => Mathf.Max(0, 2 * (bossesCalled - 1));
+    private int BossHelpers => Features.BossEscalation ? Mathf.Min(5, 1 + bossesCalled) : 2;
+    private int BossCompany => Features.BossEscalation ? Mathf.Max(0, 2 * (bossesCalled - 1)) : 0;
     private const float BossHelperGap = 4f;
     private float nextHelperTime;
 
