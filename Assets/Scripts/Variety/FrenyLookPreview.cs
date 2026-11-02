@@ -16,6 +16,7 @@ public class FrenyLookPreview : MonoBehaviour {
     private readonly Image[] capeImages = new Image[3];
     private Sprite[] frames;
     private FrenyLook.Item helmetItem, capeItem, colorItem;
+    private bool suit;
 
     // the idle frames are 200 px squares with Freny in the bottom two thirds; size is the square's
     // side on screen, anchored at the bottom centre of the window
@@ -58,7 +59,8 @@ public class FrenyLookPreview : MonoBehaviour {
         return image;
     }
 
-    public void Show(FrenyLook.Item helmetLook, FrenyLook.Item capeLook, FrenyLook.Item colorLook) {
+    public void Show(FrenyLook.Item helmetLook, FrenyLook.Item capeLook, FrenyLook.Item colorLook, FrenyLook.Item suitLook) {
+        suit = suitLook != null && suitLook.unlock != FrenyLook.Unlock.Free;
         helmetItem = helmetLook != null && helmetLook.unlock != FrenyLook.Unlock.Free ? helmetLook : null;
         capeItem = capeLook != null && capeLook.unlock != FrenyLook.Unlock.Free ? capeLook : null;
         colorItem = colorLook != null && colorLook.unlock != FrenyLook.Unlock.Free ? colorLook : null;
@@ -76,18 +78,22 @@ public class FrenyLookPreview : MonoBehaviour {
             return;
         }
         Sprite frame = frames[Mathf.FloorToInt(Time.unscaledTime * Fps) % frames.Length];
+        if (suit) {
+            frame = FrenyLook.TrajeFrame(frame);
+        }
         body.sprite = frame;
         float scale = body.rectTransform.rect.width / frame.rect.width;   // screen pixels per texel
 
         Sprite top = null;
-        Dictionary<string, Sprite> helmets = FrenyLook.HelmetSheet(helmetItem);
+        // the Traje's helmet: the broken horn, as he wears it without armor
+        Dictionary<string, Sprite> helmets = suit ? FrenyLook.Sheet("FrenyHeads/berserker_broken") : FrenyLook.HelmetSheet(helmetItem);
         if (helmets != null) {
             helmets.TryGetValue(frame.name, out top);
         }
         Place(helmet, frame, top, scale);
 
         Sprite mask = null;
-        if (colorItem != null) {
+        if (colorItem != null && !suit) {
             FrenyLook.ShirtSheet.TryGetValue(frame.name, out mask);
         }
         Place(shirt, frame, mask, scale);

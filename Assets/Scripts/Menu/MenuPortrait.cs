@@ -42,6 +42,9 @@ public class MenuPortrait : MonoBehaviour {
     // a layer drawn over each frame, picked by the frame's name (Freny's Berserker helmet);
     // null hides it
     public Dictionary<string, Sprite> OverlaySprites { get; set; }
+
+    // swaps each frame for another one (Freny's Traje); null leaves them
+    public System.Func<Sprite, Sprite> FrameSkin { get; set; }
     private Image overlay;
 
     public void Talk(float seconds) {
@@ -65,6 +68,9 @@ public class MenuPortrait : MonoBehaviour {
             }
         } else {
             image.sprite = idle;
+        }
+        if (FrameSkin != null) {
+            image.sprite = FrameSkin(image.sprite);
         }
         UpdateOverlay();
     }
