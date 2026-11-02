@@ -93,7 +93,9 @@ public class MainMenu : MonoBehaviour {
         page.Button("Configurações", () => stack.Push(SettingsScreens.Settings(stack)), true, CompactRow);
         page.Button("Ajuda", () => stack.Push(HelpScreen.Help(stack)), true, CompactRow);
         page.Button("Guia", () => stack.Push(GuideScreen.Guide(stack)), true, CompactRow);
-        page.Button(MissionsLabel(), () => stack.Push(MissionsScreen.Page(stack)), true, CompactRow);
+        if (Features.DailyMissions) {
+            page.Button(MissionsLabel(), () => stack.Push(MissionsScreen.Page(stack)), true, CompactRow);
+        }
         page.Button("Conquistas", () => stack.Push(AchievementsScreen.Page(stack)), true, CompactRow);
         if (Online.OnlineServices.Instance != null && Online.OnlineServices.Instance.State != Online.OnlineServices.Status.Disabled) {
             page.Button("Ranking", () => stack.Push(OnlineScreens.Ranking(stack, this, ArenaDifficulty.Ranked[0])), true, CompactRow);
@@ -118,8 +120,12 @@ public class MainMenu : MonoBehaviour {
         page.Button("Inventário", () => stack.Push(InventoryScreens.Inventory(stack)));
         page.Button("Armeiro", () => stack.Push(InventoryScreens.Armory(stack)));
         // Freny's looks and Renascer (VarietyScreens)
-        page.Button("Visual", () => stack.Push(VarietyScreens.Visual(stack)));
-        page.Button(VarietyScreens.RebirthButtonLabel, () => stack.Push(VarietyScreens.RebirthPage(stack)));
+        if (Features.Looks) {
+            page.Button("Visual", () => stack.Push(VarietyScreens.Visual(stack)));
+        }
+        if (Features.Rebirth) {
+            page.Button(VarietyScreens.RebirthButtonLabel, () => stack.Push(VarietyScreens.RebirthPage(stack)));
+        }
         page.Button("Voltar", stack.Back);
         page.SelectFirst = CampaignOpen ? null : arena;
         return page;
@@ -184,8 +190,10 @@ public class MainMenu : MonoBehaviour {
         page.Choice("Controle", new[] { "Automático", "Manual" }, ArenaDifficulty.Manual ? 1 : 0,
             i => ArenaDifficulty.Manual = i == 1);
         ArenaVariant.AddChoice(page);   // Clássica or Poço de Ácido, once it is open
-        page.Label("Só corridas manuais do começo ao fim valem para o ranking. O oficial é o do Difícil.");
-        page.Label(WeeklyMutators.MenuText);   // the same rule for everyone this week
+        page.Label("Só corridas manuais do começo ao fim valem para o ranking. O oficial é o do Freny.");
+        if (Features.WeeklyMutators) {
+            page.Label(WeeklyMutators.MenuText);   // the same rule for everyone this week
+        }
         Button current = null;
         foreach (ArenaLevel level in System.Enum.GetValues(typeof(ArenaLevel))) {
             ArenaLevel chosen = level;
@@ -206,8 +214,7 @@ public class MainMenu : MonoBehaviour {
         switch (level) {
             case ArenaLevel.Easy: return "Poucos inimigos, o ritmo sobe devagar";
             case ArenaLevel.Medium: return "O ritmo normal da Arena";
-            case ArenaLevel.Hard: return "Mais inimigos, mais fortes, mais rápido";
-            default: return "Para quem já domina a Arena";
+            default: return "Mais inimigos, mais fortes, mais rápido";
         }
     }
 

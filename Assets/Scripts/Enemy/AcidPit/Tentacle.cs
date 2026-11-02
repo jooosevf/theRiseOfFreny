@@ -53,7 +53,6 @@ public class Tentacle : Enemy {
 
     // the top of the tentacle, where the jet leaves from
     public Vector3 Mouth => transform.position + Vector3.up * MouthHeight;
-    public bool Winding => state == State.Windup && !isDead;
 
     public override void Init() {
         health = Life;
@@ -77,6 +76,12 @@ public class Tentacle : Enemy {
         attack = FrameAnimator.Load(Sheets + "Attack");
         hit = FrameAnimator.Load(Sheets + "Hit");
         Surface();
+    }
+
+    // the Insta-kill isn't a hit: it must not send it diving
+    public override void DropToOneHeart() {
+        base.DropToOneHeart();
+        lastHealth = Health;
     }
 
     // up out of the acid (also when it comes back after a dive, AcidPitArena.Resurface)

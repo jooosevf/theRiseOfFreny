@@ -56,7 +56,6 @@ public class Player : MonoBehaviour, IDamageable {
     [SerializeField] private float stunTime = 0.3f;        // crouched and helpless after a knockback
     private const float ShoveTime = 0.2f;                   // no control while a light hit shoves him back
     [SerializeField] private float knockbackDrag = 14f;    // how fast the shove dies out (units/s²)
-    [SerializeField] private int shellsPerRun = 6;         // shotgun shells at the start of a run; chests add more
     [SerializeField] private int revolverCapacity = 4;     // shots before the revolver has to be reloaded
     [SerializeField] private float revolverReloadTime = 1.6f;
     [SerializeField] private int revolverReserveStart = 8;  // spare bullets at the start of a run: the gun is no longer infinite
@@ -64,7 +63,6 @@ public class Player : MonoBehaviour, IDamageable {
     [SerializeField] private int shellsMax = 30;
 
     [Header("Grenade (E)")]
-    [SerializeField] private int grenadesFromUpgrade = 2;  // the shop's grenade upgrade starts each run with these
     [SerializeField] private int grenadesMax = 6;
     [SerializeField] private float grenadeAngle = 55f;     // degrees above the horizontal
     [SerializeField] private float grenadeMinSpeed = 8f;   // José, 2026-11-01: was 5, it landed at his feet
@@ -174,8 +172,6 @@ public class Player : MonoBehaviour, IDamageable {
     public bool IsCrouching { get; private set; }
     public bool IsInvulnerable => Time.time < invulnerableUntil;
     public bool CanAirJump => !isGrounded && airJumpsLeft > 0;
-    // the HUD's jump meter: on the ground (or just off an edge), or with the double jump still left
-    public bool JumpReady => isGrounded || Time.time - lastGroundedTime <= coyoteTime || CanAirJump;
     public bool AttackReady => Time.time >= attackReadyAt;
     public bool FacingRight => transform.localScale.x > 0;
     public bool RunReady => !IsRunning && runStamina >= RunMinStamina;
@@ -203,17 +199,17 @@ public class Player : MonoBehaviour, IDamageable {
     public bool WantsShells => !RunModifiers.NoGuns && ShotgunOwned && ShotgunShells < ShellsMax;
     public bool WantsGrenades => Grenades < GrenadesMax;
     public bool WantsArmor => !isDead && Armor < ArmorMax;
-    // a dropped great sword is no use with the bought one, or with a fresh one still in hand
-    public bool WantsGreatSword => !isDead && !FrenyProgress.HasGreatSword && GreatSwordSwings < DroppedGreatSwordSwings;
+    // a dropped great sword is no use with a fresh one still in hand
+    public bool WantsGreatSword => !isDead && GreatSwordSwings < DroppedGreatSwordSwings;
     // how full each supply is (0 empty .. 1 full): the drops lean on what he's short of (ItemPickup.Need)
     public float BulletsFill => ReserveMax > 0 ? RevolverReserve / (float)ReserveMax : 1f;
     public float ShellsFill => ShellsMax > 0 ? ShotgunShells / (float)ShellsMax : 1f;
     public float GrenadesFill => GrenadesMax > 0 ? Grenades / (float)GrenadesMax : 1f;
 
     // ---- drops and buffs: the dropped great sword, armor and Rage
-    // the great sword (bought at the shop, or dropped for a few swings): FrenyMotion makes the slash
+    // the great sword (dropped for a few swings): FrenyMotion makes the slash
     // and the hitbox bigger. It stays on briefly after the last dropped swing so that swing is big too.
-    public bool GreatSwordActive => FrenyProgress.HasGreatSword || GreatSwordSwings > 0 || Time.time < greatSwordGraceUntil;
+    public bool GreatSwordActive => GreatSwordSwings > 0 || Time.time < greatSwordGraceUntil;
     public int GreatSwordSwings { get; private set; }
     // the combo hit of the last swing (1, 2 or 3) and a count of swings, so the sword can hit the
     // same enemy once per swing (MeleeAttack) and FrenyMotion can draw each hit its own way
@@ -231,7 +227,7 @@ public class Player : MonoBehaviour, IDamageable {
     public bool RageReady => !Raging && Rage >= 1f;
     public bool Raging => Time.time < rageUntil;
     public float RageLeft => Raging ? (rageUntil - Time.time) / RageTotal : 0f;
-    public int MeleeDamage => (Raging ? RageMeleeDamage : 1) + WeaponLevels.GreatSwordBonus;
+    public int MeleeDamage => Raging ? RageMeleeDamage : 1;
     public float ReloadProgress => Reloading ? Mathf.Clamp01(1f - (reloadReadyAt - Time.time) / (revolverReloadTime * WeaponLevels.ReloadTime)) : 1f;
     // body and jump, for the autopilot's platform map (the same numbers the physics uses)
     public float JumpHeight => jumpHeight;
@@ -246,7 +242,6 @@ public class Player : MonoBehaviour, IDamageable {
     private float slowUntil;
     private float slowFactor = 1f;
     private float SlowFactor => Time.time < slowUntil ? slowFactor : 1f;
-    public bool Slowed => Time.time < slowUntil;
 
     public void Slow(float factor, float seconds) {
         slowFactor = Time.time < slowUntil ? Mathf.Min(slowFactor, factor) : factor;
@@ -322,18 +317,17 @@ public class Player : MonoBehaviour, IDamageable {
         ApplyUpgrades();
         FrenyProgress.Changed += ApplyUpgrades;
         Enemy.Killed += OnEnemyKilled;
-        NetThrower.Attach(this);   // the Rede, when bought (its own component, so the prefab stays as it is)
+        if (Features.Net) {
+            NetThrower.Attach(this);   // the Rede, when bought (its own component, so the prefab stays as it is)
+        }
 
         Health = MaxHealth;
         if (UIManager.Instance) {
             UIManager.Instance.UpdateLives(Health, false); // the bought hearts too (the scene has 4)
         }
-        // the run's loadout: a loaded revolver with spare bullets; the shop's shotgun and grenades
-        // add theirs (and again when bought mid-run, see GrantUpgradeLoadout)
+        // the run's loadout: a loaded revolver with spare bullets
         RevolverBullets = DrumSize;
         RevolverReserve = revolverReserveStart;
-        loadoutReady = true;
-        GrantUpgradeLoadout();
         // coins persist between runs and scenes (GDD: persistência)
         coins = FrenyProgress.Coins;
         if (UIManager.Instance) {
@@ -417,28 +411,8 @@ public class Player : MonoBehaviour, IDamageable {
         rg2d.SetVel(velocity);
     }
 
-    private bool loadoutReady;
-    private bool shotgunGranted;
-    private bool grenadesGranted;
-
-    private void GrantUpgradeLoadout() {
-        if (!loadoutReady) {
-            return;
-        }
-        if (FrenyProgress.HasShotgun && !shotgunGranted) {
-            shotgunGranted = true;
-            ShotgunOwned = true;
-            ShotgunShells = Mathf.Max(ShotgunShells, shellsPerRun + WeaponLevels.ExtraShells);
-        }
-        if (FrenyProgress.HasGrenade && !grenadesGranted) {
-            grenadesGranted = true;
-            Grenades = Mathf.Min(GrenadesMax, Grenades + grenadesFromUpgrade + WeaponLevels.ExtraGrenades);
-        }
-    }
-
     // applies in the arena, by hand and in the campaign
     public void ApplyUpgrades() {
-        GrantUpgradeLoadout();
         int oldMax = MaxHealth;
         // and the run's blessing and mutator on top (RunModifiers; 1 / 0 outside an arena run)
         MaxHealth = _baseMaxHealth + FrenyProgress.BonusMaxHealth + RunModifiers.BonusMaxHealth;
@@ -719,7 +693,7 @@ public class Player : MonoBehaviour, IDamageable {
         Sfx.Play("sword_combo" + ComboStep, transform.position);
         swingCooldown = attackCooldown * (ComboStep == 3 ? FinisherRecovery : ComboGapFactor);
         attackReadyAt = Time.time + swingCooldown;
-        if (GreatSwordSwings > 0 && !FrenyProgress.HasGreatSword) {
+        if (GreatSwordSwings > 0) {
             GreatSwordSwings--;
             greatSwordGraceUntil = Time.time + GreatSwordGrace;
         }
@@ -784,7 +758,7 @@ public class Player : MonoBehaviour, IDamageable {
             FireBullet(muzzle, forward, RevolverPush);
         }
         // the Armeiro's "Espada mais rápida" is the sword's only (2026-11-01); the guns' buffs are their own
-        gunReadyAt = Time.time + (shotgun ? shotgunCooldown * WeaponLevels.ShotgunCooldown : pistolCooldown * WeaponLevels.PistolCooldown);
+        gunReadyAt = Time.time + (shotgun ? shotgunCooldown : pistolCooldown);
     }
 
     private const float CrouchMuzzleDrop = 0.32f; // the crouched gun sits 8 art pixels lower
@@ -857,6 +831,15 @@ public class Player : MonoBehaviour, IDamageable {
     // what is left. The autopilot sends the power it wants, and may cook one the same way.
     private void ThrowGrenade() {
         PlayerInputFrame input = _input.Current;
+        if (!Features.GrenadeFuse) {
+            // nothing to cook: the press throws it, and it bursts where it hits (Grenade)
+            bool press = input.grenadePressed || (input.grenadeHeld && !grenadeNeedsRelease);
+            grenadeNeedsRelease = input.grenadeHeld;
+            if (press) {
+                Throw(input.grenadeCharge, Grenade.ImpactFuse);
+            }
+            return;
+        }
         if (ChargingGrenade) {
             if (Time.time - cookStart >= GrenadeFuse) {
                 // held too long: it goes off in his hand
@@ -1086,7 +1069,7 @@ public class Player : MonoBehaviour, IDamageable {
     }
 
     private void AddRage(float amount) {
-        if (isDead || Raging || RageReady) {
+        if (!Features.Fury || isDead || Raging || RageReady) {
             return;
         }
         lastRageAction = Time.time;
@@ -1111,7 +1094,7 @@ public class Player : MonoBehaviour, IDamageable {
 
     // the golden chest (GoldenChest): the Fúria right away, whatever the meter says
     public void GiftRage() {
-        if (isDead || Raging) {
+        if (!Features.Fury || isDead || Raging) {
             return;
         }
         Rage = 1f;
@@ -1136,14 +1119,5 @@ public class Player : MonoBehaviour, IDamageable {
         }
         GameObject tagged = GameObject.FindGameObjectWithTag("RevolverShootPosition");
         return tagged ? tagged.transform : transform;
-    }
-
-    private Transform FindChild(string name) {
-        foreach (Transform child in GetComponentsInChildren<Transform>(true)) {
-            if (child.name == name) {
-                return child;
-            }
-        }
-        return null;
     }
 }

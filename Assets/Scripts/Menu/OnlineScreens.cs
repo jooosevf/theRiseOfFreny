@@ -63,7 +63,7 @@ public static class OnlineScreens {
                 return;
             }
             status.text = online.State == OnlineServices.Status.Online
-                ? auto ? "Corridas começadas no Automático" : "Só valem corridas manuais · o oficial é o do Difícil"
+                ? auto ? "Corridas começadas no Automático" : "Só valem corridas manuais · o oficial é o do Freny"
                 : online.State == OnlineServices.Status.Connecting ? "Conectando..." : "Sem conexão: mostrando o último ranking";
             string self = online.Auth != null ? online.Auth.UserId : null;
             if (friends) {

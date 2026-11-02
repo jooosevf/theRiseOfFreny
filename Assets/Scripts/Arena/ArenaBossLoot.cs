@@ -19,7 +19,7 @@ using UnityEngine;
 // calls DrawKeyIcon).
 public class ArenaBossLoot : MonoBehaviour {
 
-    public const float KeyChance = 0.4f;    // from the second Ciclope of a run on
+    public const float KeyChance = 0.25f;    // from the second Ciclope of a run on
     private const float ChestDelay = 1.5f;
     private const float PortalSeconds = 2f;
     private const string BossTrack = "ciclope";
@@ -77,7 +77,15 @@ public class ArenaBossLoot : MonoBehaviour {
             return;
         }
         cyclopsKilled++;
-        if (cyclopsKilled == 1 || Random.value < KeyChance) {
+        if (Features.EnemyToughening) {
+            RunModifiers.CyclopsSlain++;
+            Camera cam = Camera.main;
+            Vector3 banner = (cam != null ? cam.transform.position : enemy.Center) + Vector3.up * 3f;
+            Color red = new Color(1f, 0.35f, 0.3f);
+            Say("Os inimigos ficaram mais fortes", banner, red, 3.5f);
+            Say("Inimigos: vida x" + RunModifiers.HealthMultiplier(RunModifiers.CyclopsSlain).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ','), banner + Vector3.down * 0.9f, red, 3.5f);
+        }
+        if (Features.GoldenChest && (cyclopsKilled == 1 || Random.value < KeyChance)) {
             DropKey(enemy.Center, enemy.coinPrefab);
         }
     }
@@ -204,7 +212,7 @@ public class ArenaBossLoot : MonoBehaviour {
 
     private void OnGUI() {
         Camera cam = Camera.main;
-        if (cam == null || lines.Count == 0 || Event.current.type != EventType.Repaint || GameMenus.Paused) {
+        if (cam == null || lines.Count == 0 || Event.current.type != EventType.Repaint || GameMenus.Paused || ArenaRunVariety.PickerOpen) {
             return;
         }
         if (sayStyle == null) {
@@ -224,7 +232,10 @@ public class ArenaBossLoot : MonoBehaviour {
                 continue;
             }
             float alpha = Mathf.Clamp01((l.life - age) / 0.4f);
-            Rect r = new Rect(screen.x - 300f, Screen.height - screen.y - 30f, 600f, 60f);
+            // as wide as the text, and whole on screen even when it was said near an edge
+            float width = sayStyle.CalcSize(new GUIContent(l.text)).x + 8f;
+            float left = Mathf.Clamp(screen.x - width / 2f, 0f, Mathf.Max(0f, Screen.width - width));
+            Rect r = new Rect(left, Screen.height - screen.y - 30f, width, 60f);
             float o = Mathf.Max(1f, 2f * scale);
             sayStyle.normal.textColor = new Color(0f, 0f, 0f, 0.85f * alpha);
             GUI.Label(new Rect(r.x - o, r.y, r.width, r.height), l.text, sayStyle);

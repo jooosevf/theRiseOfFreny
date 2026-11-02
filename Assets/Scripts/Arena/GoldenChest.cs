@@ -196,6 +196,11 @@ public class GoldenChest : MonoBehaviour, IDamageable {
         }
         Reward(player);
         ExclusiveLook(center);
+        // José, 2026-11-02: and a blessing, one of three, on top of those he already has
+        ArenaRunVariety run = player != null ? player.GetComponent<ArenaRunVariety>() : null;
+        if (run != null) {
+            run.OfferBlessing();
+        }
     }
 
     // sometimes a look only this chest has (FrenyLook.ChestDrop), his for good: saved like a bought

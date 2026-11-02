@@ -12,9 +12,9 @@ public static class InventoryScreens {
     private const float SideWidth = 360f;
 
     // what can be left at home: the weapons themselves only drop now (2026-11-01)
-    private static readonly FrenyUpgrade[] Equipment = {
+    private static readonly FrenyUpgrade[] Equipment = Array.FindAll(new[] {
         FrenyUpgrade.Net, FrenyUpgrade.DoubleJump,
-    };
+    }, Features.Sold);
 
     // the Armeiro's shelves (José, 2026-11-01: buffs for the weapons instead of the weapons), each
     // its own page so no list grows past the screen
@@ -65,8 +65,10 @@ public static class InventoryScreens {
             }
         }
         // the looks live on one page (VarietyScreens.Visual), the Berserker helmet among them
-        Button looks = page.Button("Visual", () => stack.Push(VarietyScreens.Visual(stack)), true, ItemRow);
-        Hover(looks, () => freny.Say("Elmo, capa e cor da roupa. Só para ficar bonito."));
+        if (Features.Looks) {
+            Button looks = page.Button("Visual", () => stack.Push(VarietyScreens.Visual(stack)), true, ItemRow);
+            Hover(looks, () => freny.Say("Elmo, capa e cor da roupa. Só para ficar bonito."));
+        }
 
         page.Space(4f);
         page.Label("O que cai dos inimigos (espadão, capacete, munição) vale só na fase em que caiu.");
@@ -119,8 +121,7 @@ public static class InventoryScreens {
         }
 
         public void Refresh() {
-            body.OverlaySprites = Loadout.IsEquipped(Loadout.Helmet) ? BerserkerHeads()
-                : Loadout.WearsCosmeticHelmet ? Heads(ref brokenHeads, "FrenyHeads/berserker_broken") : null;
+            body.OverlaySprites = Loadout.WearsCosmeticHelmet ? Heads(ref brokenHeads, "FrenyHeads/berserker_broken") : null;
             foreach (Action slot in slots) {
                 slot();
             }
@@ -132,13 +133,9 @@ public static class InventoryScreens {
         }
     }
 
-    private static Dictionary<string, Sprite> berserkerHeads, brokenHeads;
+    private static Dictionary<string, Sprite> brokenHeads;
 
     // the same helmet layer the game puts on Freny (FrenyMotion)
-    private static Dictionary<string, Sprite> BerserkerHeads() {
-        return Heads(ref berserkerHeads, "FrenyHeads/berserker");
-    }
-
     private static Dictionary<string, Sprite> Heads(ref Dictionary<string, Sprite> cache, string path) {
         if (cache == null) {
             cache = new Dictionary<string, Sprite>();
@@ -212,7 +209,11 @@ public static class InventoryScreens {
         };
 
         foreach (var shelf in Shelves) {
-            var current = shelf;
+            // what Features switched off leaves the shelf, and an empty shelf leaves the page
+            var current = (shelf.title, shelf.hint, rows: Array.FindAll(shelf.rows, Features.Sold));
+            if (current.rows.Length == 0) {
+                continue;
+            }
             Button open = page.Button("", () => stack.Push(ShelfPage(stack, current.title, current.hint, current.rows)), true, ItemRow);
             Hover(open, () => speech.Say(current.hint));
             Text label = open.GetComponentInChildren<Text>();
@@ -220,8 +221,10 @@ public static class InventoryScreens {
             refresh.Add(() => label.text = current.title + " · " + Progress(current.rows));
         }
         page.Space(4f);
-        Button looks = page.Button("Cosméticos", () => stack.Push(VarietyScreens.Visual(stack)), true, ItemRow);
-        Hover(looks, () => speech.Say("Coisas só para ficar bonito, querido. Não dão força nenhuma."));
+        if (Features.Looks) {
+            Button looks = page.Button("Cosméticos", () => stack.Push(VarietyScreens.Visual(stack)), true, ItemRow);
+            Hover(looks, () => speech.Say("Coisas só para ficar bonito, querido. Não dão força nenhuma."));
+        }
         Button brain = page.Button("", () => stack.Push(BrainPage(stack)), true, ItemRow);
         Hover(brain, () => speech.Say("O piloto automático da Arena aprende com pontos de nível, não com moedas."));
         Text brainText = brain.GetComponentInChildren<Text>();
@@ -348,11 +351,6 @@ public static class InventoryScreens {
             price.text = FrenyProgress.IsMaxed(upgrade) ? (max > 1 ? "máximo" : "comprado")
                 : FrenyProgress.CostText(upgrade);
         });
-    }
-
-    private static void Refuse(MenuSpeech speech, string why) {
-        Sfx.Ui("ui_error");
-        speech.Say(why);
     }
 
     // a shop row: the item's icon and name on the left, its price on the right

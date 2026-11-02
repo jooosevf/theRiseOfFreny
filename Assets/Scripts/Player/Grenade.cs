@@ -11,6 +11,7 @@ public class Grenade : MonoBehaviour {
     public const int EnemyDamage = 3;      // one grenade kills any enemy but the red Golem (6 HP)
     public const int SelfDamage = 2;       // what Freny takes in his own blast (armor first)
     public const float SelfKnockback = 7f;
+    public const float ImpactFuse = 1f;    // with Features.GrenadeFuse off: at most this long in the air
 
     public float fuse = Player.GrenadeFuse;
     // the Armeiro's grenade levels (WeaponLevels) widen the blast and raise the damage
@@ -46,6 +47,10 @@ public class Grenade : MonoBehaviour {
     private bool landed;
 
     private void OnCollisionEnter2D(Collision2D collision) {
+        if (!Features.GrenadeFuse) {
+            Explode();
+            return;
+        }
         if (landed || !TryGetComponent(out Rigidbody2D body)) {
             return;
         }

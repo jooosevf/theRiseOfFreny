@@ -13,8 +13,9 @@ public class NetProjectile : MonoBehaviour {
     private Rigidbody2D body;
     private bool opened;
     private float dieAt;
+    private float throwerFeet;   // one-way platforms above this are flown through both ways
 
-    public static void Launch(Vector3 from, Vector2 velocity, float facing) {
+    public static void Launch(Vector3 from, Vector2 velocity, float facing, float feetY) {
         GameObject net = new GameObject("Net");
         net.transform.position = from;
         net.transform.localScale = Vector3.one * 0.8f;
@@ -30,6 +31,7 @@ public class NetProjectile : MonoBehaviour {
         trigger.radius = 0.3f;
         NetProjectile projectile = net.AddComponent<NetProjectile>();
         projectile.body = body;
+        projectile.throwerFeet = feetY;
         projectile.dieAt = Time.time + MaxLife;
         Fx.Spray(from, velocity, RopeColor, 4, 2f, 0.4f);
         Sfx.Play("grenade_throw", from, 0.8f, 1.3f);
@@ -49,7 +51,13 @@ public class NetProjectile : MonoBehaviour {
         if (enemy != null && !enemy.IsDead) {
             Open();
         } else if (enemy == null && !other.isTrigger && body != null && body.Vel().y <= 0f) {
-            Open();   // the floor (on the way up it passes through the one-way platforms)
+            // thrown from under a one-way platform the arc came down on top of it and missed the
+            // enemy on Freny's floor: only his own floor or lower stops the net (an enemy up there
+            // still opens it, above)
+            if (other.usedByEffector && other.bounds.max.y > throwerFeet + 0.2f) {
+                return;
+            }
+            Open();
         }
     }
 

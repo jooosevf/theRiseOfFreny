@@ -55,6 +55,12 @@ namespace Online {
             _moments.Add(new Moment { time = GameTime, kind = kind, count = count });
         }
 
+        private readonly List<Moment> _blessings = new List<Moment>();
+
+        public void AddBlessing(string key) {
+            _blessings.Add(new Moment { time = GameTime, kind = key });
+        }
+
         public void AddVital(string kind, int count) {
             _vitals.Add(new Moment { time = GameTime, kind = kind, count = count });
         }
@@ -85,10 +91,15 @@ namespace Online {
             }
             AppendMoments(json.Append("],\"events\":["), _moments);
             AppendMoments(json.Append("],\"vitals\":["), _vitals);
-            // the run's blessing and the week's mutator (Blessings, WeeklyMutators): neither changes
-            // the score, the server only records them
-            json.Append("],\"blessing\":\"").Append(Blessings.RunKey)
-                .Append("\",\"mutator\":\"").Append(WeeklyMutators.RunKey).Append('"');
+            // the run's blessings, [game seconds, key], and the week's mutator (Blessings,
+            // WeeklyMutators): neither changes the score, the server only records them
+            json.Append("],\"blessings\":[");
+            for (int i = 0; i < _blessings.Count; i++) {
+                if (i > 0) json.Append(',');
+                json.Append('[').Append(_blessings[i].time.ToString("0.###", CultureInfo.InvariantCulture))
+                    .Append(",\"").Append(_blessings[i].kind).Append("\"]");
+            }
+            json.Append("],\"mutator\":\"").Append(WeeklyMutators.RunKey).Append('"');
             json.Append(",\"flags\":[");
             for (int i = 0; i < _flags.Count; i++) {
                 if (i > 0) json.Append(',');

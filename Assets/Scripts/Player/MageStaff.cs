@@ -50,7 +50,7 @@ public class MageStaff : MonoBehaviour {
             return;
         }
         Remember(sorcerer.hexballEffectPrefab);
-        if (!ArenaBounds.Active || hexPrefab == null || Random.value >= DropChance) {
+        if (!Features.MageStaff || !ArenaBounds.Active || hexPrefab == null || Random.value >= DropChance) {
             return;
         }
         Drop(sorcerer.Center);

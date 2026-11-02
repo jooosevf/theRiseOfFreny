@@ -80,7 +80,12 @@ public static class FrenyLook {
 
     public static Item Find(string id) => Array.Find(All, i => i.id == id);
 
-    public static List<Item> InSlot(LookSlot slot) => new List<Item>(Array.FindAll(All, i => i.slot == slot));
+    public static List<Item> InSlot(LookSlot slot) => new List<Item>(Array.FindAll(All, i => i.slot == slot && Reachable(i)));
+
+    // a look only a mechanic switched off (Features) gives is not shown
+    public static bool Reachable(Item item) {
+        return (item.unlock != Unlock.Rebirths || Features.Rebirth) && (item.unlock != Unlock.GoldenChest || Features.GoldenChest);
+    }
 
     // ---- owned ----
 
@@ -169,11 +174,11 @@ public static class FrenyLook {
     // what he wears in that slot; an item no longer owned (another slot loaded, a reset) is not worn
     public static Item Worn(LookSlot slot) {
         Item item = Find(WornId(slot));
-        return item != null && item.slot == slot && item.unlock != Unlock.Free && Owns(item) ? item : null;
+        return item != null && item.slot == slot && item.unlock != Unlock.Free && Reachable(item) && Owns(item) ? item : null;
     }
 
     public const string BerserkerId = "helmet.berserker";
-    public static bool WearsBerserker => WornId(LookSlot.Helmet) == BerserkerId;
+    public static bool WearsBerserker => Features.Looks && WornId(LookSlot.Helmet) == BerserkerId;
 
     // whoever bought the cosmetic helmet when it was gear of the Armeiro (Loadout.CosmeticHelmet)
     // keeps it, and keeps it on unless it was taken off or another helmet is on

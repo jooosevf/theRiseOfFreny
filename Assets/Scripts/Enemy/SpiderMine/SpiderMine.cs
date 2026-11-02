@@ -39,7 +39,6 @@ public class SpiderMine : Enemy {
     private float beepPeriod = 1f;
 
     public bool Arming => armedAt >= 0f && !isDead;
-    public float ArmLeft => Arming ? Mathf.Max(0f, armedAt + ArmTime - Time.time) : ArmTime;
 
     protected override bool Small => true;            // any hit kills it, and the hard levels speed it up
     protected override float SpeedFactor => 1.4f;
@@ -173,6 +172,12 @@ public class SpiderMine : Enemy {
         }
         lamp.enabled = nextBeep - Time.time > period * 0.6f;
         lamp.transform.localScale = Vector3.one * (Arming ? 1.4f : 1f);
+    }
+
+    // the Nuke takes it whole: no blast of its own to catch Freny with
+    public override void Nuked() {
+        blown = true;
+        base.Nuked();
     }
 
     // its own fuse ran out: the full blast, and nobody gets the kill

@@ -117,7 +117,15 @@ public class UIManager : MonoBehaviour {
     // José, 2026-11-01: while a Ciclope is on the floor every other kill is worth 1 point, combo or
     // not, so nobody farms points off the small ones around it (the kill log tells the server, RunLog)
     public static bool ScoresFlat(Enemy enemy) {
-        return !(enemy is Cyclops) && Cyclops.AnyFighting;
+        return enemy.OnePointKill || (Features.CyclopsFlatScore && !(enemy is Cyclops) && Cyclops.AnyFighting);
+    }
+
+    // what killing it right now would pay (the Nuke's cap, ArenaPowerUps)
+    public int PointsFor(Enemy enemy) {
+        if (!comboManager) {
+            comboManager = FindAnyObjectByType<ComboManager>();
+        }
+        return ScoresFlat(enemy) ? 1 : Mathf.RoundToInt(enemy.scoreToAdd * (comboManager ? comboManager.GetCombo() : 1f));
     }
 
         public void HandleComboManager(Enemy enemy) {

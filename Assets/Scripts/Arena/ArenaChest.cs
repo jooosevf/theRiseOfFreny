@@ -34,6 +34,15 @@ public class ArenaChest : MonoBehaviour, IDamageable {
 
     private void Awake() {
         HitBody.MakeHittable(gameObject);
+        // José, 2026-11-02: silver, so it doesn't pass for the golden chest (same art, recoloured)
+        SpriteRenderer sprite = GetComponentInChildren<SpriteRenderer>();
+        if (sprite != null && sprite.sprite != null) {
+            Sprite silver = System.Array.Find(FrameAnimator.Load("BossLoot/Silver Chest"),
+                s => s.name == sprite.sprite.name.Replace("Chest 100x100", "Silver Chest"));
+            if (silver != null) {
+                sprite.sprite = silver;
+            }
+        }
     }
 
     private void Start() {
@@ -57,8 +66,8 @@ public class ArenaChest : MonoBehaviour, IDamageable {
         StatsTracker.ChestOpened();
 
         Vector3 center = transform.position + Vector3.up * 0.2f;
-        Fx.Burst(center, new Color(0.55f, 0.35f, 0.15f), 18, 3f, 0.1f, 0.6f);   // wood
-        Fx.Burst(center, new Color(1f, 0.85f, 0.2f), 24, 3.5f, 0.1f, 0.8f);    // gold
+        Fx.Burst(center, new Color(0.45f, 0.48f, 0.55f), 18, 3f, 0.1f, 0.6f);   // steel
+        Fx.Burst(center, new Color(0.85f, 0.88f, 0.95f), 24, 3.5f, 0.1f, 0.8f);    // silver
         Sfx.Play("chest_break", center);
 
         // the weights follow what Freny is short of: no grenades when his pouch is full, the

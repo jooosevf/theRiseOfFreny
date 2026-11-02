@@ -13,7 +13,7 @@ using UnityEngine;
 public static class WeaponLevels {
 
     private static int L(FrenyUpgrade upgrade) {
-        return Mathf.Min(FrenyProgress.GetLevel(upgrade), FrenyProgress.MaxLevel(upgrade));
+        return Features.WeaponBuffs ? Mathf.Min(FrenyProgress.GetLevel(upgrade), FrenyProgress.MaxLevel(upgrade)) : 0;
     }
 
     // ---- pistol ----
@@ -21,28 +21,22 @@ public static class WeaponLevels {
     public static int DrumBonus => L(FrenyUpgrade.PistolDrum);
     public static int ReserveBonus => 8 * L(FrenyUpgrade.PistolReserve);
     public static float ReloadTime => 1f - 0.2f * L(FrenyUpgrade.PistolReload);
-    public static float PistolCooldown => 1f;
 
     // ---- shotgun ----
     private static readonly float[] ThreePellets = { 10f, 0f, -10f };
     private static readonly float[] FivePellets = { 16f, 8f, 0f, -8f, -16f };
     public static float[] ShotgunAngles => L(FrenyUpgrade.ShotgunSpread) > 0 ? FivePellets : ThreePellets;
-    public static float ShotgunCooldown => 1f;
     public static float ShotgunPower => 1f + 0.25f * L(FrenyUpgrade.ShotgunDamage);
     public static int ShellsBonus => 10 * L(FrenyUpgrade.ShotgunShells);
-    public static int ExtraShells => 0;
 
     // ---- sword ----
     public const float GreatSwordScale = 1.8f;
-    public static float GreatSwordCut => GreatSwordScale;
-    public static int GreatSwordBonus => 0;
     public static float SwordPower => 1f + 0.25f * L(FrenyUpgrade.SwordDamage);
     public static int GreatSwordExtraSwings => 3 * L(FrenyUpgrade.GreatSwordSwings);
 
     // ---- grenade ----
     public static float GrenadeRadius => Grenade.BlastRadius * (L(FrenyUpgrade.GrenadeBlast) > 0 ? 1.3f : 1f);
     public static int GrenadeDamage => L(FrenyUpgrade.GrenadePower) > 0 ? 4 : Grenade.EnemyDamage;
-    public static int ExtraGrenades => 0;
     public static int GrenadeCarryBonus => 2 * L(FrenyUpgrade.GrenadeCarry);
 
     // ---- critical hits and Rage ----

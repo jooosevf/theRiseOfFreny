@@ -149,6 +149,12 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         if (!cooking) {
             return;
         }
+        if (!Features.GrenadeFuse) {
+            cooking = false;   // no fuse to burn: thrown at once
+            frame.grenadePressed = true;
+            frame.grenadeCharge = cookCharge;
+            return;
+        }
         if (player.ChargingGrenade) {
             cookSeen = true;
         } else if (cookSeen || Time.time > cookReleaseAt + 0.5f) {
@@ -1331,6 +1337,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
             case ItemPickup.Kind.Shells: return player.ShotgunOwned && player.ShellsFill < 0.35f;
             case ItemPickup.Kind.Shotgun: return !player.ShotgunOwned;
             case ItemPickup.Kind.GreatSword: return player.WantsGreatSword;
+            case ItemPickup.Kind.InstaKill: case ItemPickup.Kind.Nuke: case ItemPickup.Kind.Magnet: return true;
             default: return false;
         }
     }

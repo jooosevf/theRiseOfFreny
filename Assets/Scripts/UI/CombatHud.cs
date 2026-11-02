@@ -80,6 +80,8 @@ public class CombatHud : MonoBehaviour {
             float rowEnd = DrawWeapons(head.xMin, barsBottom + 8f * scale, size, scale);
             // the Ciclope's key while he carries one (Arena)
             rowEnd = ArenaBossLoot.DrawKeyIcon(rowEnd, barsBottom + 8f * scale, size, scale, labelStyle);
+            // the power-ups running, each with its seconds (Arena)
+            rowEnd = ArenaPowerUps.DrawHudIcons(rowEnd, barsBottom + 8f * scale, size, scale, labelStyle);
             // the gun just switched: its name at the end of the row (above are the bars, under the counts)
             if (Time.time - switchedAt < 1.2f) {
                 ShadowLabel(new Rect(rowEnd + 12f * scale, gunLabelY, 160f * scale, 28f * scale), lastShotgun ? "Escopeta" : "Pistola");
@@ -166,7 +168,7 @@ public class CombatHud : MonoBehaviour {
     private float DrawWeapons(float x, float y, float size, float scale) {
         float swordX = x;
         DrawIcon(player.GreatSwordActive ? Icon(greatSwordIcon, a => a.greatSwordIcon) : Icon(swordIcon, a => a.swordIcon), ref x, y, size);
-        if (player.GreatSwordSwings > 0 && !FrenyProgress.HasGreatSword) {
+        if (player.GreatSwordSwings > 0) {
             // swings left with the dropped great sword
             ShadowLabel(new Rect(swordX + size - 14f * scale, y + size + 10f * scale, 60f * scale, 26f * scale), $"x{player.GreatSwordSwings}");
         }
@@ -274,6 +276,9 @@ public class CombatHud : MonoBehaviour {
         float run = player.RunMeter;
         DrawMeter(new Rect(x, y, width, height), run, player.IsRunning || run >= 1f ? EnergyColor : EnergyRefillColor);
         y += height + 6f * scale;
+        if (!Features.Fury) {
+            return;
+        }
         DrawMeter(new Rect(x, y, width, height), player.Raging ? player.RageLeft : player.Rage, player.Raging ? RageColor : RageFillColor, RageBack);
         if (player.Raging) {
             ShadowLabel(new Rect(x + width + 8f * scale, y - 6f * scale, 160f * scale, 22f * scale), $"FÚRIA! {Mathf.CeilToInt(player.RageLeft * 20f)}s");

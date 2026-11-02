@@ -148,9 +148,9 @@ service cloud.firestore {
                                'w_staff', 'w_other', 'd_bug', 'd_bat', 'd_licker', 'd_golem',
                                'd_golemRed', 'd_shield', 'd_sorcerer', 'd_supreme', 'd_cyclops', 'd_fall',
                                'd_grenade', 'd_mine', 'd_spike', 'd_vomit', 'd_beam', 'd_shock',
-                               'd_acid', 'd_other', 'runsEasy', 'runsMedium', 'runsHard', 'runsFreny',
-                               'bestEasy', 'bestMedium', 'bestHard', 'bestFreny', 'bestAutoEasy', 'bestAutoMedium',
-                               'bestAutoHard', 'bestAutoFreny', 'createdAt', 'lastSeen'
+                               'd_acid', 'd_other', 'runsEasy', 'runsMedium', 'runsHard',
+                               'bestEasy', 'bestMedium', 'bestHard', 'bestAutoEasy', 'bestAutoMedium',
+                               'bestAutoHard', 'createdAt', 'lastSeen'
              ])
           && d.lastSeen == request.time
           && o.get('runsManual', 0) <= d.get('runsManual', 0)
@@ -206,15 +206,15 @@ service cloud.firestore {
           && o.get('runsEasy', 0) <= d.get('runsEasy', 0)
           && o.get('runsMedium', 0) <= d.get('runsMedium', 0)
           && o.get('runsHard', 0) <= d.get('runsHard', 0)
-          && o.get('runsFreny', 0) <= d.get('runsFreny', 0)
+          && o.get(0) <= d.get(0)
           && o.get('bestEasy', 0) <= d.get('bestEasy', 0)
           && o.get('bestMedium', 0) <= d.get('bestMedium', 0)
           && o.get('bestHard', 0) <= d.get('bestHard', 0)
-          && o.get('bestFreny', 0) <= d.get('bestFreny', 0)
+          && o.get(0) <= d.get(0)
           && o.get('bestAutoEasy', 0) <= d.get('bestAutoEasy', 0)
           && o.get('bestAutoMedium', 0) <= d.get('bestAutoMedium', 0)
           && o.get('bestAutoHard', 0) <= d.get('bestAutoHard', 0)
-          && o.get('bestAutoFreny', 0) <= d.get('bestAutoFreny', 0);
+          && o.get(0) <= d.get(0);
     }
 
     function num(d, f) {
@@ -228,8 +228,7 @@ service cloud.firestore {
     function validPerfil(userId) {
       let d = request.resource.data;
       return d.keys().hasOnly(['apelido', 'chave', 'codigo', 'helmet', 'cape', 'color', 'rebirths', 'lastSeen',
-                               'bestEasy', 'bestMedium', 'bestHard', 'bestFreny', 'sigEasy', 'sigMedium', 'sigHard', 'sigFreny',
-                               'runsManual', 'runsAuto', 'secManual', 'secAuto', 'longestRun', 'kills', 'deaths', 'bestCombo',
+                               'bestEasy', 'bestMedium', 'bestHard', 'sigEasy', 'sigMedium', 'sigHard', 'runsManual', 'runsAuto', 'secManual', 'secAuto', 'longestRun', 'kills', 'deaths', 'bestCombo',
                                'k_cyclops', 'k_supreme', 'nights', 'bloodMoons', 'chests', 'coinsEarned'])
           && d.lastSeen == request.time
           && text(d, 'apelido', 16) && d.apelido.size() >= 3
@@ -254,7 +253,7 @@ service cloud.firestore {
           && bestOk(d, userId, 'bestEasy', 'sigEasy', 'leaderboard_easy')
           && bestOk(d, userId, 'bestMedium', 'sigMedium', 'leaderboard_medium')
           && bestOk(d, userId, 'bestHard', 'sigHard', 'leaderboard_hard')
-          && bestOk(d, userId, 'bestFreny', 'sigFreny', 'leaderboard_freny');
+          && bestOk(d, userId, 'leaderboard_freny');
     }
 
     function ownsNick(d, userId) {

@@ -96,7 +96,7 @@ public static class HelpScreen {
             case GameAction.Ranged: return "Atira com a arma escolhida";
             case GameAction.Dash: return "Avança rápido no ar";
             case GameAction.Run: return "Corre no chão; no ar dá dash";
-            case GameAction.Grenade: return "Segure para queimar o pavio, solte";
+            case GameAction.Grenade: return Features.GrenadeFuse ? "Segure para queimar o pavio, solte" : "Joga uma granada";
             case GameAction.Potion: return "Bebe uma poção e cura";
             case GameAction.Pistol: return "Troca para a pistola";
             case GameAction.Shotgun: return "Troca para a escopeta";

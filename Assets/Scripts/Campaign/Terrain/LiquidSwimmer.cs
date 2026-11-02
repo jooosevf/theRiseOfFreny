@@ -22,8 +22,6 @@ public class LiquidSwimmer : MonoBehaviour {
     private float nextAcidHurt;
     private bool jumpQueued;
 
-    public bool InWater => pool != null && !pool.IsAcid;
-    public bool InAcid => pool != null && pool.IsAcid;
 
     private void Start() {
         player = GetComponent<Player>();

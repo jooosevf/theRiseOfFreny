@@ -78,7 +78,7 @@ public class NetThrower : MonoBehaviour {
         float rad = Angle * Mathf.Deg2Rad;
         Vector2 velocity = new Vector2(facing * Mathf.Cos(rad), Mathf.Sin(rad)) * speed;
         Vector3 from = transform.position + Vector3.up * 0.6f;
-        NetProjectile.Launch(from, velocity, facing);
+        NetProjectile.Launch(from, velocity, facing, player.Feet.y);
     }
 
     // the charge (0..1) that lands a net `dx` away and `dy` higher; -1 out of reach (as Player.GrenadeChargeFor)

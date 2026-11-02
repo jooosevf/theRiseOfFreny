@@ -427,11 +427,7 @@ public static class FrenyProgress {
     // the sword's swing only now (the guns have their own: PistolReload, the shotgun's cooldown)
     public static float AttackCooldownMultiplier => 1f - 0.1f * Mathf.Min(GetLevel(FrenyUpgrade.AttackSpeed), MaxLevel(FrenyUpgrade.AttackSpeed));
     public static bool HasDoubleJump => Carries(FrenyUpgrade.DoubleJump);
-    // the weapons are no longer bought: a run never starts with them (they come from drops)
-    public static bool HasShotgun => false;
-    public static bool HasGreatSword => false;
-    public static bool HasGrenade => false;
-    public static bool HasNet => Carries(FrenyUpgrade.Net);
+    public static bool HasNet => Features.Net && Carries(FrenyUpgrade.Net);
 
     // seconds between autopilot decisions: 0.6 s untrained, 0.1 s maxed
     public static float AutopilotReactionTime => 0.6f - 0.1f * GetLevel(FrenyUpgrade.Reaction);
