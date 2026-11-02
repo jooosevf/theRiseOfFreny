@@ -362,18 +362,24 @@ namespace Online {
             // somebody may have taken the nickname in the last second: the account stands, and the
             // Conta page asks for another
             yield return Profiles.Claim(nick, e => error = e);
-            if (error == null) TakeNick(nick);
             StartCoroutine(Auth.SendVerifyEmail(null));
-            yield return SaveGuestRecord();
+            // what the boards really have comes first: a guest's best here was never uploaded, and
+            // renaming an entry that isn't there is refused
+            yield return SyncBests();
+            if (error == null && Save.playerName != nick) {
+                Save.playerName = nick;
+                SaveLocal();
+                yield return PushName();
+            }
+            SaveGuestRecord();
             AccountChanged?.Invoke();
             done?.Invoke(error != null ? "Conta criada, mas: " + error : null);
         }
 
         // the guest's run still has its ticket (same user id), so its record goes now
-        private IEnumerator SaveGuestRecord() {
-            yield return SyncBests();
+        private void SaveGuestRecord() {
             PendingRecord run = _pending;
-            if (run == null || Record != RecordStatus.NeedsAccount) yield break;
+            if (run == null || Record != RecordStatus.NeedsAccount) return;
             run.previousBest = BestFor(run.level, run.auto);
             run.allTime = run.score > run.previousBest;
             if (run.allTime) SetBest(run.level, run.score, run.auto);
@@ -427,7 +433,9 @@ namespace Online {
 
         // "Esqueci a senha"
         public void SendPasswordReset(string email, Action<string> done) {
-            StartCoroutine(Auth.SendPasswordReset((email ?? "").Trim(), (ok, e) => done?.Invoke(ok ? null : AccountError(e))));
+            // an email with no account gets the same answer: nobody finds out who has one here
+            StartCoroutine(Auth.SendPasswordReset((email ?? "").Trim(),
+                (ok, e) => done?.Invoke(ok || (e ?? "").StartsWith("EMAIL_NOT_FOUND") ? null : AccountError(e))));
         }
 
         public void SendVerifyEmail(Action<string> done) {

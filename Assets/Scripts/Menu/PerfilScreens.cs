@@ -12,7 +12,7 @@ using Online;
 public static class PerfilScreens {
 
     private const float PageWidth = 1040f;
-    private const float RowHeight = 28f;
+    private const float RowHeight = 26f;
     private static readonly Vector2 Middle = new Vector2(0.5f, 0.5f);
     private static readonly string[] Tabs = { "Resumo", "Inimigos", "Armas", "Mortes" };
     private static int lastTab;
@@ -42,7 +42,7 @@ public static class PerfilScreens {
         Head(page, name, line + since, FrenyLook.WornId(LookSlot.Helmet), FrenyLook.WornId(LookSlot.Cape), FrenyLook.WornId(LookSlot.Color));
 
         RectTransform holder = MenuKit.MakeRect("Stats", page.Content);
-        MenuKit.Size(holder, -1f, 9 * RowHeight);
+        MenuKit.Size(holder, -1f, 10 * RowHeight);
         page.Choice("Mostrar", Tabs, lastTab, i => {
             lastTab = i;
             Fill(holder, i);
@@ -90,7 +90,7 @@ public static class PerfilScreens {
             UnityEngine.Object.Destroy(child.gameObject);
         }
         List<string[]> rows = tab == 0 ? Summary() : tab == 1 ? Killed() : tab == 2 ? ByWeapon() : Deaths();
-        RectTransform grid = MakeGrid(holder, 490f);
+        RectTransform grid = MakeGrid(holder, 488f);
         foreach (string[] row in rows) {
             Cell(grid, row[0], row[1]);
         }
@@ -291,15 +291,15 @@ public static class PerfilScreens {
         MenuPage page = new MenuPage(stack.transform, friend.apelido, 860f, Middle, 3f);
 
         RectTransform looks = MenuKit.MakeRect("Looks", page.Content);
-        MenuKit.Size(looks, -1f, 90f);
+        MenuKit.Size(looks, -1f, 76f);
         HorizontalLayoutGroup layout = looks.gameObject.AddComponent<HorizontalLayoutGroup>();
         layout.childAlignment = TextAnchor.MiddleCenter;
         layout.spacing = 180f;
         layout.childControlWidth = true;
         layout.childControlHeight = true;
         layout.childForceExpandWidth = false;
-        LookBox(looks, 90f, me.helmet, me.cape, me.color);
-        LookBox(looks, 90f, friend.helmet, friend.cape, friend.color);
+        LookBox(looks, 76f, me.helmet, me.cape, me.color);
+        LookBox(looks, 76f, friend.helmet, friend.cape, friend.color);
 
         Compare(page, "", me.apelido, friend.apelido);
         Compare(page, "Visto por último", "agora", friend.SeenText());
@@ -316,7 +316,6 @@ public static class PerfilScreens {
         CompareNumber(page, "Noites sobrevividas", PlayerStats.Nights, me, friend);
         CompareNumber(page, "Luas de Sangue", PlayerStats.BloodMoons, me, friend);
         CompareNumber(page, "Quedas", PlayerStats.Deaths, me, friend);
-        page.Space(2f);
         page.Button("Voltar", stack.Back);
         return page;
     }
@@ -328,7 +327,7 @@ public static class PerfilScreens {
     private static void Compare(MenuPage page, string label, string mine, string theirs, long a = 0, long b = 0) {
         Image row = MenuKit.MakeRow(page.Content, label, out Text text);
         row.color = new Color(1f, 1f, 1f, 0.04f);
-        MenuKit.Size(row, -1f, 26f);
+        MenuKit.Size(row, -1f, 24f);
         text.fontSize = MenuKit.SmallTextSize;
         Value(row.transform, mine, a > b);
         Value(row.transform, theirs, b > a);

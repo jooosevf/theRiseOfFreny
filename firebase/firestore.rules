@@ -117,7 +117,8 @@ service cloud.firestore {
       allow read: if request.auth != null && (resource.data.para == request.auth.uid || resource.data.de == request.auth.uid);
       allow create: if isAccount() && validPedido(id);
       allow update: if false;
-      allow delete: if request.auth != null && (resource.data.para == request.auth.uid || resource.data.de == request.auth.uid);
+      // by the id, not the document: answering a request also clears one that may not be there
+      allow delete: if request.auth != null && request.auth.uid in id.split('_');
     }
 
     // The friends of an account, up to 50. A uid only goes in when it sent this player a message or
@@ -133,11 +134,9 @@ service cloud.firestore {
       return request.auth != null && request.auth.token.firebase.sign_in_provider != 'anonymous';
     }
 
-    // a counter: an integer, not below what the document had
-    function up(d, o, f) {
-      return !(f in d) || (d[f] is int && d[f] >= 0 && d[f] >= o.get(f, 0));
-    }
-
+    // Every counter stays at or above what the document had (so it can't go missing or negative,
+    // and a text there is an error, which refuses the write). Written out in the cheapest way: the
+    // rules stop at 1000 evaluated expressions per request, and a helper function per field passed it.
     function validStats(o) {
       let d = request.resource.data;
       return d.keys().hasOnly([
@@ -153,70 +152,69 @@ service cloud.firestore {
                                'bestEasy', 'bestMedium', 'bestHard', 'bestFreny', 'bestAutoEasy', 'bestAutoMedium',
                                'bestAutoHard', 'bestAutoFreny', 'createdAt', 'lastSeen'
              ])
-          && d.keys().hasAll(o.keys())
           && d.lastSeen == request.time
-          && up(d, o, 'runsManual')
-          && up(d, o, 'runsAuto')
-          && up(d, o, 'secManual')
-          && up(d, o, 'secAuto')
-          && up(d, o, 'longestRun')
-          && up(d, o, 'kills')
-          && up(d, o, 'killsAuto')
-          && up(d, o, 'deaths')
-          && up(d, o, 'bestCombo')
-          && up(d, o, 'nights')
-          && up(d, o, 'bloodMoons')
-          && up(d, o, 'coinsEarned')
-          && up(d, o, 'coinsSpent')
-          && up(d, o, 'chests')
-          && up(d, o, 'k_bug')
-          && up(d, o, 'k_bat')
-          && up(d, o, 'k_licker')
-          && up(d, o, 'k_golem')
-          && up(d, o, 'k_golemRed')
-          && up(d, o, 'k_shield')
-          && up(d, o, 'k_sorcerer')
-          && up(d, o, 'k_supreme')
-          && up(d, o, 'k_cyclops')
-          && up(d, o, 'k_other')
-          && up(d, o, 'w_sword')
-          && up(d, o, 'w_greatsword')
-          && up(d, o, 'w_fury')
-          && up(d, o, 'w_gun')
-          && up(d, o, 'w_shotgun')
-          && up(d, o, 'w_grenade')
-          && up(d, o, 'w_staff')
-          && up(d, o, 'w_other')
-          && up(d, o, 'd_bug')
-          && up(d, o, 'd_bat')
-          && up(d, o, 'd_licker')
-          && up(d, o, 'd_golem')
-          && up(d, o, 'd_golemRed')
-          && up(d, o, 'd_shield')
-          && up(d, o, 'd_sorcerer')
-          && up(d, o, 'd_supreme')
-          && up(d, o, 'd_cyclops')
-          && up(d, o, 'd_fall')
-          && up(d, o, 'd_grenade')
-          && up(d, o, 'd_mine')
-          && up(d, o, 'd_spike')
-          && up(d, o, 'd_vomit')
-          && up(d, o, 'd_beam')
-          && up(d, o, 'd_shock')
-          && up(d, o, 'd_acid')
-          && up(d, o, 'd_other')
-          && up(d, o, 'runsEasy')
-          && up(d, o, 'runsMedium')
-          && up(d, o, 'runsHard')
-          && up(d, o, 'runsFreny')
-          && up(d, o, 'bestEasy')
-          && up(d, o, 'bestMedium')
-          && up(d, o, 'bestHard')
-          && up(d, o, 'bestFreny')
-          && up(d, o, 'bestAutoEasy')
-          && up(d, o, 'bestAutoMedium')
-          && up(d, o, 'bestAutoHard')
-          && up(d, o, 'bestAutoFreny');
+          && o.get('runsManual', 0) <= d.get('runsManual', 0)
+          && o.get('runsAuto', 0) <= d.get('runsAuto', 0)
+          && o.get('secManual', 0) <= d.get('secManual', 0)
+          && o.get('secAuto', 0) <= d.get('secAuto', 0)
+          && o.get('longestRun', 0) <= d.get('longestRun', 0)
+          && o.get('kills', 0) <= d.get('kills', 0)
+          && o.get('killsAuto', 0) <= d.get('killsAuto', 0)
+          && o.get('deaths', 0) <= d.get('deaths', 0)
+          && o.get('bestCombo', 0) <= d.get('bestCombo', 0)
+          && o.get('nights', 0) <= d.get('nights', 0)
+          && o.get('bloodMoons', 0) <= d.get('bloodMoons', 0)
+          && o.get('coinsEarned', 0) <= d.get('coinsEarned', 0)
+          && o.get('coinsSpent', 0) <= d.get('coinsSpent', 0)
+          && o.get('chests', 0) <= d.get('chests', 0)
+          && o.get('k_bug', 0) <= d.get('k_bug', 0)
+          && o.get('k_bat', 0) <= d.get('k_bat', 0)
+          && o.get('k_licker', 0) <= d.get('k_licker', 0)
+          && o.get('k_golem', 0) <= d.get('k_golem', 0)
+          && o.get('k_golemRed', 0) <= d.get('k_golemRed', 0)
+          && o.get('k_shield', 0) <= d.get('k_shield', 0)
+          && o.get('k_sorcerer', 0) <= d.get('k_sorcerer', 0)
+          && o.get('k_supreme', 0) <= d.get('k_supreme', 0)
+          && o.get('k_cyclops', 0) <= d.get('k_cyclops', 0)
+          && o.get('k_other', 0) <= d.get('k_other', 0)
+          && o.get('w_sword', 0) <= d.get('w_sword', 0)
+          && o.get('w_greatsword', 0) <= d.get('w_greatsword', 0)
+          && o.get('w_fury', 0) <= d.get('w_fury', 0)
+          && o.get('w_gun', 0) <= d.get('w_gun', 0)
+          && o.get('w_shotgun', 0) <= d.get('w_shotgun', 0)
+          && o.get('w_grenade', 0) <= d.get('w_grenade', 0)
+          && o.get('w_staff', 0) <= d.get('w_staff', 0)
+          && o.get('w_other', 0) <= d.get('w_other', 0)
+          && o.get('d_bug', 0) <= d.get('d_bug', 0)
+          && o.get('d_bat', 0) <= d.get('d_bat', 0)
+          && o.get('d_licker', 0) <= d.get('d_licker', 0)
+          && o.get('d_golem', 0) <= d.get('d_golem', 0)
+          && o.get('d_golemRed', 0) <= d.get('d_golemRed', 0)
+          && o.get('d_shield', 0) <= d.get('d_shield', 0)
+          && o.get('d_sorcerer', 0) <= d.get('d_sorcerer', 0)
+          && o.get('d_supreme', 0) <= d.get('d_supreme', 0)
+          && o.get('d_cyclops', 0) <= d.get('d_cyclops', 0)
+          && o.get('d_fall', 0) <= d.get('d_fall', 0)
+          && o.get('d_grenade', 0) <= d.get('d_grenade', 0)
+          && o.get('d_mine', 0) <= d.get('d_mine', 0)
+          && o.get('d_spike', 0) <= d.get('d_spike', 0)
+          && o.get('d_vomit', 0) <= d.get('d_vomit', 0)
+          && o.get('d_beam', 0) <= d.get('d_beam', 0)
+          && o.get('d_shock', 0) <= d.get('d_shock', 0)
+          && o.get('d_acid', 0) <= d.get('d_acid', 0)
+          && o.get('d_other', 0) <= d.get('d_other', 0)
+          && o.get('runsEasy', 0) <= d.get('runsEasy', 0)
+          && o.get('runsMedium', 0) <= d.get('runsMedium', 0)
+          && o.get('runsHard', 0) <= d.get('runsHard', 0)
+          && o.get('runsFreny', 0) <= d.get('runsFreny', 0)
+          && o.get('bestEasy', 0) <= d.get('bestEasy', 0)
+          && o.get('bestMedium', 0) <= d.get('bestMedium', 0)
+          && o.get('bestHard', 0) <= d.get('bestHard', 0)
+          && o.get('bestFreny', 0) <= d.get('bestFreny', 0)
+          && o.get('bestAutoEasy', 0) <= d.get('bestAutoEasy', 0)
+          && o.get('bestAutoMedium', 0) <= d.get('bestAutoMedium', 0)
+          && o.get('bestAutoHard', 0) <= d.get('bestAutoHard', 0)
+          && o.get('bestAutoFreny', 0) <= d.get('bestAutoFreny', 0);
     }
 
     function num(d, f) {

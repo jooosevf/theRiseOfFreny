@@ -32,12 +32,15 @@ namespace Online {
         // what AntiCheat noticed, taken when the run ends (Seal)
         private readonly List<string> _flags = new List<string>();
         private readonly float _start;
+        private float _sealedAt = -1f;
 
         public RunLog(float start) {
             _start = start;
         }
 
-        public float GameTime => Time.time - _start;
+        // stops when the run ends: the log can go much later ("Salvar recorde", or a guest creating an
+        // account first) and the server refuses a run whose clock went on after Freny fell
+        public float GameTime => _sealedAt >= 0f ? _sealedAt : Time.time - _start;
 
         public void Add(Enemy enemy, float combo) {
             _kills.Add(new Kill {
@@ -57,6 +60,7 @@ namespace Online {
         }
 
         public void Seal(IEnumerable<string> flags) {
+            _sealedAt = GameTime;
             _flags.Clear();
             _flags.AddRange(flags);
         }
