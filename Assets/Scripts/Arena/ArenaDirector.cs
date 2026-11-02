@@ -83,6 +83,10 @@ public class ArenaDirector : MonoBehaviour {
     // enemy pace over the run, on top of the menu level (ArenaDifficulty): slower at the start,
     // faster at the peak and still faster in overtime
     public static float SpeedRamp => Mathf.Lerp(0.95f, 1.15f, CurrentDifficulty) * Mathf.Min(1.4f, 1f + 0.04f * CurrentOvertime);
+    // José, 2026-11-02: the bugs and the bats keep getting faster, up to their limit (Enemy.SwarmTopSpeed),
+    // reached this long into the ramp; like the rest of the ramp, it stops at the first Ciclope
+    private const float SwarmSeconds = 300f;
+    public static float SwarmRamp { get; private set; }
     public static float CooldownRamp => Mathf.Lerp(1.1f, 0.8f, CurrentDifficulty) / Mathf.Min(1.6f, 1f + 0.06f * CurrentOvertime);
 
     private static readonly Color PortalColor = new Color(0.6f, 0.3f, 1f);
@@ -270,6 +274,7 @@ public class ArenaDirector : MonoBehaviour {
     private void Update() {
         CurrentDifficulty = Difficulty;
         CurrentOvertime = Overtime;
+        SwarmRamp = Mathf.Clamp01(rampElapsed / SwarmSeconds);
         if (enemies == null || enemies.Length == 0 || (spawners.Count == 0 && Map == null)) {
             return;
         }
@@ -315,6 +320,7 @@ public class ArenaDirector : MonoBehaviour {
     private void OnDestroy() {
         CurrentDifficulty = 0f;
         CurrentOvertime = 0f;
+        SwarmRamp = 0f;
     }
 
     // the usual enemies out during a Ciclope fight (not the Ciclopes, not the sorcerers)

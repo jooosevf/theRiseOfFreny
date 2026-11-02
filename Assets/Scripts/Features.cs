@@ -13,6 +13,8 @@ public static class Features {
     public static readonly bool EnemyToughening = true;     // each Ciclope killed gives the others more life and speed, up to 3x life; off, they stay as they are
     public static readonly bool CyclopsFlatScore = true;    // other kills are worth 1 point while a Ciclope is alive; off, full points
 
+    public static readonly bool SwarmSpeedUp = true;        // bugs and bats get faster over a run, up to a limit; off, only the usual ramp
+
     // ---- Freny ----
     public static readonly bool Net = true;                 // Rede
     public static readonly bool MageStaff = true;           // Cajado do Mago

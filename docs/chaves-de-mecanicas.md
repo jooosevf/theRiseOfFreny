@@ -13,6 +13,7 @@ Para desligar uma mecânica, troque `true` por `false` na linha dela e salve. A 
 | `BossEscalation` | Inimigos a mais por Ciclope | Toda luta traz 2 feiticeiros, sem outros inimigos de companhia (o morcego e o inseto continuam). |
 | `EnemyToughening` | Inimigos mais fortes a cada Ciclope morto | Eles continuam com a vida e a velocidade normais, e o aviso "ficaram mais fortes" não aparece. |
 | `CyclopsFlatScore` | 1 ponto por abate com Ciclope vivo | Os abates valem os pontos normais durante a luta. |
+| `SwarmSpeedUp` | Inseto e morcego mais rápidos ao longo da corrida | Eles só seguem a aceleração normal da Arena. |
 | `Net` | Rede | Sai da Armeira, do Inventário, do HUD, dos Controles e dos botões de toque. |
 | `MageStaff` | Cajado do Mago | Os feiticeiros não deixam mais o cajado. |
 | `Fury` | Fúria | Some a barra, o botão, o "+5 s" da Armeira e a Fúria do baú dourado. |

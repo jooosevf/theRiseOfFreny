@@ -598,7 +598,20 @@ public abstract class Enemy : MonoBehaviour, IDamageable
 
     // a little faster or slower than its whole-number speed
     protected virtual float SpeedFactor => 1f;
-    protected float MoveSpeed => speed * SpeedFactor * NetSpeed * Tuning.EnemySpeed.Value * (ArenaBounds.Active ? ArenaDifficulty.SpeedFactor(Small) * ArenaDirector.SpeedRamp * (1f + BloodSpeed * BloodMoon) * RunModifiers.EnemySpeedMultiplier : 1f);
+    protected float MoveSpeed => speed * SpeedFactor * NetSpeed * Tuning.EnemySpeed.Value * (ArenaBounds.Active ? ArenaDifficulty.SpeedFactor(Small) * ArenaDirector.SpeedRamp * SwarmFactor * (1f + BloodSpeed * BloodMoon) * RunModifiers.EnemySpeedMultiplier : 1f);
+
+    // the speed the Arena's ramp takes it up to over a run (ArenaDirector.SwarmRamp), on the Médio
+    // level: the levels scale it. 0: it only follows the usual ramp. It never slows anyone down: a
+    // long run already past this limit keeps going as it did
+    protected virtual float SwarmTopSpeed => 0f;
+    private float SwarmFactor {
+        get {
+            if (!Features.SwarmSpeedUp || SwarmTopSpeed <= 0f || speed <= 0) {
+                return 1f;
+            }
+            return Mathf.Max(1f, Mathf.Lerp(1f, SwarmTopSpeed / (speed * ArenaDirector.SpeedRamp), ArenaDirector.SwarmRamp));
+        }
+    }
 
     // ---- Freny's Rede (NetTrap): a caught enemy starts no attack (NetTrap pins it in place); the
     // Ciclope is only slowed down ----
