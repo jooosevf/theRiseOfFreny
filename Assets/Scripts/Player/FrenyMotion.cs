@@ -409,9 +409,9 @@ public class FrenyMotion : MonoBehaviour {
             if (arcPending) {
                 // the smear follows the tip of the blade, around his shoulder
                 arcPending = false;
-                float radius = (GreatSword ? ArmAndGreatBlade : ArmAndBlade) * (slashStep == 3 ? 1.4f : 1.25f);
+                float radius = (GreatSword ? ArmAndGreatBlade : ArmAndBlade) * (slashStep == 3 ? 1.3f : 1.15f);
                 SlashArc.Spawn(this, body.transform, body, Shoulder, radius, CutFrom[slashStep - 1], CutTo[slashStep - 1], GreatSword,
-                    slashStep == 3, slashStep == 3 ? 0.22f : SlashArc.DefaultLife, slashStep == 3 ? 1.05f : 1f);
+                    slashStep == 3, slashStep == 3 ? 0.22f : SlashArc.DefaultLife, slashStep == 3 ? 1f : 0.9f);
             }
         }
         UpdateSwingAngles(swing);
@@ -695,7 +695,7 @@ public class FrenyMotion : MonoBehaviour {
             float tail = gone * gone * 0.9f;                                          // eats the arc from its start
             float thin = 1f - gone * gone;                                            // the band narrows as it goes
             float alpha = 1f - gone * gone * gone;
-            float bandMax = Mathf.Min(0.5f * thickness, 0.85f) * radius;
+            float bandMax = Mathf.Min(0.32f * thickness, 0.5f) * radius;   // slimmer: José found the first cut "gorda"
             Color white = new Color(1f, 1f, 1f, alpha);
             Color inside = tint; inside.a = alpha;
             Color edge = rim; edge.a *= alpha;
@@ -704,7 +704,7 @@ public class FrenyMotion : MonoBehaviour {
                 float along = Mathf.Lerp(tail, head, k);
                 float a = Mathf.Lerp(from, to, along) * Mathf.Deg2Rad;
                 // pointed at both ends, widest past the middle (the blade's tip does the work)
-                float shape = Mathf.Pow(Mathf.Max(0f, Mathf.Sin(Mathf.Clamp01(along) * Mathf.PI)), 0.6f);   // Sin(PI) is a hair negative: Pow gave NaN
+                float shape = Mathf.Pow(Mathf.Max(0f, Mathf.Sin(Mathf.Clamp01(along) * Mathf.PI)), 0.8f);   // Sin(PI) is a hair negative: Pow gave NaN
                 float width = Mathf.Max(0.01f, bandMax * shape * thin);
                 Vector3 dir = new Vector3(Mathf.Cos(a), Mathf.Sin(a) * squashY, 0f);
                 int v = i * Rings;
