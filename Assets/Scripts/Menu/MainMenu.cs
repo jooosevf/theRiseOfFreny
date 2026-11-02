@@ -173,7 +173,7 @@ public class MainMenu : MonoBehaviour {
         page.Choice("Controle", new[] { "Automático", "Manual" }, ArenaDifficulty.Manual ? 1 : 0,
             i => ArenaDifficulty.Manual = i == 1);
         ArenaVariant.AddChoice(page);   // Clássica or Poço de Ácido, once it is open
-        page.Label("Só corridas manuais do começo ao fim valem para o ranking. O oficial é o do Difícil.");
+        page.Label("Só corridas manuais do começo ao fim valem para o ranking. O oficial é o do Freny.");
         if (Features.WeeklyMutators) {
             page.Label(WeeklyMutators.MenuText);   // the same rule for everyone this week
         }
@@ -197,8 +197,7 @@ public class MainMenu : MonoBehaviour {
         switch (level) {
             case ArenaLevel.Easy: return "Poucos inimigos, o ritmo sobe devagar";
             case ArenaLevel.Medium: return "O ritmo normal da Arena";
-            case ArenaLevel.Hard: return "Mais inimigos, mais fortes, mais rápido";
-            default: return "Para quem já domina a Arena";
+            default: return "Mais inimigos, mais fortes, mais rápido";
         }
     }
 

@@ -29,7 +29,7 @@ public static class GuideScreen {
         for (int i = 0; i < Topics.Length; i++) {
             if (TopicOn(i)) {
                 shown.Add(i);
-                names.Add(Topics[i]);
+                names.Add(i == 1 && !Features.Fury ? "Defesa" : Topics[i]);
             }
         }
         lastTopic = shown[Mathf.Max(0, shown.IndexOf(lastTopic))];
@@ -153,7 +153,7 @@ public static class GuideScreen {
         Entry(parent, art ? art.coin : null, "Inimigos (Arena)",
             "Além da moeda, com metade faltando: poção 15%, balas 12%, cartuchos 10%, granada 6%, " +
             "escopeta 3% (sem escopeta), espadão 4%, armadura 4%, diamante 4%. Na campanha só deixam moedas.");
-        Entry(parent, art ? art.grenade : null, "Baú (Arena)",
+        Entry(parent, art ? art.grenade : null, "Baú prata (Arena)",
             "Surge a cada 30 s e some em 20 s; quebra com golpe ou tiro. Dá 2 granadas, a escopeta com 6 " +
             "cartuchos ou 10-25 moedas (às vezes com diamante); granadas e escopeta conforme a necessidade.");
         Entry(parent, art ? art.diamond : null, "Vasos, caixas e barris",
@@ -169,7 +169,8 @@ public static class GuideScreen {
             "Só abre com a chave (encoste ou bata). Dá cerca de 145 moedas (moedas e 2 diamantes), enche a vida, a armadura, " +
             "as balas, os cartuchos e as granadas, " + (Features.Fury ? "solta a Fúria na hora " : "") + "e, se você não tem o Espadão, uns golpes com ele. Não dá pontos. " +
             "E tem " + Mathf.RoundToInt(FrenyLook.ChestLookChance * 100f) + "% de chance de trazer um visual que só ele dá " +
-            "(Elmo do Ciclope ou Capa dourada), um que você ainda não tem.");
+            "(Elmo do Ciclope ou Capa dourada), um que você ainda não tem." + (Features.Blessings ? " Ao abrir, escolha 1 de 3 bênçãos." : "") + " " +
+            "Cada chave traz um baú novo, então dá para ter vários na mesma corrida.");
         if (Features.MageStaff) Entry(parent, MageStaff.Icon, "Feiticeiros (Arena)",
             "Cada feiticeiro que morre tem " + Mathf.RoundToInt(MageStaff.DropChance * 100f) + "% de chance de deixar o Cajado do Mago.");
     }
@@ -283,8 +284,10 @@ public static class GuideScreen {
             "os inimigos ficam 25% mais rápidos, tiram 1 coração a mais, recuperam vida (1 a cada 3 s, o Ciclope também) " +
             "e ficam de olhos vermelhos, deixando um rastro vermelho.");
         Entry(parent, art ? art.rageHelmet : null, "Dificuldade",
-            "Fácil, Médio, Difícil ou Freny: quanto maior, mais inimigos, mais rápidos e mais cedo. " +
-            "Com o tempo e os pontos a Arena aperta, mas para de apertar no primeiro Ciclope (50 mil) e só volta em 1 milhão.");
+            "Fácil, Médio ou Freny: quanto maior, mais inimigos, mais rápidos e mais cedo. " +
+            "Com o tempo e os pontos a Arena aperta, mas para de apertar no primeiro Ciclope (50 mil) e só volta em 1 milhão." +
+            (Features.EnemyToughening ? " E cada Ciclope derrotado deixa os outros inimigos mais fortes até o fim da corrida: +25% de vida nos 4 primeiros, depois +10% por Ciclope, " +
+            "até o máximo de 3x (quem tinha 1 de vida vai no máximo a 2), e um pouco mais rápidos." : ""));
         if (Features.Cyclops) Entry(parent, null, "Música do chefe",
             "Quando o Ciclope chega, a música da Arena dá lugar à dele, mais pesada e rápida, e as tochas piscam " +
             "rápido e ficam vermelhas. Quando ele cai, tudo volta ao normal.");
@@ -324,7 +327,7 @@ public static class GuideScreen {
             "Escolha um em Conquistas > Títulos e ele aparece ao lado do seu nome no ranking do jogo e do site. " +
             "Cada conquista confirmada pelo servidor libera um (o Ciclope dá Matador de Gigantes, o Supremo " +
             "Caçador de Magos...), e terminar uma corrida manual libera Gladiador. Rei da Arena só aparece " +
-            "enquanto você for o 1º do Difícil, no geral ou no do dia.");
+            "enquanto você for o 1º do Freny, no geral ou no do dia.");
         Entry(parent, art ? art.run : null, "Estatísticas",
             "Em Conquistas > Estatísticas: corridas, tempo de jogo, melhor combo, recorde de cada dificuldade " +
             "e inimigos derrotados de cada tipo, Ciclopes também. Contam todas as corridas do save, com o piloto " +
@@ -335,8 +338,8 @@ public static class GuideScreen {
 
     private static void BlessingsTopic(Transform parent) {
         Entry(parent, null, "Bênçãos",
-            "No começo de cada corrida da Arena o jogo para e mostra as 10 bênçãos: escolha qualquer uma (clique, " +
-            "toque, setas e Enter, ou as teclas de 1 a 9 e 0). Ela vale a corrida toda e aparece embaixo das armas. " +
+            "Vêm do baú dourado: ao abrir, o jogo para e mostra 3 bênçãos sorteadas entre as que você ainda não tem. Escolha uma (clique, " +
+            "toque, setas e Enter, ou 1, 2, 3). Ela vale até o fim da corrida, soma com as outras e aparece embaixo das armas. " +
             "No automático o piloto escolhe sozinho. Nenhuma mexe nos pontos, então a corrida vale para o ranking.");
         // two per row, so the ten fit on a 720p screen
         for (int i = 0; i < Blessings.All.Length; i += 2) {

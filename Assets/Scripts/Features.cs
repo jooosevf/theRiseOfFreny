@@ -10,6 +10,7 @@ public static class Features {
     public static readonly bool SpiderMine = true;          // Mina-aranha
     public static readonly bool Cyclops = true;             // the boss at 50k; off, its missions and loot go too
     public static readonly bool BossEscalation = true;      // each Ciclope brings more helpers and company; off, every fight is like the first
+    public static readonly bool EnemyToughening = true;     // each Ciclope killed gives the others more life and speed, up to 3x life; off, they stay as they are
     public static readonly bool CyclopsFlatScore = true;    // other kills are worth 1 point while a Ciclope is alive; off, full points
 
     // ---- Freny ----
@@ -20,7 +21,7 @@ public static class Features {
     public static readonly bool WeaponBuffs = true;         // the Armeiro's weapon levels and Crítico; the old weapon sales do not come back
 
     // ---- a run's variety ----
-    public static readonly bool Blessings = true;           // Bênçãos (no picker at the start of a run)
+    public static readonly bool Blessings = true;           // Bênçãos (the golden chest stops offering them)
     public static readonly bool WeeklyMutators = true;      // Mutador da semana
     public static readonly bool GoldenChest = true;         // the Ciclope's key, the golden chest and its exclusive looks
     public static readonly bool AcidPit = true;             // Poço de Ácido
