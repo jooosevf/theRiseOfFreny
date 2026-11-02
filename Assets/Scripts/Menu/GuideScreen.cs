@@ -302,8 +302,8 @@ public static class GuideScreen {
         Entry(parent, art ? art.rageHelmet : null, "Dificuldade",
             "Fácil, Médio ou Freny: quanto maior, mais inimigos, mais rápidos e mais cedo. " +
             "Com o tempo e os pontos a Arena aperta, mas para de apertar no primeiro Ciclope (50 mil) e só volta em 1 milhão." +
-            (Features.EnemyToughening ? " E cada Ciclope derrotado deixa os outros inimigos mais fortes até o fim da corrida: +25% de vida nos 4 primeiros, depois +10% por Ciclope, " +
-            "até o máximo de 3x (quem tinha 1 de vida vai no máximo a 2), e um pouco mais rápidos." : ""));
+            (Features.EnemyToughening ? " E cada Ciclope derrotado deixa os outros inimigos mais difíceis até o fim da corrida, sem limite: +25% de vida, +3% de velocidade, " +
+            "+4% de ritmo de ataque e um inimigo a mais na Arena (até o limite dela). A cada 8 Ciclopes, cada golpe deles tira 1 coração a mais." : ""));
         if (Features.Cyclops) Entry(parent, null, "Música do chefe",
             "Quando o Ciclope chega, a música da Arena dá lugar à dele, mais pesada e rápida, e as tochas piscam " +
             "rápido e ficam vermelhas. Quando ele cai, tudo volta ao normal.");

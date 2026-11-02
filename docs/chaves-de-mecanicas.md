@@ -11,7 +11,7 @@ Para desligar uma mecânica, troque `true` por `false` na linha dela e salve. A 
 | `SpiderMine` | Mina-aranha | Ela não entra na lista de inimigos da Arena. Sai do Guia. |
 | `Cyclops` | Ciclope | Nenhum Ciclope aparece. As duas missões dele saem do sorteio do dia. A Lua de Sangue continua. |
 | `BossEscalation` | Inimigos a mais por Ciclope | Toda luta traz 2 feiticeiros, sem outros inimigos de companhia (o morcego e o inseto continuam). |
-| `EnemyToughening` | Inimigos mais fortes a cada Ciclope morto | Eles continuam com a vida e a velocidade normais, e o aviso "ficaram mais fortes" não aparece. |
+| `EnemyToughening` | Inimigos mais difíceis a cada Ciclope morto, sem limite | Eles continuam com vida, velocidade, ataque e dano normais, e o aviso "ficaram mais fortes" não aparece. |
 | `CyclopsFlatScore` | 1 ponto por abate com Ciclope vivo | Os abates valem os pontos normais durante a luta. |
 | `WeakCombo` | Inseto e morcego contam metade no combo | Todo abate soma 0,1x. A API aceita os dois jeitos. |
 | `SwarmSpeedUp` | Inseto e morcego mais rápidos ao longo da corrida | Eles só seguem a aceleração normal da Arena. |

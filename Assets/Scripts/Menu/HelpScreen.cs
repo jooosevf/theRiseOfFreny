@@ -94,7 +94,7 @@ public static class HelpScreen {
             case GameAction.Jump: return "Pula";
             case GameAction.Melee: return "Golpe de espada, de perto";
             case GameAction.Ranged: return "Atira com a arma escolhida";
-            case GameAction.Dash: return "Avança rápido no ar";
+            case GameAction.Dash: return "Avança rápido, no chão ou no ar";
             case GameAction.Run: return "Corre no chão; no ar dá dash";
             case GameAction.Grenade: return Features.GrenadeFuse ? "Segure para queimar o pavio, solte" : "Joga uma granada";
             case GameAction.Potion: return "Bebe uma poção e cura";
@@ -135,7 +135,7 @@ public static class HelpScreen {
             case GameAction.Jump: return "Pular";
             case GameAction.Melee: return "Golpe";
             case GameAction.Ranged: return "Tiro";
-            case GameAction.Dash: return "2 toques no direcional, no ar";
+            case GameAction.Dash: return "2 toques no direcional";
             case GameAction.Run: return "2 toques no direcional e segure";
             case GameAction.Grenade: return "Gran.";
             case GameAction.Potion: return "Poção";

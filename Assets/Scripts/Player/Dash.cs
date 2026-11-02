@@ -1,8 +1,10 @@
 using UnityEngine;
 
-// Dash (Shift or Ctrl, in the air only): a flat, fixed-speed burst in the facing direction, once per
-// jump. Owns the velocity while it lasts (Player.FixedUpdate leaves the horizontal speed alone), then
-// hands it back. On the ground Shift is the sprint instead. Added by ArenaBootstrap and CampaignBootstrap.
+// Dash: a flat, fixed-speed burst in the facing direction, once per jump in the air, and on the ground
+// too (José, 2026-11-02). Owns the velocity while it lasts (Player.FixedUpdate leaves the horizontal speed
+// alone), then hands it back. Ctrl dashes anywhere; Shift is the sprint on the ground and a dash in
+// the air. On a touch screen the sprint's double tap also dashes, as it has no button of its own. Added
+// by ArenaBootstrap and CampaignBootstrap.
 public class Dash : MonoBehaviour {
 
     public float dashVelocity = 12f;   // units/s, constant for the whole dash
@@ -19,7 +21,9 @@ public class Dash : MonoBehaviour {
     private bool usedInAir;            // one dash per jump; landing gives it back
 
     public bool IsDashing => direction != 0;
-    public bool CanDash => direction == 0 && Time.time >= nextDashTime && !usedInAir && player && player.IsAirborne;
+    public bool CanDash => direction == 0 && Time.time >= nextDashTime && !usedInAir && player;
+    // the autopilot only dashes in the air: its dodges on the ground are jumps
+    public bool CanAirDash => CanDash && player.IsAirborne;
     // 1 = ready, 0 = just dashed (for the HUD)
 
     private void Start() {
@@ -49,7 +53,8 @@ public class Dash : MonoBehaviour {
             return;
         }
 
-        if (input != null && input.Current.dashPressed && CanDash && !player.IsStunned) {
+        bool sprintDash = input != null && input.Current.runPressed && (player.IsAirborne || TouchControls.Active);
+        if (input != null && (input.Current.dashPressed || sprintDash) && CanDash && !player.IsStunned && !player.IsCrouching) {
             Begin();
         }
     }
@@ -64,7 +69,7 @@ public class Dash : MonoBehaviour {
 
     private void Begin() {
         direction = player.FacingRight ? 1 : -1;
-        usedInAir = true;
+        usedInAir = player.IsAirborne;
         dashUntil = Time.time + startDashTime;
         nextDashTime = dashUntil + dashCooldown;
         if (playerAnim) {

@@ -74,7 +74,7 @@ public class ArenaDirector : MonoBehaviour {
     private const int MaxEnemies = 24;
     public int MaxAlive => Mathf.Min(MaxEnemies, Mathf.Max(1, Mathf.RoundToInt(
         Mathf.Lerp(3f * Mathf.Min(1f, ArenaDifficulty.PeakFactor), Tuning.PeakEnemies.Value * ArenaDifficulty.PeakFactor, Difficulty)
-        + Overtime)));
+        + Overtime + RunModifiers.CyclopsSlain)));
     public float SpawnInterval => Mathf.Lerp(3f, 0.8f, Difficulty) * ArenaDifficulty.SpawnIntervalFactor / (1f + 0.15f * Overtime);
 
     // how many enemies go after Freny from anywhere in the arena (Enemy.JoinChase); the ones that

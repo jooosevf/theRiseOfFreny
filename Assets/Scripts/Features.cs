@@ -10,7 +10,7 @@ public static class Features {
     public static readonly bool SpiderMine = true;          // Mina-aranha
     public static readonly bool Cyclops = true;             // the boss at 50k; off, its missions and loot go too
     public static readonly bool BossEscalation = true;      // each Ciclope brings more helpers and company; off, every fight is like the first
-    public static readonly bool EnemyToughening = true;     // each Ciclope killed gives the others more life and speed, up to 3x life; off, they stay as they are
+    public static readonly bool EnemyToughening = true;     // each Ciclope killed makes the others harder, with no end (RunModifiers); off, they stay as they are
     public static readonly bool CyclopsFlatScore = true;    // other kills are worth 1 point while a Ciclope is alive; off, full points
 
     public static readonly bool WeakCombo = true;           // a bug or a bat counts half for the combo; off, every kill adds 0.1x

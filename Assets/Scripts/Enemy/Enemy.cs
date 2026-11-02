@@ -162,7 +162,7 @@ public abstract class Enemy : MonoBehaviour, IDamageable
     private float pushScale = 1f;            // set for one sword hit by Damage(amount, push)
     private const float PushDrag = 40f;
     // arena difficulty on attack rhythm (1 outside the arena)
-    protected float DifficultyCooldown => ArenaBounds.Active ? ArenaDifficulty.CooldownFactor * ArenaDirector.CooldownRamp * ScoreCooldown : 1f;
+    protected float DifficultyCooldown => ArenaBounds.Active ? ArenaDifficulty.CooldownFactor * ArenaDirector.CooldownRamp * ScoreCooldown * RunModifiers.EnemyCooldownMultiplier : 1f;
 
     // José, 2026-10-29: the more points, the shorter every enemy's cooldown: 1x at 0 down to
     // ScoreCooldownHold at the first Ciclope (50 000), held there until a million (it got too hard
@@ -1116,7 +1116,7 @@ public abstract class Enemy : MonoBehaviour, IDamageable
 
     protected void HitPlayer() {
         Player.NextDamageSource = Online.RunLog.PrefabName(gameObject.name);
-        if (!player.TryDamage(HitDamage + BloodDamage)) {
+        if (!player.TryDamage(HitDamage + BloodDamage + RunModifiers.SlainDamage)) {
             return;
         }
         float dir = Mathf.Sign(player_t.position.x - transform.position.x);

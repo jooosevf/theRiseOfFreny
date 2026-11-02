@@ -9,6 +9,7 @@ public struct PlayerInputFrame {
     public bool meleePressed;
     public bool rangedPressed;
     public bool dashPressed;
+    public bool runPressed;      // the sprint's button went down: a dash too in the air (Dash)
     public bool runHeld;         // sprint while held (short, with a cooldown)
     public bool crouchHeld;      // down: crouch while on the ground
     public bool aimUpHeld;       // up: the gun fires straight up
