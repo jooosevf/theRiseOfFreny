@@ -20,7 +20,8 @@ Para desligar uma mecânica, troque `true` por `false` na linha dela e salve. A 
 | `Fury` | Fúria | Some a barra, o botão, o "+5 s" da Armeira e a Fúria do baú dourado. |
 | `GrenadeFuse` | Pavio de 3 s da granada | A granada explode onde bater (no máximo 1 s no ar), sem segurar para queimar o pavio. |
 | `ComboHype` | Combo que cresce, muda de cor e treme na tela | Volta a linha simples de sempre. |
-| `MultiKill` | Banners de Double, Triple, Quadra e Penta Kill | Os banners e o som somem. Nada mais muda, porque eles não dão pontos. |
+| `MultiKill` | Banners de Double, Triple, Quadra, Penta e Multi Kill | Os banners e o som somem. Nada mais muda, porque eles não dão pontos. |
+| `Narrator` | Voz do narrador: "Bem-vindo à arena" e os multi-kills | O jogo fica sem a voz; os banners continuam. |
 | `WeaponBuffs` | Armeira por níveis | As melhorias de arma e o Crítico saem da loja e param de valer, mesmo para quem já comprou. Ficam vida, velocidade, pulo duplo, espada mais rápida e Rede. **As armas não voltam à venda**: esse código foi removido em 2026-11-01. |
 | `InstaKill`, `Nuke`, `Magnet` | Drops raros | Aquele drop para de cair; os outros mantêm as chances. Cada um sai do Guia. |
 | `Blessings` | Bênçãos | O baú dourado para de oferecer bênçãos. |

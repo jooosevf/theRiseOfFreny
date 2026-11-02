@@ -1,7 +1,10 @@
+using System.Collections;
 using UnityEngine;
 
-// The multi-kill banners (José, 2026-11-02): one attack of Freny's that kills 2, 3, 4 or 5 or more
-// enemies shows DOUBLE, TRIPLE, QUADRA or PENTA KILL across the screen. One attack is one grenade
+// The multi-kill banners (José, 2026-11-02): one attack of Freny's that kills 2, 3, 4, 5 or 6 or more
+// enemies shows DOUBLE, TRIPLE, QUADRA, PENTA or MULTI KILL across the screen, and the narrator says it
+// (Tools/VoiceGen/narrador.ps1). He also welcomes Freny to the arena: every manual run, and the first
+// automatic one (the autopilot restarts on its own, and he would say it all the time). One attack is one grenade
 // blast, one swing of the sword (of the Espadão and the Fúria too) or one shotgun shot; a swing or
 // a shot lands its kills a few frames apart, so the banner climbs as they come. The Nuke is a drop,
 // not an attack, so it doesn't count. It is only the banner: no points, nothing in the run's log, so
@@ -12,28 +15,53 @@ public class MultiKill : MonoBehaviour {
     private const float PopSeconds = 0.15f;
     private const float FadeSeconds = 0.4f;
     private const float ScreenY = 0.37f;   // under "LUA DE SANGUE" and the achievement banner
+    private const float VoiceDelay = 0.12f;   // a swing's kills come frames apart: he only says the last banner
+    private const float WelcomeDelay = 0.8f;
 
     // from bone to blood, and bigger each step
-    private static readonly string[] Names = { "DOUBLE KILL", "TRIPLE KILL", "QUADRA KILL", "PENTA KILL" };
-    private static readonly int[] Sizes = { 54, 62, 72, 86 };
-    private static readonly float[] Pitches = { 1f, 1.12f, 1.26f, 1.5f };
+    private static readonly string[] Names = { "DOUBLE KILL", "TRIPLE KILL", "QUADRA KILL", "PENTA KILL", "MULTI KILL" };
+    private static readonly string[] Voices = { "narrator_double", "narrator_triple", "narrator_quadra", "narrator_penta", "narrator_multi" };
+    private static readonly int[] Sizes = { 54, 62, 72, 86, 98 };
+    private static readonly float[] Pitches = { 1f, 1.12f, 1.26f, 1.5f, 1.68f };
     public static readonly Color[] Colors = {
         new Color(0.91f, 0.85f, 0.72f),
         new Color(0.95f, 0.72f, 0.25f),
         new Color(1f, 0.45f, 0.15f),
         new Color(0.9f, 0.12f, 0.1f),
+        new Color(0.95f, 0.05f, 0.3f),
     };
 
     private static int swing, swingKills;
     private static int shot, shotKills;
     private static int tier = -1;      // which banner is up
     private static float shownAt;
+    private static bool voicePending;
+    private static bool welcomedAuto;
     private GUIStyle style;
 
     private void Awake() {
         // a new run starts counting from nothing (the scene reloads for each one)
         swing = shot = swingKills = shotKills = 0;
         tier = -1;
+        voicePending = false;
+    }
+
+    private IEnumerator Start() {
+        if (!Features.Narrator || (!ArenaDifficulty.Manual && welcomedAuto)) {
+            yield break;
+        }
+        welcomedAuto = welcomedAuto || !ArenaDifficulty.Manual;
+        yield return new WaitForSeconds(WelcomeDelay);
+        Sfx.Play("narrator_welcome");
+    }
+
+    private void Update() {
+        if (voicePending && Time.unscaledTime - shownAt >= VoiceDelay) {
+            voicePending = false;
+            if (Features.Narrator) {
+                Sfx.Play(Voices[tier]);
+            }
+        }
     }
 
     // Grenade.Explode: all the enemies one blast killed
@@ -66,6 +94,7 @@ public class MultiKill : MonoBehaviour {
         tier = Mathf.Min(kills, Names.Length + 1) - 2;
         shownAt = Time.unscaledTime;
         Sfx.Play("multi_kill", 1f, Pitches[tier]);
+        voicePending = true;
     }
 
     private void OnGUI() {
