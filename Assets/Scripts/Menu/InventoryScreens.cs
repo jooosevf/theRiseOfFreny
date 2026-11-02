@@ -446,6 +446,9 @@ public static class InventoryScreens {
         if (upgrade == FrenyUpgrade.Net) {
             return NetThrower.Icon;
         }
+        if (upgrade == FrenyUpgrade.BossHunter && BossKey.Icon != null) {
+            return BossKey.Icon;
+        }
         MenuArt art = MenuArt.Get;
         if (art == null) {
             return null;
@@ -477,6 +480,13 @@ public static class InventoryScreens {
             case FrenyUpgrade.GrenadePower:
             case FrenyUpgrade.GrenadeCarry: return art.grenade;
             case FrenyUpgrade.RageTime: return art.rageHelmet;
+            // autopilot brain: generic icons from the art we already have
+            case FrenyUpgrade.Reaction:
+                return art.frenyFace != null && art.frenyFace.Length > 0 ? art.frenyFace[0] : art.run;
+            case FrenyUpgrade.DashDodge: return art.run;
+            case FrenyUpgrade.ItemSense: return art.armorHeart;
+            case FrenyUpgrade.SmartTarget: return art.revolver;
+            case FrenyUpgrade.BossHunter: return art.grenade;
             default: return null;
         }
     }
