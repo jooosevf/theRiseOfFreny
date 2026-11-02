@@ -57,6 +57,255 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ---- contas, perfil e amigos (2026-11-02) ----
+    // "account" below is a player with an email login: a guest (anonymous login) plays everything,
+    // but has no nickname, public profile or friends.
+
+    // Who owns a nickname. The id is the nickname in plain lowercase ("José_1" -> "jose_1", the
+    // game's ProfileService.NickKey and the site's nickKey), so "jose" can't be taken next to "José".
+    // Created once, never changed; only its owner frees it (renaming). Anyone can look one up.
+    match /apelidos/{key} {
+      allow read: if true;
+      allow create: if isAccount() && key.matches('[a-z0-9_-]{3,16}')
+                    && request.resource.data.keys().hasOnly(['uid', 'apelido', 'criadoEm'])
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.apelido is string
+                    && request.resource.data.apelido.size() >= 3 && request.resource.data.apelido.size() <= 16
+                    && request.resource.data.criadoEm == request.time;
+      allow update: if false;
+      allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
+    }
+
+    // Who owns a friend code, FRENY-XXXX. Created once, never changed.
+    match /codigos/{code} {
+      allow read: if true;
+      allow create: if isAccount() && code.matches('FRENY-[2-9A-HJ-NP-Z]{4}')
+                    && request.resource.data.keys().hasOnly(['uid', 'criadoEm'])
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.criadoEm == request.time;
+      allow update, delete: if false;
+    }
+
+    // The account's stats, the game's Perfil (PlayerStats): written once when a run ends and read
+    // once at login. Only the owner; every counter only goes up; one write every 20 s; only the
+    // fields below (so the size is bounded); createdAt never changes. A guest has them too, so
+    // they stay when the guest creates an account (same uid).
+    match /stats/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && validStats({})
+                    && request.resource.data.createdAt == request.time;
+      allow update: if isOwner(userId) && validStats(resource.data)
+                    && request.resource.data.createdAt == resource.data.createdAt
+                    && request.time > resource.data.lastSeen + duration.value(20, 's');
+      allow delete: if false;
+    }
+
+    // The public profile, what the site's Perfil, the friends list and the friends ranking read. No
+    // email. The nickname and the code must be the account's own (checked only when they change),
+    // and each best carries the signature the ranking API gave it (the same one its board entry has).
+    match /perfis/{userId} {
+      allow read: if true;
+      allow create, update: if isOwner(userId) && isAccount() && validPerfil(userId)
+                    && (resource == null || request.time > resource.data.lastSeen + duration.value(10, 's'));
+      allow delete: if false;
+    }
+
+    // A message from one account to another: "pedido" (a friend request), "aceito" (the other side
+    // accepted: they already list this player) or "removido". The id is <para>_<de>. Only the two
+    // can read it, and either one can delete it. The game only lists its own: where para == uid.
+    match /pedidos/{id} {
+      allow read: if request.auth != null && (resource.data.para == request.auth.uid || resource.data.de == request.auth.uid);
+      allow create: if isAccount() && validPedido(id);
+      allow update: if false;
+      allow delete: if request.auth != null && (resource.data.para == request.auth.uid || resource.data.de == request.auth.uid);
+    }
+
+    // The friends of an account, up to 50. A uid only goes in when it sent this player a message or
+    // already lists this player; "novo" names the one going in, so the rules can look it up.
+    match /amigos/{userId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isAccount() && validFriends(userId);
+      allow delete: if false;
+    }
+
+    // not a guest
+    function isAccount() {
+      return request.auth != null && request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+
+    // a counter: an integer, not below what the document had
+    function up(d, o, f) {
+      return !(f in d) || (d[f] is int && d[f] >= 0 && d[f] >= o.get(f, 0));
+    }
+
+    function validStats(o) {
+      let d = request.resource.data;
+      return d.keys().hasOnly([
+                               'runsManual', 'runsAuto', 'secManual', 'secAuto', 'longestRun', 'kills',
+                               'killsAuto', 'deaths', 'bestCombo', 'nights', 'bloodMoons', 'coinsEarned',
+                               'coinsSpent', 'chests', 'k_bug', 'k_bat', 'k_licker', 'k_golem',
+                               'k_golemRed', 'k_shield', 'k_sorcerer', 'k_supreme', 'k_cyclops', 'k_other',
+                               'w_sword', 'w_greatsword', 'w_fury', 'w_gun', 'w_shotgun', 'w_grenade',
+                               'w_staff', 'w_other', 'd_bug', 'd_bat', 'd_licker', 'd_golem',
+                               'd_golemRed', 'd_shield', 'd_sorcerer', 'd_supreme', 'd_cyclops', 'd_fall',
+                               'd_grenade', 'd_mine', 'd_spike', 'd_vomit', 'd_beam', 'd_shock',
+                               'd_acid', 'd_other', 'runsEasy', 'runsMedium', 'runsHard', 'runsFreny',
+                               'bestEasy', 'bestMedium', 'bestHard', 'bestFreny', 'bestAutoEasy', 'bestAutoMedium',
+                               'bestAutoHard', 'bestAutoFreny', 'createdAt', 'lastSeen'
+             ])
+          && d.keys().hasAll(o.keys())
+          && d.lastSeen == request.time
+          && up(d, o, 'runsManual')
+          && up(d, o, 'runsAuto')
+          && up(d, o, 'secManual')
+          && up(d, o, 'secAuto')
+          && up(d, o, 'longestRun')
+          && up(d, o, 'kills')
+          && up(d, o, 'killsAuto')
+          && up(d, o, 'deaths')
+          && up(d, o, 'bestCombo')
+          && up(d, o, 'nights')
+          && up(d, o, 'bloodMoons')
+          && up(d, o, 'coinsEarned')
+          && up(d, o, 'coinsSpent')
+          && up(d, o, 'chests')
+          && up(d, o, 'k_bug')
+          && up(d, o, 'k_bat')
+          && up(d, o, 'k_licker')
+          && up(d, o, 'k_golem')
+          && up(d, o, 'k_golemRed')
+          && up(d, o, 'k_shield')
+          && up(d, o, 'k_sorcerer')
+          && up(d, o, 'k_supreme')
+          && up(d, o, 'k_cyclops')
+          && up(d, o, 'k_other')
+          && up(d, o, 'w_sword')
+          && up(d, o, 'w_greatsword')
+          && up(d, o, 'w_fury')
+          && up(d, o, 'w_gun')
+          && up(d, o, 'w_shotgun')
+          && up(d, o, 'w_grenade')
+          && up(d, o, 'w_staff')
+          && up(d, o, 'w_other')
+          && up(d, o, 'd_bug')
+          && up(d, o, 'd_bat')
+          && up(d, o, 'd_licker')
+          && up(d, o, 'd_golem')
+          && up(d, o, 'd_golemRed')
+          && up(d, o, 'd_shield')
+          && up(d, o, 'd_sorcerer')
+          && up(d, o, 'd_supreme')
+          && up(d, o, 'd_cyclops')
+          && up(d, o, 'd_fall')
+          && up(d, o, 'd_grenade')
+          && up(d, o, 'd_mine')
+          && up(d, o, 'd_spike')
+          && up(d, o, 'd_vomit')
+          && up(d, o, 'd_beam')
+          && up(d, o, 'd_shock')
+          && up(d, o, 'd_acid')
+          && up(d, o, 'd_other')
+          && up(d, o, 'runsEasy')
+          && up(d, o, 'runsMedium')
+          && up(d, o, 'runsHard')
+          && up(d, o, 'runsFreny')
+          && up(d, o, 'bestEasy')
+          && up(d, o, 'bestMedium')
+          && up(d, o, 'bestHard')
+          && up(d, o, 'bestFreny')
+          && up(d, o, 'bestAutoEasy')
+          && up(d, o, 'bestAutoMedium')
+          && up(d, o, 'bestAutoHard')
+          && up(d, o, 'bestAutoFreny');
+    }
+
+    function num(d, f) {
+      return f in d && d[f] is int && d[f] >= 0 && d[f] <= 1000000000000;
+    }
+
+    function text(d, f, max) {
+      return f in d && d[f] is string && d[f].size() <= max;
+    }
+
+    function validPerfil(userId) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['apelido', 'chave', 'codigo', 'helmet', 'cape', 'color', 'rebirths', 'lastSeen',
+                               'bestEasy', 'bestMedium', 'bestHard', 'bestFreny', 'sigEasy', 'sigMedium', 'sigHard', 'sigFreny',
+                               'runsManual', 'runsAuto', 'secManual', 'secAuto', 'longestRun', 'kills', 'deaths', 'bestCombo',
+                               'k_cyclops', 'k_supreme', 'nights', 'bloodMoons', 'chests', 'coinsEarned'])
+          && d.lastSeen == request.time
+          && text(d, 'apelido', 16) && d.apelido.size() >= 3
+          && text(d, 'chave', 16) && text(d, 'codigo', 10)
+          && text(d, 'helmet', 32) && text(d, 'cape', 32) && text(d, 'color', 32)
+          && d.rebirths is int && d.rebirths >= 0 && d.rebirths <= 999
+          && num(d, 'runsManual')
+          && num(d, 'runsAuto')
+          && num(d, 'secManual')
+          && num(d, 'secAuto')
+          && num(d, 'longestRun')
+          && num(d, 'kills')
+          && num(d, 'deaths')
+          && num(d, 'bestCombo')
+          && num(d, 'k_cyclops')
+          && num(d, 'k_supreme')
+          && num(d, 'nights')
+          && num(d, 'bloodMoons')
+          && num(d, 'chests')
+          && num(d, 'coinsEarned')
+          && ownsNick(d, userId) && ownsCode(d, userId)
+          && bestOk(d, userId, 'bestEasy', 'sigEasy', 'leaderboard_easy')
+          && bestOk(d, userId, 'bestMedium', 'sigMedium', 'leaderboard_medium')
+          && bestOk(d, userId, 'bestHard', 'sigHard', 'leaderboard_hard')
+          && bestOk(d, userId, 'bestFreny', 'sigFreny', 'leaderboard_freny');
+    }
+
+    function ownsNick(d, userId) {
+      return (resource != null && resource.data.chave == d.chave)
+          || get(/databases/$(database)/documents/apelidos/$(d.chave)).data.uid == userId;
+    }
+
+    function ownsCode(d, userId) {
+      return d.codigo == '' || (resource != null && resource.data.codigo == d.codigo)
+          || get(/databases/$(database)/documents/codigos/$(d.codigo)).data.uid == userId;
+    }
+
+    // no best yet, or the signature of the board's score: sha256("<key>|<uid>|<board>|<score>")
+    function bestOk(d, userId, best, sig, board) {
+      return num(d, best) && (d[best] == 0
+          || d[sig] == hashing.sha256('__SCORE_KEY__|' + userId + '|' + board + '|' + string(d[best])).toHexString().lower());
+    }
+
+    function validPedido(id) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['de', 'para', 'tipo', 'apelido', 'criadoEm'])
+          && d.de == request.auth.uid && d.para is string && d.para != d.de
+          && id == d.para + '_' + d.de
+          && d.tipo in ['pedido', 'aceito', 'removido']
+          && d.apelido is string && d.apelido.size() <= 16
+          && d.criadoEm == request.time
+          && (d.tipo != 'aceito' || get(/databases/$(database)/documents/amigos/$(d.de)).data.lista.hasAny([d.para]));
+    }
+
+    function validFriends(userId) {
+      let d = request.resource.data;
+      let before = resource == null ? [] : resource.data.lista;
+      let added = d.lista.toSet().difference(before.toSet());
+      return d.keys().hasOnly(['lista', 'novo', 'updatedAt'])
+          && d.updatedAt == request.time
+          && d.lista is list && d.lista.size() <= 50
+          && d.lista.toSet().size() == d.lista.size()
+          && !d.lista.hasAny([userId])
+          && d.novo is string
+          && ((d.novo == '' && added.size() == 0)
+              || (d.novo != '' && added.size() == 1 && added.hasAll([d.novo]) && canAdd(userId, d.novo)));
+    }
+
+    function canAdd(userId, other) {
+      return exists(/databases/$(database)/documents/pedidos/$(userId + '_' + other))
+          || (exists(/databases/$(database)/documents/amigos/$(other))
+              && get(/databases/$(database)/documents/amigos/$(other)).data.lista.hasAny([userId]));
+    }
+
     // the all-time boards, and the daily ones (daily_<level>_<yyyymmdd>, Brasília day) the site's
     // Diário tab reads; the API's signature names the board, so a score only lands on the day the
     // API gave it

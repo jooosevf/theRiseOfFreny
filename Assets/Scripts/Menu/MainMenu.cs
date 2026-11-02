@@ -39,6 +39,20 @@ public class MainMenu : MonoBehaviour {
         stack.ShadeSubPages = true;
         stack.OnRootCancel = () => { };
         stack.ResetTo(MainPage());
+        // the first time the game opens: Entrar, Criar conta or Jogar como convidado
+        Online.OnlineServices online = Online.OnlineServices.Instance;
+        if (online != null) {
+            online.AccountChanged += OnPulled;
+            StartCoroutine(AskAccount(online));
+        }
+    }
+
+    // a frame later: OnlineServices starts its login in its own Start, maybe after this one
+    private System.Collections.IEnumerator AskAccount(Online.OnlineServices online) {
+        yield return null;
+        if (online.NeedsAccountChoice && stack.Depth == 1) {
+            stack.Push(AccountScreens.Welcome(stack));
+        }
     }
 
     private void OnEnable() {
@@ -47,6 +61,9 @@ public class MainMenu : MonoBehaviour {
 
     private void OnDisable() {
         Online.CloudProgressSync.Pulled -= OnPulled;
+        if (Online.OnlineServices.Instance != null) {
+            Online.OnlineServices.Instance.AccountChanged -= OnPulled;
+        }
     }
 
     // progress came down from the cloud: redraw "Continue" with it
@@ -80,7 +97,7 @@ public class MainMenu : MonoBehaviour {
         page.Button("Conquistas", () => stack.Push(AchievementsScreen.Page(stack)), true, CompactRow);
         if (Online.OnlineServices.Instance != null && Online.OnlineServices.Instance.State != Online.OnlineServices.Status.Disabled) {
             page.Button("Ranking", () => stack.Push(OnlineScreens.Ranking(stack, this, ArenaDifficulty.Ranked[0])), true, CompactRow);
-            page.Button("Conta online", () => stack.Push(OnlineScreens.Account(stack)), true, CompactRow);
+            page.Button(PerfilScreens.ButtonLabel, () => stack.Push(PerfilScreens.Page(stack)), true, CompactRow);
         }
         if (GameMenus.CanQuit) {
             page.Button("Sair", GameMenus.Quit, true, CompactRow);

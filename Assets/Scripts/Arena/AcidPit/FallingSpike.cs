@@ -104,6 +104,7 @@ public class FallingSpike : MonoBehaviour {
         if (freny != null && !freny.IsDead) {
             Vector3 body = freny.BodyCenter;
             if (Mathf.Abs(tip.x - body.x) < 0.45f && tip.y < body.y + freny.BodyHeight * 0.5f && tip.y > body.y - freny.BodyHeight * 0.5f) {
+                Player.NextDamageSource = PlayerStats.CauseSpike;
                 if (freny.TryDamage(Damage)) {
                     freny.Knockback(new Vector2(Mathf.Sign(body.x - tip.x + 0.01f) * 3f, 1f), false);
                 }

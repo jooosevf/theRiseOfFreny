@@ -78,6 +78,10 @@ public class ArenaDayNight : MonoBehaviour {
     private static readonly Color BloodMoonColor = new Color(1f, 0.3f, 0.25f);
     private float bloodAnnounced = -1f;
     private int announcedNight;
+    private int lastNight;            // to notice a night ending, for the Perfil
+    private int bloodPassed;          // the last night whose Lua de Sangue faded
+    public static event System.Action NightSurvived;
+    public static event System.Action BloodMoonSurvived;
     private GUIStyle bloodStyle;
 
     // which night it is (1 = the one the run starts in), or 0 by day
@@ -289,6 +293,16 @@ public class ArenaDayNight : MonoBehaviour {
             announcedNight = night;
             bloodAnnounced = Time.time;
             Sfx.Play("blood_moon", cam.transform.position);   // wolves howl, then the slow laugh (José, 2026-11-01)
+        }
+        if (announcedNight == night && bloodPassed != night && Blood <= 0.01f) {
+            bloodPassed = night;
+            BloodMoonSurvived?.Invoke();
+        }
+        if (night != lastNight) {
+            if (lastNight > 0) {
+                NightSurvived?.Invoke();
+            }
+            lastNight = night;
         }
         float dusk = Mathf.Clamp01(1f - Mathf.Abs(sunHeight - 0.02f) / 0.22f);
 

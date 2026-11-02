@@ -246,6 +246,12 @@ public class GameMenus : MonoBehaviour {
         }
     }
 
+    // a guest's NOVO RECORDE: "Criar conta para salvar", over the paused game
+    public void ShowCreateAccount() {
+        Pause();
+        pauseStack.Push(AccountScreens.Create(pauseStack, Resume));
+    }
+
     public bool RankingOpen => paused && pauseStack != null && pauseStack.Top != null && pauseStack.Top.Root.name == "Page Ranking";
 
     // testers did not know the buttons: the first run opens the pause menu on the Help page
@@ -313,9 +319,10 @@ public class GameMenus : MonoBehaviour {
         // counts right away (FrenyProgress.Changed reaches Player)
         page.Button("Armeiro", () => pauseStack.Push(InventoryScreens.Armory(pauseStack)));
         page.Button("Inventário", () => pauseStack.Push(InventoryScreens.Inventory(pauseStack)));
-        page.Button("Ajuda", () => pauseStack.Push(HelpScreen.Help(pauseStack)));
-        page.Button("Guia", () => pauseStack.Push(GuideScreen.Guide(pauseStack)));
-        page.Button("Conquistas", () => pauseStack.Push(AchievementsScreen.Page(pauseStack)));
+        // two in a row each, or the arena's page wouldn't fit a 720p screen with the Perfil
+        page.ButtonRow("", new[] { 260f, 260f }, new[] { "Ajuda", "Guia" }, i => pauseStack.Push(i == 0 ? HelpScreen.Help(pauseStack) : GuideScreen.Guide(pauseStack)));
+        page.ButtonRow("", new[] { 260f, 260f }, new[] { "Conquistas", PerfilScreens.ButtonLabel },
+            i => pauseStack.Push(i == 0 ? AchievementsScreen.Page(pauseStack) : PerfilScreens.Page(pauseStack)));
         page.Button("Configurações", () => pauseStack.Push(SettingsScreens.Settings(pauseStack)));
 
         // the arena keeps its progress (coins, XP, upgrades) as it goes: nothing to save by hand

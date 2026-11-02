@@ -59,10 +59,16 @@ public static class FrenyProgress {
     public static int Coins {
         get => PlayerPrefs.GetInt(CoinsKey, 0);
         set {
-            PlayerPrefs.SetInt(CoinsKey, Mathf.Max(0, value));
+            int after = Mathf.Max(0, value);
+            if (!refunding) {
+                PlayerStats.CoinsChanged(after - PlayerPrefs.GetInt(CoinsKey, 0));   // the Perfil's earned and spent
+            }
+            PlayerPrefs.SetInt(CoinsKey, after);
             Changed?.Invoke();
         }
     }
+
+    private static bool refunding;   // money coming back is neither earned nor spent
 
     // longest arena run so far, in seconds
     public static float BestRunSeconds {
@@ -375,6 +381,7 @@ public static class FrenyProgress {
             return false;
         }
         PlayerPrefs.SetInt(LevelKeyPrefix + upgrade, level - 1);
+        refunding = true;
         if (IsBrain(upgrade)) {
             PlayerPrefs.SetInt(SpentPointsKey, Mathf.Max(0, PlayerPrefs.GetInt(SpentPointsKey, 0) - Cost(upgrade)));
         } else if (player != null) {
@@ -382,6 +389,7 @@ public static class FrenyProgress {
         } else {
             Coins += Cost(upgrade);
         }
+        refunding = false;
         PlayerPrefs.Save();
         Changed?.Invoke();
         return true;

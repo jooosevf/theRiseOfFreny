@@ -33,6 +33,9 @@ public static class SettingsScreens {
         }
 
         page.Button("Controles", () => stack.Push(Controls(stack)));
+        if (Online.OnlineServices.Instance != null && Online.OnlineServices.Instance.State != Online.OnlineServices.Status.Disabled) {
+            page.Button("Conta", () => stack.Push(AccountScreens.Account(stack)));
+        }
         page.Button("Voltar", stack.Back);
         return page;
     }

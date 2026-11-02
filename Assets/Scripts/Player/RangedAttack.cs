@@ -65,6 +65,7 @@ public class RangedAttack : MonoBehaviour {
             if (hit is Enemy enemy) {
                 bool alive = !enemy.IsDead;
                 if (alive) Enemy.NextHitPower = WeaponLevels.Roll(FromShotgun ? WeaponLevels.ShotgunPower : WeaponLevels.PistolPower, transform.position);
+                if (alive) Enemy.NextHitSource = FromShotgun ? PlayerStats.WeaponShotgun : PlayerStats.WeaponGun;
                 enemy.ShotDamage(push, transform.position);
                 if (alive && enemy.IsDead && ShotgunShot > 0) {
                     Achievements.ShotKill(ShotgunShot);

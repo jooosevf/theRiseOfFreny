@@ -19,6 +19,8 @@ namespace Online {
         private const string LocalBestPref = "online.best.";   // + level, this account's best on each ranked board
         private const string LocalAutoBestPref = "online.autoBest.";  // + level, best on the autopilot's board
         private const string LocalDailyPref = "online.daily.";  // + level, "<daily board>|<best>" for today's board
+        private const string LocalSignedPref = "online.bestSigned.";  // + level, "<score>|<sig>" as the board has it
+        private const string GuestChosenPref = "online.guestChosen";  // "Jogar como convidado" was picked
 
         public static OnlineServices Instance { get; private set; }
 
@@ -26,6 +28,10 @@ namespace Online {
         public string LastError { get; private set; }
         public FirebaseAuthService Auth { get; private set; }
         public FirestoreClient Db => _db;   // for CloudProgressSync (save slots)
+        public ProfileService Profiles { get; private set; }
+        public FriendsService Friends { get; private set; }
+        // the account changed, or its nickname or requests arrived (the main menu redraws)
+        public event Action AccountChanged;
         public PlayerSave Save { get; private set; }
         // the autopilot drove at some point of this run: it won't count for the leaderboard
         public bool RunAssisted => _assisted;
@@ -38,7 +44,8 @@ namespace Online {
         // The last arena run's record, for the "NOVO RECORDE" box of the end-of-run banner: a run
         // that beats the board's best can be saved with "Salvar recorde" (and is saved anyway
         // when the player moves on), or says why it can't (the autopilot played, no connection).
-        public enum RecordStatus { None, CanSave, Saving, Saved, CannotSave, Refused, InReview }
+        // NeedsAccount: a guest's record, kept until the guest creates an account (José, 2026-11-02)
+        public enum RecordStatus { None, CanSave, Saving, Saved, CannotSave, Refused, InReview, NeedsAccount }
         public RecordStatus Record { get; private set; }
         public bool RecordOnlyToday { get; private set; }   // beats today's best, not the all-time one
         public long RecordScore { get; private set; }
@@ -152,12 +159,14 @@ namespace Online {
             FirebaseConfig config = FirebaseConfig.Load();
             if (config == null) return;
 
-            Auth = new FirebaseAuthService(config.apiKey);
-            _db = new FirestoreClient(config.projectId, Auth);
+            Auth = new FirebaseAuthService(config.apiKey, config.authUrl);
+            _db = new FirestoreClient(config.projectId, Auth, config.firestoreUrl);
             _leaderboard = new LeaderboardService(_db, Auth);
             _api = new ScoreApi(config.apiUrl, Auth);
             _saves = new CloudSaveService(_db, Auth);
             _achievements = new AchievementService(_db, _api, Auth);
+            Profiles = new ProfileService(_db, Auth);
+            Friends = new FriendsService(_db, Auth, Profiles);
             StartCoroutine(Connect());
         }
 
@@ -175,6 +184,39 @@ namespace Online {
             yield return SyncSave();
             yield return _achievements.Load();
             State = Status.Online;
+            yield return AfterLogin();
+        }
+
+        // the Perfil's numbers, the nickname and the friends' messages: one read each per login
+        private IEnumerator AfterLogin() {
+            yield return PlayerStats.Load(_db, Auth);
+            yield return Profiles.AfterLogin(Save.playerName, TakeNick);
+            yield return Friends.Sync();
+            AccountChanged?.Invoke();
+        }
+
+        // the account's nickname is its name on the boards too
+        private void TakeNick(string nick) {
+            if (Save.playerName == nick) return;
+            Save.playerName = nick;
+            SaveLocal();
+            StartCoroutine(PushName());
+        }
+
+        // ---- the start screen (AccountScreens.Welcome) ----
+
+        // nobody decided yet on this device: no email account and "convidado" not picked
+        public bool NeedsAccountChoice => State != Status.Disabled && Auth != null && Auth.IsAnonymous &&
+                                          PlayerPrefs.GetInt(GuestChosenPref, 0) == 0;
+
+        public void ChooseGuest() {
+            PlayerPrefs.SetInt(GuestChosenPref, 1);
+            PlayerPrefs.Save();
+        }
+
+        // the login that runs at launch has to finish first: it would overwrite this one
+        private IEnumerator WaitForConnect() {
+            while (State == Status.Connecting) yield return null;
         }
 
         // The top of one ranked board (ArenaDifficulty.Ranked), as last fetched.
@@ -212,7 +254,25 @@ namespace Online {
                 SetBest(level, 0);
                 SetBest(level, 0, true);
                 PlayerPrefs.DeleteKey(LocalDailyPref + level);
+                PlayerPrefs.DeleteKey(LocalSignedPref + level);
             }
+        }
+
+        // this account's best as the board really has it, with the API's signature: what perfis/{uid}
+        // can show (firestore.rules checks the signature, so nobody edits a best there)
+        public static void SignedBest(ArenaLevel level, out long best, out string sig) {
+            best = 0;
+            sig = null;
+            string[] saved = PlayerPrefs.GetString(LocalSignedPref + level, "").Split('|');
+            if (saved.Length == 2 && long.TryParse(saved[0], out long score)) {
+                best = score;
+                sig = saved[1];
+            }
+        }
+
+        private static void SetSignedBest(ArenaLevel level, long best, string sig) {
+            if (best > 0 && !string.IsNullOrEmpty(sig)) PlayerPrefs.SetString(LocalSignedPref + level, best + "|" + sig);
+            else PlayerPrefs.DeleteKey(LocalSignedPref + level);
         }
 
         // Reads only the board on screen, at most once a minute (10 reads instead of 80 for all eight boards).
@@ -236,12 +296,25 @@ namespace Online {
             _boardFetchedAt.Clear();
         }
 
-        public void SetPlayerName(string newName) {
-            newName = CleanName(newName);
-            if (newName.Length == 0 || newName == Save.playerName) return;
-            Save.playerName = newName;
-            SaveLocal();
-            if (State == Status.Online) StartCoroutine(PushName());
+        // the Conta page: done(error), null when the nickname is this account's
+        public void ChangeNick(string nick, Action<string> done) {
+            StartCoroutine(ChangeNickRoutine(nick, done));
+        }
+
+        private IEnumerator ChangeNickRoutine(string nick, Action<string> done) {
+            string problem = ProfileService.NickProblem(nick);
+            if (problem == null && (Auth == null || !Auth.IsSignedIn || Auth.IsAnonymous)) problem = "Crie uma conta primeiro";
+            if (problem != null) {
+                done?.Invoke(problem);
+                yield break;
+            }
+            nick = nick.Trim();
+            string error = null;
+            if (Profiles.HasNick) yield return Profiles.Rename(nick, e => error = e);
+            else yield return Profiles.Claim(nick, e => error = e);
+            if (error == null) TakeNick(nick);
+            AccountChanged?.Invoke();
+            done?.Invoke(error);
         }
 
         // Renascer: the boards with a score of his get the new rebirth count (the star) right away,
@@ -250,9 +323,61 @@ namespace Online {
             if (State == Status.Online) StartCoroutine(PushName());
         }
 
-        // Email account actions, used by the HUD. done(errorOrNull).
-        public void LinkEmail(string email, string password, Action<string> done) {
-            StartCoroutine(Auth.LinkEmail(email, password, (ok, error) => done?.Invoke(ok ? null : error)));
+        // Email account actions, used by the account screens. done(errorOrNull), in the player's words
+        // (AccountScreens shows them as they come).
+
+        // "Criar conta": nickname, email and password. The guest account becomes this one, same user
+        // id, so progress, Conquistas and stats stay. A record waiting for an account goes right after.
+        public void CreateAccount(string nick, string email, string password, Action<string> done) {
+            StartCoroutine(CreateAccountRoutine(nick, email, password, done));
+        }
+
+        private IEnumerator CreateAccountRoutine(string nick, string email, string password, Action<string> done) {
+            string problem = ProfileService.NickProblem(nick);
+            if (problem != null) {
+                done?.Invoke(problem);
+                yield break;
+            }
+            nick = nick.Trim();
+            yield return WaitForConnect();
+            if (!Auth.IsSignedIn) {
+                done?.Invoke("Sem conexão com o servidor");
+                yield break;
+            }
+            if (!Auth.IsAnonymous) {
+                done?.Invoke("Você já está numa conta");
+                yield break;
+            }
+            yield return Profiles.CheckFree(nick, e => problem = e);
+            if (problem != null) {
+                done?.Invoke(problem);
+                yield break;
+            }
+            string error = null;
+            yield return Auth.LinkEmail(email.Trim(), password, (ok, e) => error = ok ? null : e);
+            if (error != null) {
+                done?.Invoke(AccountError(error));
+                yield break;
+            }
+            // somebody may have taken the nickname in the last second: the account stands, and the
+            // Conta page asks for another
+            yield return Profiles.Claim(nick, e => error = e);
+            if (error == null) TakeNick(nick);
+            StartCoroutine(Auth.SendVerifyEmail(null));
+            yield return SaveGuestRecord();
+            AccountChanged?.Invoke();
+            done?.Invoke(error != null ? "Conta criada, mas: " + error : null);
+        }
+
+        // the guest's run still has its ticket (same user id), so its record goes now
+        private IEnumerator SaveGuestRecord() {
+            yield return SyncBests();
+            PendingRecord run = _pending;
+            if (run == null || Record != RecordStatus.NeedsAccount) yield break;
+            run.previousBest = BestFor(run.level, run.auto);
+            run.allTime = run.score > run.previousBest;
+            if (run.allTime) SetBest(run.level, run.score, run.auto);
+            StartCoroutine(PushRecord(run));
         }
 
         public void SignInWithEmail(string email, string password, Action<string> done) {
@@ -261,23 +386,75 @@ namespace Online {
 
         public void SignOut() {
             Auth.SignOut();
+            Profiles.Forget();
+            Friends.Forget();
             Save = NewSave();
             ClearBests();
             SaveLocal();
+            // back to the start screen
+            PlayerPrefs.DeleteKey(GuestChosenPref);
+            _pending = null;
+            if (Record == RecordStatus.NeedsAccount) SetRecord(RecordStatus.None);
+            AccountChanged?.Invoke();
             StartCoroutine(Connect());
         }
 
         private IEnumerator SignInWithEmailRoutine(string email, string password, Action<string> done) {
+            yield return WaitForConnect();
             string error = null;
-            yield return Auth.SignInWithEmail(email, password, (ok, e) => error = ok ? null : e);
+            yield return Auth.SignInWithEmail(email.Trim(), password, (ok, e) => error = ok ? null : e);
             if (error == null) {
                 // This device's local progress belonged to another account; take the cloud one.
                 Save = NewSave();
                 ClearBests();
+                Profiles.Forget();
+                Friends.Forget();
+                // a guest's record can't go to another account: its ticket has the guest's user id
+                if (Record == RecordStatus.NeedsAccount) {
+                    _pending = null;
+                    SetRecord(RecordStatus.None);
+                }
                 yield return SyncSave();
+                yield return _achievements.Load();
                 ForgetBoards();
+                State = Status.Online;
+                done?.Invoke(null);
+                yield return AfterLogin();
+                yield break;
             }
-            done?.Invoke(error);
+            done?.Invoke(AccountError(error));
+        }
+
+        // "Esqueci a senha"
+        public void SendPasswordReset(string email, Action<string> done) {
+            StartCoroutine(Auth.SendPasswordReset((email ?? "").Trim(), (ok, e) => done?.Invoke(ok ? null : AccountError(e))));
+        }
+
+        public void SendVerifyEmail(Action<string> done) {
+            StartCoroutine(Auth.SendVerifyEmail((ok, e) => done?.Invoke(ok ? null : AccountError(e))));
+        }
+
+        // Firebase's error codes, in the player's words
+        public static string AccountError(string code) {
+            code = code ?? "";
+            if (code.StartsWith("EMAIL_EXISTS") || code.StartsWith("CREDENTIAL_TOO_OLD")) return "Esse email já tem conta. Use Entrar";
+            if (code.StartsWith("INVALID_EMAIL") || code.StartsWith("MISSING_EMAIL")) return "Esse email não parece certo";
+            if (code.StartsWith("WEAK_PASSWORD") || code.StartsWith("MISSING_PASSWORD")) return "A senha precisa de pelo menos 6 caracteres";
+            if (code.StartsWith("INVALID_LOGIN_CREDENTIALS") || code.StartsWith("EMAIL_NOT_FOUND") || code.StartsWith("INVALID_PASSWORD")) return "Email ou senha errados";
+            if (code.StartsWith("TOO_MANY_ATTEMPTS")) return "Muitas tentativas. Espere um pouco e tente de novo";
+            if (code.StartsWith("USER_DISABLED")) return "Esta conta está bloqueada";
+            if (code.StartsWith("OPERATION_NOT_ALLOWED")) return "O login com email está desligado";
+            return "Sem conexão com o servidor";
+        }
+
+        // the end of a run: its stats and the public profile, one write each
+        public void OnStatsRunEnded() {
+            if (State == Status.Online) StartCoroutine(PushAfterRun());
+        }
+
+        private IEnumerator PushAfterRun() {
+            yield return PlayerStats.Upload(_db, Auth);
+            yield return Profiles.Push(false);
         }
 
         // Merges the cloud save with local progress (e.g. runs played while offline)
@@ -299,14 +476,19 @@ namespace Online {
             SaveLocal();
 
             if (localAhead) yield return _saves.Save(Save, null);
+            yield return SyncBests();
+        }
 
-            // each ranked board: the server's best is the one that counts. A score only gets there
-            // at the end of the run that made it (firestore.rules checks it against the run's ticket),
-            // so a better local best (an offline run, or an edited save) is not uploaded.
+        // each ranked board: the server's best is the one that counts. A score only gets there
+        // at the end of the run that made it (firestore.rules checks it against the run's ticket),
+        // so a better local best (an offline run, or an edited save) is not uploaded.
+        private IEnumerator SyncBests() {
             foreach (ArenaLevel level in ArenaDifficulty.Ranked) {
-                long? server = null;
-                yield return _leaderboard.GetOwn(level, s => server = s);
-                if (server != null) SetBest(level, server.Value);
+                yield return _leaderboard.GetOwnSigned(level, (ok, score, sig) => {
+                    if (!ok) return;
+                    SetBest(level, score);
+                    SetSignedBest(level, score, sig);
+                });
                 string daily = LeaderboardService.DailyCollection(level);
                 long? today = null;
                 yield return _leaderboard.GetOwn(daily, s => today = s);
@@ -354,6 +536,7 @@ namespace Online {
                     bool written = false;
                     yield return SubmitWithRetry(board, run.score, signed.sig, ok => written = ok);
                     if (!written) refused = "o ranking não gravou";
+                    else if (!run.auto) SetSignedBest(run.level, run.score, signed.sig);
                 }
                 // today's board too (the site's Diário); a lower score than today's best there is
                 // simply not taken
@@ -374,6 +557,7 @@ namespace Online {
             }
             ForgetBoards();
             yield return RefreshBoard(run.level, run.auto);
+            yield return Profiles.Push(true);   // the new best on the public profile
         }
 
         private IEnumerator SubmitWithRetry(string board, long score, string sig, Action<bool> done) {
@@ -519,7 +703,13 @@ namespace Online {
                 SetRecord(RecordStatus.CannotSave, "sem ticket do servidor");
             } else {
                 _pending = new PendingRecord { level = _runLevel, score = score, previousBest = previousBest, allTime = allTime, auto = auto, log = _runLog, token = _runToken };
-                SetRecord(RecordStatus.CanSave);
+                if (Auth.IsAnonymous) {
+                    // it stays as this guest's best here, so the next worse run isn't a "record"
+                    if (!auto) SetDailyBest(_runLevel, LeaderboardService.DailyCollection(_runLevel), score);
+                    SetRecord(RecordStatus.NeedsAccount);
+                } else {
+                    SetRecord(RecordStatus.CanSave);
+                }
             }
             if (newBest && Record == RecordStatus.CannotSave) SetBest(_runLevel, previousBest, auto);
 

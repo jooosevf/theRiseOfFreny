@@ -210,6 +210,7 @@ public class SpiderMine : Enemy {
             }
             enemy.HitBy(null, EnemyDamage);   // other spider mines go off in turn
         }
+        Player.NextDamageSource = PlayerStats.CauseMine;
         if (freny != null && !freny.IsDead && freny.TryDamage(frenyDamage)) {
             float side = Mathf.Sign(freny.transform.position.x - at.x);
             if (side == 0f) {

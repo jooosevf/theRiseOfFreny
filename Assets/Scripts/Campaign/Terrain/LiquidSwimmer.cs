@@ -55,6 +55,7 @@ public class LiquidSwimmer : MonoBehaviour {
         if (pool.IsAcid) {
             if (Time.time >= nextAcidHurt) {
                 nextAcidHurt = Time.time + acidHurtInterval;
+                Player.NextDamageSource = PlayerStats.CauseAcid;
                 player.TryDamage(1);
             }
         } else if (!InputBindings.GameplayBlocked && InputBindings.GetDown(GameAction.Jump)) {
