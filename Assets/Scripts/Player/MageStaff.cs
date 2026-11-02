@@ -116,10 +116,12 @@ public class MageStaff : MonoBehaviour {
             main.startColor = new ParticleSystem.MinMaxGradient(new Color(BallTint.r, BallTint.g, BallTint.b, main.startColor.color.a));
             glow.Clear();
         }
-        // and the purple light it casts on the walls
+        // and the purple light it casts on the walls (URP is not in the CI compile check, like ArenaDayNight)
+#if UNITY_5_3_OR_NEWER
         foreach (UnityEngine.Rendering.Universal.Light2D light in ball.GetComponentsInChildren<UnityEngine.Rendering.Universal.Light2D>()) {
             light.color = new Color(0.25f, 0.9f, 0.3f);
         }
+#endif
         Fx.Burst(from, SparkColor, 8, 1.5f, 0.08f, 0.4f);
         Sfx.Play("hexball_launch", from, 0.8f, 1.2f);
     }

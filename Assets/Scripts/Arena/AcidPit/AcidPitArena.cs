@@ -379,7 +379,7 @@ public class AcidPitArena : MonoBehaviour {
     // over where Freny is going: a ceiling (a platform's underside, a tower roof) 2 to 9 units above
     private void DropSpike() {
         Rigidbody2D body = hero.GetComponent<Rigidbody2D>();
-        float ahead = body != null ? Mathf.Clamp(body.linearVelocity.x * 0.6f, -2f, 2f) : 0f;
+        float ahead = body != null ? Mathf.Clamp(body.Vel().x * 0.6f, -2f, 2f) : 0f;
         int ground = LayerMask.GetMask("Ground");
         for (int attempt = 0; attempt < 6; attempt++) {
             float x = hero.BodyCenter.x + ahead + Random.Range(-1.5f, 1.5f);
