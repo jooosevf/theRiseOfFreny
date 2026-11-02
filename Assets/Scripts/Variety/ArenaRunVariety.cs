@@ -5,10 +5,10 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 // One arena run's blessing and mutator (ArenaVariety adds it to Freny):
-//  - at the start, the game waits while the player picks one of three blessings (Blessings.Draw):
-//    three cards, clicked, touched, or picked with the arrows / d-pad and Enter / A, or 1-2-3.
-//    A run the autopilot starts gets a random one at once (nobody is there to pick: José, 2026-11-01,
-//    the idle arena keeps going on its own);
+//  - at the start, the game waits while the player picks any of the ten blessings:
+//    cards, clicked, touched, or picked with the arrows / d-pad and Enter / A, or 1-9 and 0.
+//    A run the autopilot starts gets Blessings.AutopilotChoice at once (nobody is there to pick:
+//    José, 2026-11-01, the idle arena keeps going on its own);
 //  - the blessing's effects that are not plain stats (RunModifiers covers those): the potion that
 //    comes back, the armor every 2 minutes, the heart every 20 kills, the coin magnet, the dash;
 //  - the mutator's start (Arsenal, Pés de vento);
@@ -51,7 +51,7 @@ public class ArenaRunVariety : MonoBehaviour {
         gameManager = FindAnyObjectByType<GameManager>();
         Enemy.Killed += OnKilled;
         GameCursor.ShowWhile(this, () => picking);
-        offered = Blessings.Draw();
+        offered = System.Array.ConvertAll(Blessings.All, info => info.id);
         if (input == null || !input.AutoEnabled) {
             OpenPicker();   // at once, before the first frame of play
         }
@@ -59,7 +59,7 @@ public class ArenaRunVariety : MonoBehaviour {
         yield return null;
         StartMutator();
         if (!picking && !Blessings.Current.HasValue) {
-            Choose(offered[Random.Range(0, offered.Length)]);
+            Choose(Blessings.AutopilotChoice);
         }
     }
 
@@ -213,37 +213,42 @@ public class ArenaRunVariety : MonoBehaviour {
         Image panel = MenuKit.MakeImage("Panel", pickerCanvas.transform, MenuKit.PanelColor);
         RectTransform rect = panel.rectTransform;
         rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.sizeDelta = new Vector2(1060f, 470f);
+        rect.sizeDelta = new Vector2(1180f, 560f);
         Outline edge = panel.gameObject.AddComponent<Outline>();
         edge.effectColor = MenuKit.ButtonColor;
         edge.effectDistance = new Vector2(3f, -3f);
 
         Text title = MenuKit.MakeText(panel.transform, "Escolha uma bênção", MenuKit.TitleSize, MenuKit.TitleColor, TextAnchor.MiddleCenter);
-        Place(title.rectTransform, new Vector2(0f, 190f), new Vector2(1000f, 50f));
+        Place(title.rectTransform, new Vector2(0f, 250f), new Vector2(1000f, 50f));
         Mutator mutator = WeeklyMutators.ThisRun ?? WeeklyMutators.ThisWeek;
         Text sub = MenuKit.MakeText(panel.transform,
             "Vale a corrida toda. " + WeeklyMutators.Title(mutator) + ": " + WeeklyMutators.Of(mutator).what,
             MenuKit.SmallTextSize, MenuKit.DimTextColor, TextAnchor.MiddleCenter);
-        Place(sub.rectTransform, new Vector2(0f, 140f), new Vector2(980f, 44f));
+        Place(sub.rectTransform, new Vector2(0f, 205f), new Vector2(1100f, 44f));
 
         cards = new Button[offered.Length];
         cardEdges.Clear();
         for (int i = 0; i < offered.Length; i++) {
-            cards[i] = Card(panel.transform, i, offered[i], new Vector2((i - (offered.Length - 1) / 2f) * 330f, -45f));
+            int column = i % CardColumns, row = i / CardColumns;
+            cards[i] = Card(panel.transform, i, offered[i], new Vector2((column - (CardColumns - 1) / 2f) * 228f, 76f - row * 200f));
         }
         for (int i = 0; i < cards.Length; i++) {
             Navigation nav = new Navigation { mode = Navigation.Mode.Explicit };
             nav.selectOnLeft = cards[(i - 1 + cards.Length) % cards.Length];
             nav.selectOnRight = cards[(i + 1) % cards.Length];
+            nav.selectOnUp = cards[(i - CardColumns + cards.Length) % cards.Length];
+            nav.selectOnDown = cards[(i + CardColumns) % cards.Length];
             cards[i].navigation = nav;
         }
-        Text hint = MenuKit.MakeText(panel.transform, "Clique, toque ou use as setas e Enter (ou 1, 2, 3)",
+        Text hint = MenuKit.MakeText(panel.transform, "Clique, toque ou use as setas e Enter (ou as teclas de 1 a 9 e 0)",
             MenuKit.SmallTextSize - 2, MenuKit.DimTextColor, TextAnchor.MiddleCenter);
-        Place(hint.rectTransform, new Vector2(0f, -205f), new Vector2(1000f, 24f));
+        Place(hint.rectTransform, new Vector2(0f, -250f), new Vector2(1000f, 24f));
         if (EventSystem.current != null) {
             EventSystem.current.SetSelectedGameObject(cards[0].gameObject);
         }
     }
+
+    private const int CardColumns = 5;
 
     private Button Card(Transform parent, int index, Blessing blessing, Vector2 position) {
         Blessings.Info info = Blessings.Of(blessing);
@@ -259,25 +264,25 @@ public class ArenaRunVariety : MonoBehaviour {
         edge.enabled = false;
         cardEdges.Add(edge);
         RectTransform rect = card.GetComponent<RectTransform>();
-        Place(rect, position, new Vector2(300f, 260f));
+        Place(rect, position, new Vector2(216f, 190f));
 
         Image icon = MenuKit.MakeImage("Icon", card.transform, Color.white);
         icon.sprite = Blessings.Icon(blessing);
         icon.preserveAspect = true;
         icon.raycastTarget = false;
         icon.enabled = icon.sprite != null;
-        Place(icon.rectTransform, new Vector2(0f, 72f), new Vector2(76f, 76f));
+        Place(icon.rectTransform, new Vector2(0f, 58f), new Vector2(48f, 48f));
 
         Text label = card.GetComponentInChildren<Text>();
         label.text = info.name;
         label.color = MenuKit.TitleColor;
-        Place(label.rectTransform, new Vector2(0f, 10f), new Vector2(280f, 34f));
+        Place(label.rectTransform, new Vector2(0f, 16f), new Vector2(208f, 30f));
 
         Text what = MenuKit.MakeText(card.transform, info.what, MenuKit.SmallTextSize, MenuKit.TextColor, TextAnchor.UpperCenter);
-        Place(what.rectTransform, new Vector2(0f, -60f), new Vector2(270f, 100f));
+        Place(what.rectTransform, new Vector2(0f, -46f), new Vector2(204f, 92f));
 
-        Text key = MenuKit.MakeText(card.transform, (index + 1).ToString(), MenuKit.SmallTextSize, MenuKit.DimTextColor, TextAnchor.UpperLeft);
-        Place(key.rectTransform, new Vector2(-130f, 112f), new Vector2(30f, 24f));
+        Text key = MenuKit.MakeText(card.transform, ((index + 1) % 10).ToString(), MenuKit.SmallTextSize, MenuKit.DimTextColor, TextAnchor.UpperLeft);
+        Place(key.rectTransform, new Vector2(-92f, 78f), new Vector2(30f, 24f));
         return card;
     }
 
@@ -300,7 +305,8 @@ public class ArenaRunVariety : MonoBehaviour {
             return;
         }
         for (int i = 0; i < cards.Length; i++) {
-            if (Input.GetKeyDown(KeyCode.Alpha1 + i) || Input.GetKeyDown(KeyCode.Keypad1 + i)) {
+            // 1..9, then 0 for the tenth
+            if (Input.GetKeyDown(i < 9 ? KeyCode.Alpha1 + i : KeyCode.Alpha0) || Input.GetKeyDown(i < 9 ? KeyCode.Keypad1 + i : KeyCode.Keypad0)) {
                 Pick(i);
                 return;
             }

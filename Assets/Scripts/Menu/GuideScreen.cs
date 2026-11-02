@@ -311,8 +311,8 @@ public static class GuideScreen {
 
     private static void BlessingsTopic(Transform parent) {
         Entry(parent, null, "Bênçãos",
-            "No começo de cada corrida da Arena o jogo para e mostra 3 bênçãos sorteadas: escolha uma (clique, " +
-            "toque, setas e Enter, ou 1, 2, 3). Ela vale a corrida toda e aparece embaixo das armas. " +
+            "No começo de cada corrida da Arena o jogo para e mostra as 10 bênçãos: escolha qualquer uma (clique, " +
+            "toque, setas e Enter, ou as teclas de 1 a 9 e 0). Ela vale a corrida toda e aparece embaixo das armas. " +
             "No automático o piloto escolhe sozinho. Nenhuma mexe nos pontos, então a corrida vale para o ranking.");
         // two per row, so the ten fit on a 720p screen
         for (int i = 0; i < Blessings.All.Length; i += 2) {

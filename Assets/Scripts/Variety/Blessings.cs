@@ -4,9 +4,9 @@ using UnityEngine;
 
 public enum Blessing { ExtraHeart, Strength, CoinMagnet, QuickDash, FullFlask, LightFeet, QuickHands, Grenadier, StoneSkin, Vampire }
 
-// The Bênçãos (José, 2026-11-01, "cada corrida diferente"): at the start of every Arena run three of
-// them are drawn and the player keeps one for the whole run (BlessingPicker; the autopilot picks
-// one by itself). None of them touches the score, the combo or the spawns (a longer combo would
+// The Bênçãos (José, 2026-11-01, "cada corrida diferente"): at the start of every Arena run the player
+// picks any of them and keeps it for the whole run (ArenaRunVariety's picker; the autopilot takes
+// AutopilotChoice). None of them touches the score, the combo or the spawns (a longer combo would
 // need the ranking API's COMBO_SECONDS to change), so blessed runs go to the normal ranking; the
 // run log names the blessing (RunLog.ToJson) for the record.
 // The numbers live in the effects: RunModifiers (stats), ArenaRunVariety (the run's extras).
@@ -43,7 +43,9 @@ public static class Blessings {
             what = "A cada 20 inimigos derrotados, recupera 1 coração.", icon = a => a.rageHelmet },
     };
 
-    public const int Choices = 3;
+    // José, 2026-11-01: no luck in a run: the player picks any of them. The autopilot always takes
+    // this one, armor that keeps coming back suits how it plays
+    public const Blessing AutopilotChoice = Blessing.StoneSkin;
 
     // the blessing of the run being played (null before the pick and outside the arena)
     public static Blessing? Current { get; private set; }
@@ -59,18 +61,6 @@ public static class Blessings {
     public static Sprite Icon(Blessing b) {
         MenuArt art = MenuArt.Get;
         return art != null ? MenuArt.Trim(Of(b).icon(art)) : null;
-    }
-
-    // three different ones, at random
-    public static Blessing[] Draw() {
-        List<Blessing> pool = new List<Blessing>((Blessing[])Enum.GetValues(typeof(Blessing)));
-        Blessing[] drawn = new Blessing[Mathf.Min(Choices, pool.Count)];
-        for (int i = 0; i < drawn.Length; i++) {
-            int pick = UnityEngine.Random.Range(0, pool.Count);
-            drawn[i] = pool[pick];
-            pool.RemoveAt(pick);
-        }
-        return drawn;
     }
 
     // a new arena run (or no run at all): nothing picked yet
