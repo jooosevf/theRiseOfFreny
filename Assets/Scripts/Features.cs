@@ -27,7 +27,7 @@ public static class Features {
 
     // ---- a run's variety ----
     public static readonly bool Blessings = true;           // Bênçãos (the golden chest stops offering them)
-    public static readonly bool WeeklyMutators = true;      // Mutador da semana
+    public static readonly bool WeeklyMutators = false;     // Mutador da semana (José, 2026-11-02: off until there is a better idea for it)
     public static readonly bool GoldenChest = true;         // the Ciclope's key, the golden chest and its exclusive looks
     public static readonly bool AcidPit = true;             // Poço de Ácido
 
