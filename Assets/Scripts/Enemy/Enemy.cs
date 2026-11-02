@@ -1259,6 +1259,9 @@ public abstract class Enemy : MonoBehaviour, IDamageable
             MarkedHit?.Invoke(this, LastHitMark);
         }
         wear += Mathf.Max(1, amount) * scale * RunModifiers.DamageMultiplier * power;   // blessing Força, rebirths
+        if (ArenaPowerUps.InstaKillOn && !(this is Cyclops)) {
+            wear = Mathf.Max(wear, 1f);   // any hit lands, even on the Escudeiro's shield
+        }
         int whole = Mathf.FloorToInt(wear + 0.001f);
         if (whole < 1) {
             TakeHit(true);   // it flinches, but holds
@@ -1276,6 +1279,27 @@ public abstract class Enemy : MonoBehaviour, IDamageable
         LastHitMark = null;
         LastHitWeapon = BlastHit;
         TakeDamage(Mathf.Max(1, Mathf.RoundToInt(amount * RunModifiers.DamageMultiplier)));
+    }
+
+    // the Insta-kill: down to one heart (ArenaPowerUps never calls it on the Ciclope)
+    public virtual void DropToOneHeart() {
+        if (!isDead && Health > 1) {
+            Health = 1;
+        }
+    }
+
+    // this kill pays 1 point whatever it is worth (UIManager.ScoresFlat): the Nuke past its cap
+    public bool OnePointKill { get; set; }
+
+    // the Nuke: dead on the spot, Freny's kill like any other (combo, coin, drops)
+    public virtual void Nuked() {
+        if (isDead) {
+            return;
+        }
+        LastHitMark = null;
+        LastHitWeapon = null;
+        Health = 0;
+        Die(true);
     }
 
     // a harder hit from Freny (the sword during Rage, the combo)

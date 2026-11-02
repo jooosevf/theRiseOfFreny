@@ -26,6 +26,7 @@ public class Coin : MonoBehaviour {
     private float bobPhase;
     private Vector2 velocity;
     private Rigidbody2D rb; // the prefab has one (no gravity) for the pickup trigger; the arc moves it directly
+    private bool pulled;    // on its way to Freny (the Ímã, ArenaPowerUps)
 
     // coins lying around, so the autopilot can go and collect them
     public static readonly List<Coin> Active = new List<Coin>();
@@ -62,6 +63,18 @@ public class Coin : MonoBehaviour {
             if (sprite) {
                 sprite.enabled = dieAt - Time.time > BlinkFor || Mathf.Repeat(Time.time, 0.3f) < 0.18f;
             }
+        }
+        if (ArenaPowerUps.PullTarget(out Vector3 pullTo)) {
+            pulled = true;
+            tossing = hovering = false;
+            Place(ArenaPowerUps.PulledFrom(transform.position, pullTo));
+            return;
+        }
+        if (pulled) {
+            // the magnet ran out with it in the air: it falls from there
+            pulled = false;
+            tossing = true;
+            velocity = Vector2.zero;
         }
         if (hovering) {
             // rests just above the floor, bobbing a little, easy to see and grab

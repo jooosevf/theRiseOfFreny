@@ -1331,6 +1331,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
             case ItemPickup.Kind.Shells: return player.ShotgunOwned && player.ShellsFill < 0.35f;
             case ItemPickup.Kind.Shotgun: return !player.ShotgunOwned;
             case ItemPickup.Kind.GreatSword: return player.WantsGreatSword;
+            case ItemPickup.Kind.InstaKill: case ItemPickup.Kind.Nuke: case ItemPickup.Kind.Magnet: return true;
             default: return false;
         }
     }
