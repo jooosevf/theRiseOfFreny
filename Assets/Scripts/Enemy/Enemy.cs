@@ -1334,6 +1334,7 @@ public abstract class Enemy : MonoBehaviour, IDamageable
         LastHitTime = Time.time;
         if (byPlayer) {
             isHit = true;
+            HitFlash.Hit(this, 0.07f, 0.08f);   // lights up white and stands still for the hit-stop
         }
         if (hasHitTrigger) {
             anim.SetTrigger("Hit");

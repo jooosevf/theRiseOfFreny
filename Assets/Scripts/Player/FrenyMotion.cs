@@ -25,7 +25,8 @@ public class FrenyMotion : MonoBehaviour {
     [Header("Slash")]
     public float windup = 0f;              // delay before the arc appears
     public float swordReach = 1.0f;        // the sword hitbox length, in units ahead of his hand
-    public float hitStop = 0.06f;
+    public float hitStop = 0.09f;          // the game stands still on a hit (the finisher 1.8x)
+    public float hitRecoil = 1.4f;         // he is pushed back a touch by his own hit
 
     private const float SpringStiff = 320f, SpringDamp = 16f;    // squash: bouncy
     private const float AngleStiff = 220f, AngleDamp = 19f;      // lean: a little overshoot
@@ -90,6 +91,10 @@ public class FrenyMotion : MonoBehaviour {
         new Swing(90f, 150f, -45f, -75f, 0.06f, 0.07f),
     };
     private const float WindupPull = 15f;  // the sword keeps drawing back a little during the wind-up
+    // the crescent of each hit (SlashArc), degrees like the blade's: kept in front of him, where
+    // the hitbox is, instead of following the blade all the way from behind his head
+    private static readonly float[] ArcFrom = { 85f, -55f, 130f };
+    private static readonly float[] ArcTo = { -40f, 80f, -70f };
     private const int SwingMin = -60, SwingMax = 90, BladeMin = -90, BladeMax = 180, AngleStep = 15;
     private static readonly Vector2[] SwingGrips = {
         new Vector2(0.32f, -0.52f), new Vector2(0.40f, -0.48f), new Vector2(0.44f, -0.40f), new Vector2(0.44f, -0.36f),
@@ -293,7 +298,10 @@ public class FrenyMotion : MonoBehaviour {
             anim.speed = 0f;
         }
         squash.v += 2f;
-        Fx.Spray(point, new Vector2(transform.localScale.x, 0.3f), new Color(1f, 0.95f, 0.8f), 7, 5f, 0.6f);
+        lunge.v -= hitRecoil;                  // the blade bites and he is thrown back a little
+        ScreenKick.Kick(slashStep == 3 ? 0.07f : 0.035f, slashStep == 3 ? 0.16f : 0.08f);
+        Fx.Burst(point, Color.white, 4, 1.5f, 0.1f, 0.12f);
+        Fx.Spray(point, new Vector2(transform.localScale.x, 0.3f), new Color(1f, 0.95f, 0.8f), 9, 6f, 0.7f);
     }
 
     // ==== per frame ==========================================================================
@@ -394,9 +402,9 @@ public class FrenyMotion : MonoBehaviour {
             if (arcPending) {
                 // the smear follows the tip of the blade, around his shoulder
                 arcPending = false;
-                float radius = (GreatSword ? ArmAndGreatBlade : ArmAndBlade) * (slashStep == 3 ? 1.08f : 1f);
-                SlashArc.Spawn(this, body.transform, body, Shoulder, radius, swing.bladeFrom, swing.bladeTo, GreatSword,
-                    slashStep == 3, swing.cut * 1.6f, slashStep == 3 ? 1.5f : 1.15f);
+                float radius = (GreatSword ? ArmAndGreatBlade : ArmAndBlade) * (slashStep == 3 ? 1.5f : 1.25f);
+                SlashArc.Spawn(this, body.transform, body, Shoulder, radius, ArcFrom[slashStep - 1], ArcTo[slashStep - 1], GreatSword,
+                    slashStep == 3, slashStep == 3 ? 0.22f : SlashArc.DefaultLife, slashStep == 3 ? 1.2f : 1f);
             }
         }
         UpdateSwingAngles(swing);
@@ -526,8 +534,10 @@ public class FrenyMotion : MonoBehaviour {
         sword.transform.localPosition = grip;
     }
 
-    // this frame's arm and sword angles: held in the wind-up (drawing back a little), then swept
-    // to the end of the cut with an ease-out, then held there while the slash frames last
+    // this frame's arm and sword angles: held in the wind-up (drawing back a little), then the cut
+    // is one frame, arm and blade jump to where the cut ends and stay there while the slash frames
+    // last. The old eased sweep through every angle in between read as a rubber sword; the
+    // crescent (SlashArc) is what shows the cut now, like a nail swing in Hollow Knight.
     private void UpdateSwingAngles(Swing swing) {
         float pull = Mathf.Sign(swing.bladeFrom - swing.bladeTo) * WindupPull;
         if (swingClock < swing.windup) {
@@ -536,10 +546,8 @@ public class FrenyMotion : MonoBehaviour {
             swingBlade = swing.bladeFrom + pull * t;
             return;
         }
-        float k = Mathf.Clamp01((swingClock - swing.windup) / swing.cut);
-        k = 1f - (1f - k) * (1f - k) * (1f - k);
-        swingArm = Mathf.Lerp(swing.armFrom, swing.armTo, k);
-        swingBlade = Mathf.Lerp(swing.bladeFrom + pull, swing.bladeTo, k);
+        swingArm = swing.armTo;
+        swingBlade = swing.bladeTo;
     }
 
     // an angle to the nearest drawn one (every AngleStep degrees), kept within what was drawn
@@ -592,10 +600,16 @@ public class FrenyMotion : MonoBehaviour {
         }
     }
 
-    // a crescent swept in front of the blade: the head runs ahead, the tail follows and thins out
+    // The cut itself, drawn the way Hollow Knight draws a nail swing: a wide, hard-edged crescent
+    // that is all there at once (a two-frame sweep, so the direction reads), holds for a few
+    // frames and then wipes away from its tail while it thins out. No soft smear: the band has a
+    // white outer edge, a pale inside and a thin dark rim, so it stays crisp on any background.
     private class SlashArc : MonoBehaviour {
-        private const int Segments = 18;
-        public const float DefaultLife = 0.11f;
+        private const int Segments = 22;
+        public const float DefaultLife = 0.16f;
+        private const float Sweep = 0.025f;      // the head reaches the end of the cut
+        private const float Hold = 0.05f;         // then the whole crescent stands
+        private const float Rim = 0.035f;         // the dark rim, in units
 
         private Mesh mesh;
         private Vector3[] verts;
@@ -603,10 +617,9 @@ public class FrenyMotion : MonoBehaviour {
         private float from, to, radius, squashY, life, thickness;
         private float age;            // stands still during Freny's hit-stop, like his blade
         private FrenyMotion motion;
-        private Color tint;
+        private Color tint, rim;
 
-        // life: how long it lasts (its head reaches the end of the cut at life / 1.6); thickness
-        // scales how wide the band is
+        // life: how long it lasts in all; thickness scales how wide the band is (1 = half the radius)
         public static void Spawn(FrenyMotion motion, Transform owner, SpriteRenderer body, Vector2 center, float radius, float from, float to,
                 bool greatSword, bool finisher, float life, float thickness) {
             GameObject go = new GameObject("SlashArc");
@@ -620,22 +633,30 @@ public class FrenyMotion : MonoBehaviour {
             arc.life = life;
             arc.thickness = thickness;
             arc.motion = motion;
-            arc.tint = greatSword ? new Color(0.65f, 0.85f, 1f) : new Color(1f, 0.97f, 0.88f);
+            arc.tint = greatSword ? new Color(0.7f, 0.88f, 1f) : new Color(1f, 0.96f, 0.85f);
+            arc.rim = greatSword ? new Color(0.25f, 0.45f, 0.75f, 0.7f) : new Color(0.45f, 0.3f, 0.2f, 0.7f);
             if (finisher) {
-                arc.tint = Color.Lerp(arc.tint, new Color(1f, 0.8f, 0.4f), 0.5f); // a warmer flash
+                arc.tint = Color.Lerp(arc.tint, new Color(1f, 0.82f, 0.45f), 0.6f); // warmer
+                arc.rim = new Color(0.6f, 0.3f, 0.1f, 0.8f);
             }
             arc.Build(body);
         }
 
+        // four rings across the band: dark rim, white edge, pale inside, dark rim
+        private const int Rings = 4;
+
         private void Build(SpriteRenderer body) {
             mesh = new Mesh();
-            verts = new Vector3[(Segments + 1) * 2];
+            verts = new Vector3[(Segments + 1) * Rings];
             colors = new Color[verts.Length];
-            int[] tris = new int[Segments * 6];
+            int[] tris = new int[Segments * (Rings - 1) * 6];
+            int t = 0;
             for (int i = 0; i < Segments; i++) {
-                int v = i * 2;
-                tris[i * 6] = v; tris[i * 6 + 1] = v + 1; tris[i * 6 + 2] = v + 2;
-                tris[i * 6 + 3] = v + 1; tris[i * 6 + 4] = v + 3; tris[i * 6 + 5] = v + 2;
+                for (int r = 0; r < Rings - 1; r++) {
+                    int v = i * Rings + r;
+                    tris[t++] = v; tris[t++] = v + 1; tris[t++] = v + Rings;
+                    tris[t++] = v + 1; tris[t++] = v + Rings + 1; tris[t++] = v + Rings;
+                }
             }
             mesh.vertices = verts;
             mesh.colors = colors;
@@ -656,27 +677,36 @@ public class FrenyMotion : MonoBehaviour {
         }
 
         private void Draw() {
-            float t = age / life;
-            if (t >= 1f) {
+            if (age >= life) {
                 Destroy(gameObject);
                 return;
             }
-            float head = EaseOut(Mathf.Clamp01(t * 1.6f));
-            float tail = EaseOut(Mathf.Clamp01(t * 1.6f - 0.35f));
-            float fade = 1f - t * t;
+            float head = EaseOut(Mathf.Clamp01(age / Sweep));                        // 0..1 along the cut
+            float gone = Mathf.Clamp01((age - Sweep - Hold) / (life - Sweep - Hold)); // the wipe, 0..1
+            float tail = gone * gone * 0.9f;                                          // eats the arc from its start
+            float thin = 1f - gone * gone;                                            // the band narrows as it goes
+            float alpha = 1f - gone * gone * gone;
+            float bandMax = Mathf.Min(0.5f * thickness, 0.85f) * radius;
+            Color white = new Color(1f, 1f, 1f, alpha);
+            Color inside = tint; inside.a = alpha;
+            Color edge = rim; edge.a *= alpha;
             for (int i = 0; i <= Segments; i++) {
                 float k = i / (float)Segments;                     // 0 = tail, 1 = head
-                float a = Mathf.Lerp(from, to, Mathf.Lerp(tail, head, k)) * Mathf.Deg2Rad;
-                float width = Mathf.Min(Mathf.Lerp(0.04f, 0.4f, k * k) * thickness, 0.85f) * radius;
+                float along = Mathf.Lerp(tail, head, k);
+                float a = Mathf.Lerp(from, to, along) * Mathf.Deg2Rad;
+                // pointed at both ends, widest past the middle (the blade's tip does the work)
+                float shape = Mathf.Pow(Mathf.Sin(Mathf.Clamp01(along) * Mathf.PI), 0.6f);
+                float width = Mathf.Max(0.01f, bandMax * shape * thin);
                 Vector3 dir = new Vector3(Mathf.Cos(a), Mathf.Sin(a) * squashY, 0f);
-                verts[i * 2] = dir * radius;
-                verts[i * 2 + 1] = dir * (radius - width);
-                Color outer = tint;
-                outer.a = k * fade;
-                Color inner = tint;
-                inner.a = 0f;
-                colors[i * 2] = outer;
-                colors[i * 2 + 1] = inner;
+                int v = i * Rings;
+                verts[v] = dir * (radius + Rim);
+                verts[v + 1] = dir * radius;
+                verts[v + 2] = dir * (radius - width);
+                verts[v + 3] = dir * (radius - width - Rim);
+                colors[v] = edge;
+                colors[v + 1] = white;
+                colors[v + 2] = inside;
+                colors[v + 3] = edge;
             }
             mesh.vertices = verts;
             mesh.colors = colors;
