@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// The Rede (José, 2026-11-01): bought at the Armeiro, Freny starts each stage with NetsPerStage
+// The Rede (José, 2026-11-01): bought at the Armeira, Freny starts each stage with NetsPerStage
 // nets and throws one with the Rede button (F; a pad button can be set in Controles; "Rede" on a
 // touch screen). It flies in an arc like the grenade, opens where it lands or on the first enemy it
 // touches, and holds every enemy under it for NetTrap.Seconds (the Ciclope is only slowed down).

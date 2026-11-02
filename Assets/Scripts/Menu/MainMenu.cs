@@ -118,7 +118,7 @@ public class MainMenu : MonoBehaviour {
         page.Button(CampaignOpen ? "Campanha" : "Campanha (na versão beta)", () => stack.Push(CampaignPage()), CampaignOpen);
         Button arena = page.Button("Arena", () => stack.Push(ArenaPage()), Application.CanStreamedLevelBeLoaded(GameMenus.ArenaScene));
         page.Button("Inventário", () => stack.Push(InventoryScreens.Inventory(stack)));
-        page.Button("Armeiro", () => stack.Push(InventoryScreens.Armory(stack)));
+        page.Button("Armeira", () => stack.Push(InventoryScreens.Armory(stack)));
         // Freny's looks and Renascer (VarietyScreens)
         if (Features.Looks) {
             page.Button("Visual", () => stack.Push(VarietyScreens.Visual(stack)));

@@ -13,7 +13,7 @@ public static class Loadout {
     public const string GearKeyPrefix = "freny.gear.";
     public const int HelmetCost = 6000;
 
-    // 2026-11-01: the Armeiro no longer sells the helmet (it only drops); a bought one was refunded
+    // 2026-11-01: the Armeira no longer sells the helmet (it only drops); a bought one was refunded
     // (FrenyProgress.MigrateShop). The list is empty so saves and rebirths leave it alone.
     public static readonly string[] GearIds = { };
 

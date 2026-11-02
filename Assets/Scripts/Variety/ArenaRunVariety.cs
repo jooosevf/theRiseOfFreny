@@ -51,7 +51,7 @@ public class ArenaRunVariety : MonoBehaviour {
         gameManager = FindAnyObjectByType<GameManager>();
         Enemy.Killed += OnKilled;
         GameCursor.ShowWhile(this, () => picking);
-        yield return null;  // the Player's Start (loadout, the Armeiro's helmet) has run
+        yield return null;  // the Player's Start (loadout, the Armeira's helmet) has run
         yield return null;
         StartMutator();
         announcedAt = Time.time;   // this week's rule

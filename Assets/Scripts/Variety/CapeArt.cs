@@ -13,11 +13,13 @@ public static class CapeArt {
 
     // art pixels: from the shoulders down
     public static readonly int[] Widths = { 4, 5, 6 };
-    public static readonly int[] Heights = { 4, 4, 5 };
+    public static readonly int[] Heights = { 5, 6, 6 };
 
     // where the cape hangs from, on the helmet of the frame (FrenyLook.NeckSheet): this many art
-    // pixels in from the back edge, and up from the bottom (the neck)
-    public const float BackInset = 0f;
+    // pixels in from the back edge, and up from the bottom (the neck). That sheet's edge is the tip
+    // of the helmet's horn, not his back: from there the cape stood out beside him like a slab
+    // (José, 2026-11-02). In here it hangs behind his shoulders, showing only past his back.
+    public const float BackInset = 3.5f;
     public const float NeckLift = 0.5f;
 
     private static readonly Dictionary<string, Sprite[]> cache = new Dictionary<string, Sprite[]>();

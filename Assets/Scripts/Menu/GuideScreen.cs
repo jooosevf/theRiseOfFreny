@@ -9,20 +9,12 @@ using UnityEngine.UI;
 public static class GuideScreen {
 
     private const float IconBox = 34f;
-    private static readonly string[] Topics = { "Armas", "Fúria e defesa", "Itens", "Onde achar", "Armeiro", "Inimigos", "Arena",
+    private static readonly string[] Topics = { "Armas", "Fúria e defesa", "Itens", "Onde achar", "Armeira", "Inimigos", "Arena",
                                                 "Poço de Ácido", "Missões e títulos", "Bênçãos", "Mutadores", "Renascer e visual", "Conta e amigos" };
     private static int lastTopic;
 
     public static MenuPage Guide(MenuStack stack) {
         MenuPage page = new MenuPage(stack.transform, "Guia", 900f, new Vector2(0.5f, 0.5f), 4f);
-
-        RectTransform entries = MenuKit.MakeRect("Entries", page.Content);
-        VerticalLayoutGroup column = entries.gameObject.AddComponent<VerticalLayoutGroup>();
-        column.spacing = 4f;
-        column.childControlWidth = true;
-        column.childControlHeight = true;
-        column.childForceExpandWidth = true;
-        column.childForceExpandHeight = false;
 
         List<int> shown = new List<int>();
         List<string> names = new List<string>();
@@ -33,16 +25,21 @@ public static class GuideScreen {
             }
         }
         lastTopic = shown[Mathf.Max(0, shown.IndexOf(lastTopic))];
-        page.Choice("Assunto", names.ToArray(), shown.IndexOf(lastTopic), i => {
+        // the topics can be far taller than the screen (José, 2026-11-02: no way back from the Armas
+        // page): they scroll, with Voltar always under them
+        RectTransform entries = null;
+        MenuScroll scroll = null;
+        MenuChoice picker = page.Choice("Assunto", names.ToArray(), shown.IndexOf(lastTopic), i => {
             lastTopic = shown[i];
             Fill(entries, lastTopic);
+            scroll.ToTop();
         });
-        // the picker is created after the entries' container but goes above it
-        entries.SetAsLastSibling();
+        scroll = MenuScroll.Create(page, out entries);
         Fill(entries, lastTopic);
 
         page.Space(6f);
-        page.Button("Voltar", stack.Back);
+        Button back = page.Button("Voltar", stack.Back);
+        scroll.Drive(picker, back);
         return page;
     }
 
@@ -86,13 +83,13 @@ public static class GuideScreen {
             "Os golpes 1 e 2 recarregam em 0,25 s, o 3º em 0,65 s. Funciona no ar e agachado.");
         Entry(parent, art ? art.greatSword : null, "Espadão",
             "Corte e alcance 1,8x maiores (mesmo dano): pega mais inimigos de uma vez. " +
-            "Só cai do chão: vale 6 golpes (2 combos), mais 3 por nível de \"Espadão: +3 golpes\" no Armeiro.");
+            "Só cai do chão: vale 6 golpes (2 combos), mais 3 por nível de \"Espadão: +3 golpes\" na Armeira.");
         Entry(parent, art ? art.revolver : null, "Revólver",
             "4 tiros por tambor; vazio, recarrega sozinho em 1,6 s com a reserva de balas " +
             "(começa com 8, máximo 16). Sem reserva, fica sem tiro. Cima atira para cima. Não empurra o inimigo.");
         Entry(parent, art ? art.shotgun : null, "Escopeta",
             "3 balas em leque, 1 cartucho por tiro; cada bala empurra o inimigo. Troque com o botão Escopeta. Vem de baús " +
-            "e inimigos da Arena. Até 30 cartuchos (40 ou 50 com o Armeiro).");
+            "e inimigos da Arena. Até 30 cartuchos (40 ou 50 com a Armeira).");
         Entry(parent, art ? art.grenade : null, "Granada",
             "Aperte para lançar em arco, sempre à mesma distância (uns 6 m); sem espera entre uma e outra. " +
             (Features.GrenadeFuse ?
@@ -101,9 +98,9 @@ public static class GuideScreen {
             "segurou 5 s, explode na mão. " : "Ela explode onde bater. ") +
             "3 de dano em todos num raio " +
             "grande (mata quase todos; o Golem Vermelho aguenta uma) e quebra baús e vasos. Cuidado: perto demais, o Freny " +
-            "também leva 2 de dano e é arremessado. Até 6 (8 ou 10 com o Armeiro).");
+            "também leva 2 de dano e é arremessado. Até 6 (8 ou 10 com a Armeira).");
         if (Features.Net) Entry(parent, NetThrower.Icon, "Rede",
-            "Comprada no Armeiro: " + NetThrower.NetsPerStage + " por fase (até " + NetThrower.MaxNets + "), botão Rede. Voa em arco e abre no " +
+            "Comprada na Armeira: " + NetThrower.NetsPerStage + " por fase (até " + NetThrower.MaxNets + "), botão Rede. Voa em arco e abre no " +
             "primeiro inimigo ou no chão: todos embaixo dela ficam presos " + NetTrap.Seconds + " s, parados e sem atacar (o morcego " +
             "fica pendurado no ar). O Ciclope é grande demais: só fica mais lento por " + NetTrap.CyclopsSeconds + " s. Não tira vida.");
         if (Features.MageStaff) Entry(parent, MageStaff.Icon, "Cajado do Mago",
@@ -111,9 +108,9 @@ public static class GuideScreen {
             MageStaff.Duration + " s, o botão Atirar lança bolas de feitiço sem gastar munição: " + MageStaff.Damage +
             " de dano, ferem os inimigos (até o Ciclope) e nunca o Freny. O cajado aparece nas costas dele e no HUD, " +
             "e pisca nos últimos segundos. Pegar outro recomeça o tempo.");
-        if (Features.WeaponBuffs) Entry(parent, art ? art.revolver : null, "Melhorias do Armeiro",
-            "O Armeiro não vende armas: vende melhorias para elas (dano, munição, recarga, crítico). Elas valem " +
-            "para sempre e para a arma que cair do chão também (veja Armeiro).");
+        if (Features.WeaponBuffs) Entry(parent, art ? art.revolver : null, "Melhorias da Armeira",
+            "A Armeira não vende armas: vende melhorias para elas (dano, munição, recarga, crítico). Elas valem " +
+            "para sempre e para a arma que cair do chão também (veja Armeira).");
     }
 
     private static void Defense(Transform parent, MenuArt art) {
@@ -123,7 +120,7 @@ public static class GuideScreen {
         if (Features.Fury) Entry(parent, art ? art.rageHelmet : null, "Fúria",
             "A barra Fúria enche lutando: matar, acertar a espada e apanhar. Parada 2 s, ela " +
             "esvazia. Cheia, ela espera: aperte F (troque em Configurações > Controles) na hora certa para " +
-            "20 s de FÚRIA (25 ou 30 com o Armeiro): a espada tira 2 de dano. O piloto automático ativa sozinho com um inimigo perto.");
+            "20 s de FÚRIA (25 ou 30 com a Armeira): a espada tira 2 de dano. O piloto automático ativa sozinho com um inimigo perto.");
         Entry(parent, art ? art.berserkerHelmet : null, "Armadura (Capacete Berserker)",
             Player.ArmorMax + " corações cinza que levam os golpes antes da vida (queda não). " +
             "Cai de inimigos e vasos.");
@@ -152,7 +149,7 @@ public static class GuideScreen {
         if (Features.Magnet) Entry(parent, ArenaPowerUps.Icon(ItemPickup.Kind.Magnet), "Ímã",
             "Raro. Por " + ArenaPowerUps.MagnetSeconds + " s moedas, diamantes e os itens de que o Freny precisa voam até ele, de qualquer lugar da tela.");
         Entry(parent, art ? art.coin : null, "Moedas",
-            "Caem de todo inimigo e ficam salvas. Compram melhorias no Armeiro (Jogar > Armeiro, ou direto da pausa no meio da partida).");
+            "Caem de todo inimigo e ficam salvas. Compram melhorias na Armeira (Jogar > Armeira, ou direto da pausa no meio da partida).");
     }
 
     private static void Drops(Transform parent, MenuArt art) {
@@ -188,12 +185,12 @@ public static class GuideScreen {
             "Cada feiticeiro que morre tem " + Mathf.RoundToInt(MageStaff.DropChance * 100f) + "% de chance de deixar o Cajado do Mago.");
     }
 
-    // the Armeiro's buffs (2026-11-01), prices read from FrenyProgress
+    // the Armeira's buffs (2026-11-01), prices read from FrenyProgress
     private static void Shop(Transform parent, MenuArt art) {
         if (Features.WeaponBuffs) ShopBuffs(parent, art);
         if (Features.Looks) Entry(parent, art ? art.berserkerHelmet : null, "Visual",
             "Elmos (o Capacete Berserker custa 1.000 e só muda o visual: um chifre quebrado, inteiro quando ele tem armadura), " +
-            "capas, cores e o Traje Berserker ficam em Armeiro > Cosméticos ou Inventário > Visual. O Armeiro e o Inventário também abrem direto da pausa.");
+            "capas, torsos e o Traje Berserker ficam em Armeira > Cosméticos ou Inventário > Visual. A Armeira e o Inventário também abrem direto da pausa.");
         Entry(parent, art ? art.heart : null, "Freny",
             "Vida máxima +1 (" + Prices(FrenyUpgrade.MaxHealth) + "), velocidade +5% (" + Prices(FrenyUpgrade.MoveSpeed) +
             "), pulo duplo (" + Prices(FrenyUpgrade.DoubleJump) + ")" +
@@ -310,7 +307,7 @@ public static class GuideScreen {
             "dos jogadores têm cada uma.");
         Entry(parent, art ? art.run : null, "XP e piloto automático",
             "Matar dá XP, e cada nível pede mais XP que o anterior. Cada nível vale 1 ponto para o piloto no " +
-            "Armeiro: reação (1 a 5 pontos por nível), esquiva com dash (3), pegar o item certo (4: busca armadura, poção com " +
+            "Armeira: reação (1 a 5 pontos por nível), esquiva com dash (3), pegar o item certo (4: busca armadura, poção com " +
             "pouca vida e munição acabando, até no meio da luta), melhor alvo (5) e caçar chefe (6: granada e rede no Ciclope, " +
             "e entra no olho mais cedo). O piloto abaixa das bolas de feitiço retas, bebe a poção no último coração (ou no penúltimo com um Golem perto), " +
             "atira na mina-aranha de longe e foge quando ela chega perto, e usa a rede e o cajado quando tem. " +
@@ -375,21 +372,21 @@ public static class GuideScreen {
 
     private static void RebirthTopic(Transform parent, MenuArt art) {
         if (Features.Rebirth) Entry(parent, null, "Renascer " + Rebirth.Star(1),
-            "Com tudo do Armeiro comprado e no nível máximo, Jogar > Renascer troca todas as melhorias (as do " +
-            "Armeiro e as do piloto automático) e o nível, que volta ao 1, por um bônus para sempre: +5% de dano " +
+            "Com tudo da Armeira comprado e no nível máximo, Jogar > Renascer troca todas as melhorias (as do " +
+            "Armeira e as do piloto automático) e o nível, que volta ao 1, por um bônus para sempre: +5% de dano " +
             "e +5% de moedas a cada renascimento, somando, e uma estrela ★ ao lado do nome no ranking (no jogo " +
             "e no site). Moedas, recordes, conquistas e o visual ficam. Alguns visuais só abrem renascendo.");
         if (!Features.Looks) {
             return;
         }
         Entry(parent, art ? art.berserkerHelmet : null, "Visual",
-            "Em Jogar > Visual o Freny troca de elmo, de capa e de cor da roupa. Uns se compram com moedas, " +
+            "Em Jogar > Visual o Freny troca de traje, elmo, capa e torso, um de cada vez. Uns se compram com moedas, " +
             "outros abrem com uma conquista, renascendo ou só no baú dourado do Ciclope. Só muda o visual, não a luta. Na Fúria e com " +
             "armadura ele ainda mostra os capacetes deles.");
         if (Features.BerserkerSuit) Entry(parent, art ? art.berserkerHelmet : null, "Traje Berserker",
             "O primeiro traje: troca a roupa inteira do Freny. Abre depois de derrotar um Ciclope e custa " +
             FrenyLook.Find(FrenyLook.TrajeId).price + " moedas, à parte do Capacete Berserker. Com ele o elmo tem um chifre " +
-            "quebrado, e fica inteiro quando ele tem armadura. A capa continua; o elmo e a cor ficam guardados. Renascer não tira. " +
+            "quebrado, e fica inteiro quando ele tem armadura. A capa continua; o elmo e o torso ficam guardados, e usar um deles tira o Traje. Renascer não tira. " +
             "Só muda o visual, não a luta.");
         foreach (FrenyLook.Item item in FrenyLook.All) {
             if (item.unlock != FrenyLook.Unlock.Free && item.unlock != FrenyLook.Unlock.Coins &&

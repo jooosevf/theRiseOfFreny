@@ -74,7 +74,7 @@ public class UIManager : MonoBehaviour {
         }
     }
 
-    // the scenes have 4 hearts; the Armeiro's Vida máxima adds more in the same row and spacing,
+    // the scenes have 4 hearts; the Armeira's Vida máxima adds more in the same row and spacing,
     // each with its empty heart behind, so a lost heart shows empty like the first four
     public void EnsureBars(int count) {
         if (healthBars == null || healthBars.Length < 2 || healthBars.Length >= count

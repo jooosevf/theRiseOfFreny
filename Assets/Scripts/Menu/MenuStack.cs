@@ -9,7 +9,7 @@ public class MenuPage {
 
     public readonly RectTransform Root;      // full screen, holds the panel
     public readonly RectTransform Panel;
-    public readonly RectTransform Content;   // the column
+    public RectTransform Content;            // the column; what is added goes here (a MenuScroll's content for a while)
     public GameObject LastSelected;
 
     private readonly List<Selectable[]> rows = new List<Selectable[]>();
@@ -100,9 +100,17 @@ public class MenuPage {
 
     // a row with a label and several buttons side by side (controls screen)
     public Button[] ButtonRow(string label, float[] widths, string[] texts, Action<int> onClick, float height = 40f) {
-        Image row = MenuKit.MakeRow(Content, label, out _);
-        row.color = new Color(1f, 1f, 1f, string.IsNullOrEmpty(label) ? 0f : 0.06f);
+        Image row = MenuKit.MakeRow(Content, label, out Text labelText);
+        bool bare = string.IsNullOrEmpty(label);
+        row.color = new Color(1f, 1f, 1f, bare ? 0f : 0.06f);
         MenuKit.Size(row, -1f, height);
+        if (bare) {
+            // no label: nothing beside the buttons, centred on the page under the full-width rows
+            labelText.gameObject.SetActive(false);
+            HorizontalLayoutGroup layout = row.GetComponent<HorizontalLayoutGroup>();
+            layout.padding = new RectOffset(0, 0, 0, 0);
+            layout.childAlignment = TextAnchor.MiddleCenter;
+        }
         Button[] buttons = new Button[texts.Length];
         for (int i = 0; i < texts.Length; i++) {
             int index = i;

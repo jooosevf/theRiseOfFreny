@@ -188,7 +188,7 @@ public class Player : MonoBehaviour, IDamageable {
         : !Reloading && RevolverBullets > 0)));
     // a dropped potion only heals: at full health it stays on the floor until needed or it expires
     public bool WantsPotion => !isDead && Health < MaxHealth;
-    // the Armeiro's buffs raise the caps (WeaponLevels)
+    // the Armeira's buffs raise the caps (WeaponLevels)
     private int ReserveMax => revolverReserveMax + WeaponLevels.ReserveBonus;
     private int ShellsMax => shellsMax + WeaponLevels.ShellsBonus;
     private int GrenadesMax => grenadesMax + WeaponLevels.GrenadeCarryBonus;
@@ -750,14 +750,14 @@ public class Player : MonoBehaviour, IDamageable {
         if (shotgun) {
             ShotgunShells--;
             int shot = Achievements.NextShot();   // the pellets' kills add up for "Doze é Demais"
-            foreach (float angle in WeaponLevels.ShotgunAngles) {   // 3, or 5 from the Armeiro's level 2
+            foreach (float angle in WeaponLevels.ShotgunAngles) {   // 3, or 5 from the Armeira's level 2
                 FireBullet(muzzle, Quaternion.Euler(0f, 0f, angle) * forward, 1f, shot, true);
             }
         } else {
             RevolverBullets--;
             FireBullet(muzzle, forward, RevolverPush);
         }
-        // the Armeiro's "Espada mais rápida" is the sword's only (2026-11-01); the guns' buffs are their own
+        // the Armeira's "Espada mais rápida" is the sword's only (2026-11-01); the guns' buffs are their own
         gunReadyAt = Time.time + (shotgun ? shotgunCooldown : pistolCooldown);
     }
 

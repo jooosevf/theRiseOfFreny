@@ -31,6 +31,11 @@ ALT = {'Player idle': 'Player idle', 'Player walk': 'Player walk', 'Player jump'
        'Player hit': 'Player hit', 'Player crouched': 'Player crouch', 'Player ranged': 'Player ranged',
        'Player melee long': 'Player melee long', 'Player death': 'Player death'}
 
+# which alt frame goes with each normal frame, where the two breathe out of step: idle 1_0 has the
+# head up and idle 1_1 down, the alt's idle the other way round. With i % len(alt) the alt's horn
+# tips stuck out under the helmet and the chest climbed over the neck (José, 2026-11-02)
+ALT_FRAMES = {'Player idle': [1, 0, 0]}
+
 SKIN, SKIN_SHADE, STRAP = ORANGE, (187, 95, 16), (71, 52, 28)
 SHIRT = (LIGHT, MID, SHADE, WHITE)
 HELMET_COLOURS = {LIGHT: PLUM, MID: DARK, SHADE: BLACK, WHITE: PLUM}
@@ -132,7 +137,8 @@ def main():
         normal = cells(os.path.join(PLAYER, sheet))
         alt = cells(os.path.join(ALT_DIR, ALT[sheet])) if sheet in ALT else []
         for i, (name, cell, r, pivot) in enumerate(normal):
-            alt_cell = alt[i % len(alt)][1] if alt else None
+            frames = ALT_FRAMES.get(sheet)
+            alt_cell = alt[frames[i] if frames else i % len(alt)][1] if alt else None
             if alt_cell is not None and alt_cell.size != cell.size:
                 alt_cell = None
             tiles.append((name, dressed(cell, alt_cell), pivot))
