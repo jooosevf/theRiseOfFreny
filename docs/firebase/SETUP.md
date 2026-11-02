@@ -77,6 +77,29 @@ Sem o `FirebaseConfig.json` o jogo funciona normal, só que offline, e o painel 
 4. Jogue a Arena no modo Manual e morra. A pontuação aparece no topo da tela e o leaderboard abre.
 5. No console do Firebase, em **Firestore Database > Dados**, deve aparecer a coleção da dificuldade jogada (`leaderboard_hard`, `leaderboard_freny`, `leaderboard_medium` ou `leaderboard_easy`) e a `saves`.
 
+## Contas, perfil e amigos
+
+Coleções novas (regras em `firebase/firestore.rules`; publicar como no passo 5):
+
+| Coleção | O que guarda | Quem lê / escreve |
+| --- | --- | --- |
+| `apelidos/{chave}` | `uid` do dono do apelido (`chave` = apelido em minúsculas, sem acento) | todos leem; a conta cria uma vez e só o dono apaga |
+| `codigos/{FRENY-XXXX}` | `uid` do dono do código de amigo | todos leem; a conta cria uma vez |
+| `stats/{uid}` | estatísticas da conta (`PlayerStats`): escritas uma vez no fim de cada corrida, lidas uma vez no login | só o dono; contadores só sobem; uma escrita a cada 20 s |
+| `perfis/{uid}` | perfil público, sem email: apelido, visual, recordes assinados, resumo | todos leem; o dono escreve, uma vez a cada 10 s |
+| `pedidos/{para}_{de}` | pedido de amizade ou aviso (`aceito`, `removido`) | só os dois |
+| `amigos/{uid}` | `lista` de uids, até 50 | o dono; só entra quem mandou pedido ou já lista o dono |
+
+Convidado é o login anônimo: joga tudo e tem `stats`, mas não tem apelido, perfil nem amigos, e a API (`api/run/finish`) recusa o ranking dele. O site entra com email e senha pela mesma API do Firebase.
+
+Para testar sem tocar no projeto de verdade, rode os emuladores (precisa de Java) e aponte o jogo e a API para eles:
+
+```bash
+firebase emulators:start --only auth,firestore --project the-rise-of-freny
+```
+
+No `FirebaseConfig.json`: `"authUrl": "http://127.0.0.1:9099"`, `"firestoreUrl": "http://127.0.0.1:8080"` e `"apiUrl": "http://localhost:3000"`. Na API: `FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 SCORE_KEY=... npm run api`. No site, abra `http://localhost:<porta>/?emu=1`. As regras carregadas precisam ter a mesma chave no lugar de `__SCORE_KEY__`. Os emails não saem: os links aparecem no log do emulador.
+
 ## Como funciona
 
 | Arquivo | O que faz |

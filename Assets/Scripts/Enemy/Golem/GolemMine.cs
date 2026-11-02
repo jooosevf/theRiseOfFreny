@@ -147,6 +147,7 @@ public class GolemMine : MonoBehaviour, IDamageable {
                 enemy.HitBy(thrower, Grenade.EnemyDamage);
             }
         }
+        Player.NextDamageSource = PlayerStats.CauseMine;
         if (freny != null && !freny.IsDead && freny.TryDamage(Grenade.SelfDamage)) {
             float side = Mathf.Sign(freny.transform.position.x - at.x);
             if (side == 0f) {

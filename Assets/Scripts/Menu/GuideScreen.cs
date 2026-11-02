@@ -10,7 +10,7 @@ public static class GuideScreen {
 
     private const float IconBox = 34f;
     private static readonly string[] Topics = { "Armas", "Fúria e defesa", "Itens", "Onde achar", "Armeiro", "Inimigos", "Arena",
-                                                "Poço de Ácido", "Missões e títulos", "Bênçãos", "Mutadores", "Renascer e visual" };
+                                                "Poço de Ácido", "Missões e títulos", "Bênçãos", "Mutadores", "Renascer e visual", "Conta e amigos" };
     private static int lastTopic;
 
     public static MenuPage Guide(MenuStack stack) {
@@ -74,6 +74,7 @@ public static class GuideScreen {
             case 8: Missions(entries, art); break;
             case 9: BlessingsTopic(entries); break;
             case 10: MutatorsTopic(entries); break;
+            case 12: AccountTopic(entries, art); break;
             default: RebirthTopic(entries, art); break;
         }
     }
@@ -399,6 +400,21 @@ public static class GuideScreen {
     }
 
     // the second arena (AcidPitArena, Tentacle, Crawler, CrumbleBlock, FallingSpike)
+    private static void AccountTopic(Transform parent, MenuArt art) {
+        Entry(parent, art ? art.frenyIdle != null && art.frenyIdle.Length > 0 ? art.frenyIdle[0] : null : null, "Conta ou convidado",
+            "O convidado joga tudo, mas o recorde dele não entra no ranking: a caixa de NOVO RECORDE oferece Criar conta para salvar. " +
+            "Ao criar a conta, o progresso, as conquistas e as estatísticas vêm junto, e o recorde daquela corrida vai para o ranking.");
+        Entry(parent, null, "Apelido",
+            "Só um jogador pode ter cada apelido (José e Jose contam como o mesmo): 3 a 16 letras, números, _ ou -. " +
+            "Troque em Perfil > Conta, onde também dá para sair da conta.");
+        Entry(parent, null, "Perfil",
+            "No menu e na pausa: abates por inimigo e por arma, tempo no manual e no automático, quedas por causa, recordes, noites e Luas de Sangue. " +
+            "Atualiza no fim de cada corrida. Ver meu perfil no site abre a sua página pública.");
+        Entry(parent, null, "Amigos",
+            "Cada conta tem um código, como FRENY-4F7K. Adicione pelo código ou pelo apelido, no jogo ou no site; o outro aceita ou recusa. " +
+            "Até " + Online.FriendsService.MaxFriends + " amigos. No Ranking, o modo Amigos mostra vocês por dificuldade, e Ver compara as estatísticas.");
+    }
+
     private static void AcidPit(Transform parent) {
         Entry(parent, FirstFrame("Liquids/Acid 100x100"), "Poço de Ácido",
             "A segunda arena: abre quando você faz " + ArenaVariant.AcidPitScore / 1000 + " mil pontos numa corrida da Arena " +

@@ -1099,6 +1099,7 @@ public abstract class Enemy : MonoBehaviour, IDamageable
     protected virtual float KnockbackLift => 0.5f;
 
     protected void HitPlayer() {
+        Player.NextDamageSource = Online.RunLog.PrefabName(gameObject.name);
         if (!player.TryDamage(HitDamage + BloodDamage)) {
             return;
         }
@@ -1226,6 +1227,9 @@ public abstract class Enemy : MonoBehaviour, IDamageable
     public const string ShotHit = "shot";
     public const string BlastHit = "blast";
     public string LastHitWeapon { get; private set; }
+    // which of his weapons it was, for the Perfil (PlayerStats.Weapon*): set right before the hit
+    public static string NextHitSource;
+    public string LastHitSource { get; private set; }
 
     // hits scaled below a point add up here until they make one
     private float wear;
@@ -1254,6 +1258,8 @@ public abstract class Enemy : MonoBehaviour, IDamageable
         NextHitPower = 1f;
         LastHitMark = null;
         LastHitWeapon = shot ? ShotHit : SwordHit;
+        LastHitSource = NextHitSource;
+        NextHitSource = null;
         float scale = player_t != null ? HitScale(player != null ? player.Feet : player_t.position, shot) : 1f;
         if (LastHitMark != null) {
             MarkedHit?.Invoke(this, LastHitMark);
@@ -1278,6 +1284,7 @@ public abstract class Enemy : MonoBehaviour, IDamageable
         }
         LastHitMark = null;
         LastHitWeapon = BlastHit;
+        LastHitSource = PlayerStats.WeaponGrenade;
         TakeDamage(Mathf.Max(1, Mathf.RoundToInt(amount * RunModifiers.DamageMultiplier)));
     }
 

@@ -95,6 +95,10 @@ public class Player : MonoBehaviour, IDamageable {
     //   "max" n: max health is now n · "hit" n: n points of damage the armor can take first
     //   "fall" n: n points straight off his life · "heal" n: n hearts back · "armor" n: armor set to n
     public static event System.Action<string, int> Vital;
+    // what the next TryDamage comes from, set right before it (an enemy's prefab name or a
+    // PlayerStats cause), and what the last hit that landed came from: the Perfil's deaths by cause
+    public static string NextDamageSource;
+    public string LastDamageSource { get; private set; }
     public bool ShotgunOwned { get; private set; }          // bought in the shop, or found in a chest this run
     public bool ShotgunEquipped { get; private set; } = true; // 1 = pistol, 2 = shotgun
     public bool IsRunning { get; private set; }
@@ -475,6 +479,7 @@ public class Player : MonoBehaviour, IDamageable {
         }
         int hearts = Mathf.Min(FallDamageMax, 1 + Mathf.FloorToInt((drop - SafeFallHeight) / FallDamageStep));
         Fx.Dust(Feet, 12);
+        NextDamageSource = PlayerStats.CauseFall;
         TryDamage(hearts, false); // the armor doesn't soften a fall
     }
 
@@ -951,9 +956,12 @@ public class Player : MonoBehaviour, IDamageable {
     }
 
     public bool TryDamage(int amount, bool armorAbsorbs) {
+        string source = NextDamageSource;
+        NextDamageSource = null;
         if (isDead || IsInvulnerable) {
             return false;
         }
+        LastDamageSource = source;
         invulnerableUntil = Time.time + InvulnerableTime;
         AddRage(RagePerHurt);
         Vital?.Invoke(armorAbsorbs ? "hit" : "fall", Mathf.Max(1, amount));

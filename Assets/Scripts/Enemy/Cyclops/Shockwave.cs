@@ -50,7 +50,7 @@ public class Shockwave : MonoBehaviour {
         if (freny != null && !freny.IsDead) {
             Vector3 feet = freny.Feet;
             if (Mathf.Abs(feet.x - transform.position.x) < Reach && feet.y >= floorY - 0.3f && feet.y <= floorY + Height
-                && freny.TryDamage(Damage)) {
+                && Hurt(freny)) {
                 freny.Knockback(new Vector2(dir * Knockback, Knockback * 0.6f));
                 Destroy(gameObject);
                 return;
@@ -59,5 +59,10 @@ public class Shockwave : MonoBehaviour {
         if (travelled >= Range || (ArenaBounds.Active && ArenaBounds.ClampX(transform.position.x, 0f) != transform.position.x)) {
             Destroy(gameObject);
         }
+    }
+
+    private static bool Hurt(Player freny) {
+        Player.NextDamageSource = PlayerStats.CauseShockwave;
+        return freny.TryDamage(Damage);
     }
 }

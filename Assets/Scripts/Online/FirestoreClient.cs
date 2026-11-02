@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -14,9 +15,10 @@ namespace Online {
         private readonly string _docRoot;   // documents' resource name prefix, for :commit
         private readonly FirebaseAuthService _auth;
 
-        public FirestoreClient(string projectId, FirebaseAuthService auth) {
+        // host: FirebaseConfig.firestoreUrl, a local emulator (docs/firebase/SETUP.md); empty = the real one
+        public FirestoreClient(string projectId, FirebaseAuthService auth, string host = null) {
             _docRoot = "projects/" + projectId + "/databases/(default)/documents";
-            _baseUrl = "https://firestore.googleapis.com/v1/" + _docRoot;
+            _baseUrl = (string.IsNullOrEmpty(host) ? "https://firestore.googleapis.com" : host.TrimEnd('/')) + "/v1/" + _docRoot;
             _auth = auth;
         }
 
@@ -48,6 +50,16 @@ namespace Online {
                 query.Append("updateMask.fieldPaths=").Append(UnityWebRequest.EscapeURL(name));
             }
             yield return Send("PATCH", "/" + path + query, fields.ToJson(), (code, _) => done?.Invoke(code == 200));
+        }
+
+        // Creates a document only if it isn't there yet (a nickname, a friend code, a friend request).
+        // done(code): 200 when it was created; anything else was refused or could not be sent.
+        public IEnumerator Create(string path, FirestoreFields fields, Action<long> done) {
+            yield return Send("POST", ":commit", fields.ToCommitJson(_docRoot + "/" + path, true), (code, _) => done?.Invoke(code));
+        }
+
+        public IEnumerator Delete(string path, Action<bool> done) {
+            yield return Send("DELETE", "/" + path, null, (code, _) => done?.Invoke(code == 200));
         }
 
         // Runs a structured query. The response is a JSON array, one entry per document.
@@ -103,6 +115,18 @@ namespace Online {
             return this;
         }
 
+        public FirestoreFields Set(string name, IEnumerable<string> list) {
+            StringBuilder sb = new StringBuilder("{\"arrayValue\":{\"values\":[");
+            bool first = true;
+            foreach (string value in list) {
+                if (!first) sb.Append(',');
+                sb.Append("{\"stringValue\":\"").Append(Json.Escape(value)).Append("\"}");
+                first = false;
+            }
+            _values[name] = sb.Append("]}}").ToString();
+            return this;
+        }
+
         public FirestoreFields SetTimestamp(string name, DateTime utc) {
             string iso = utc.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture);
             _values[name] = "{\"timestampValue\":\"" + iso + "\"}";
@@ -117,7 +141,8 @@ namespace Online {
         }
 
         // A :commit body with one write that updates only these fields of the document.
-        public string ToCommitJson(string documentName) {
+        // mustBeNew: it fails if the document already exists.
+        public string ToCommitJson(string documentName, bool mustBeNew = false) {
             StringBuilder sb = new StringBuilder("{\"writes\":[{\"update\":{\"name\":\"");
             sb.Append(Json.Escape(documentName)).Append("\",").Append(ToJson().Substring(1)).Append(',');
             sb.Append("\"updateMask\":{\"fieldPaths\":[");
@@ -132,7 +157,9 @@ namespace Online {
                 if (i > 0) sb.Append(',');
                 sb.Append("{\"fieldPath\":\"").Append(Json.Escape(_serverTimes[i])).Append("\",\"setToServerValue\":\"REQUEST_TIME\"}");
             }
-            return sb.Append("]}]}").ToString();
+            sb.Append(']');
+            if (mustBeNew) sb.Append(",\"currentDocument\":{\"exists\":false}");
+            return sb.Append("}]}").ToString();
         }
 
         public string ToJson() {
@@ -154,6 +181,68 @@ namespace Online {
         public long Value => long.TryParse(integerValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out long v) ? v : 0;
     }
     [Serializable] public class FsBool { public bool booleanValue; }
+
+    // A document as Firestore returns it, read by field type: JsonUtility needs a class per
+    // document and these (stats, perfis) have dozens of fields, some of them optional.
+    public class FsDoc {
+        private static readonly Regex IntField = new Regex(@"""(\w+)""\s*:\s*\{\s*""integerValue""\s*:\s*""(-?\d+)""");
+        private static readonly Regex TextField = new Regex(@"""(\w+)""\s*:\s*\{\s*""stringValue""\s*:\s*""((?:[^""\\]|\\.)*)""");
+        private static readonly Regex TimeField = new Regex(@"""(\w+)""\s*:\s*\{\s*""timestampValue""\s*:\s*""([^""]+)""");
+        private static readonly Regex ListField = new Regex(@"""(\w+)""\s*:\s*\{\s*""arrayValue""\s*:\s*\{(.*?)\}\s*\}", RegexOptions.Singleline);
+        private static readonly Regex ListItem = new Regex(@"""stringValue""\s*:\s*""((?:[^""\\]|\\.)*)""");
+        private static readonly Regex DocName = new Regex(@"""name""\s*:\s*""([^""]+/documents/[^""]+)""");
+
+        public string Id { get; private set; }
+        public readonly Dictionary<string, long> Ints = new Dictionary<string, long>();
+        public readonly Dictionary<string, string> Texts = new Dictionary<string, string>();
+        public readonly Dictionary<string, DateTime> Times = new Dictionary<string, DateTime>();
+        public readonly Dictionary<string, List<string>> Lists = new Dictionary<string, List<string>>();
+
+        public long Int(string name) => Ints.TryGetValue(name, out long value) ? value : 0;
+        public string Text(string name) => Texts.TryGetValue(name, out string value) ? value : "";
+
+        public static FsDoc Parse(string json) {
+            if (string.IsNullOrEmpty(json)) return null;
+            FsDoc doc = new FsDoc();
+            Match name = DocName.Match(json);
+            if (name.Success) doc.Id = name.Groups[1].Value.Substring(name.Groups[1].Value.LastIndexOf('/') + 1);
+            foreach (Match m in ListField.Matches(json)) {
+                List<string> items = new List<string>();
+                foreach (Match item in ListItem.Matches(m.Groups[2].Value)) items.Add(Unescape(item.Groups[1].Value));
+                doc.Lists[m.Groups[1].Value] = items;
+            }
+            foreach (Match m in IntField.Matches(json)) {
+                if (long.TryParse(m.Groups[2].Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out long value)) doc.Ints[m.Groups[1].Value] = value;
+            }
+            foreach (Match m in TextField.Matches(json)) doc.Texts[m.Groups[1].Value] = Unescape(m.Groups[2].Value);
+            foreach (Match m in TimeField.Matches(json)) {
+                if (DateTime.TryParse(m.Groups[2].Value, CultureInfo.InvariantCulture,
+                        DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out DateTime time)) doc.Times[m.Groups[1].Value] = time;
+            }
+            return doc;
+        }
+
+        // the answer of a :runQuery, one FsDoc per document found
+        public static List<FsDoc> ParseQuery(string json) {
+            List<FsDoc> docs = new List<FsDoc>();
+            if (string.IsNullOrEmpty(json)) return docs;
+            string[] parts = json.Split(new[] { "\"document\"" }, StringSplitOptions.None);
+            for (int i = 1; i < parts.Length; i++) {
+                FsDoc doc = Parse(parts[i]);
+                if (doc != null && !string.IsNullOrEmpty(doc.Id)) docs.Add(doc);
+            }
+            return docs;
+        }
+
+        private static string Unescape(string text) {
+            if (text.IndexOf('\\') < 0) return text;
+            try {
+                return Regex.Unescape(text);
+            } catch (ArgumentException) {
+                return text;
+            }
+        }
+    }
 
     public static class Json {
         public static string Escape(string s) {

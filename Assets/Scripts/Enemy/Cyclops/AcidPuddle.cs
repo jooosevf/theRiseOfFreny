@@ -195,6 +195,7 @@ public class AcidPuddle : MonoBehaviour {
             Vector3 feet = freny.Feet;
             if (feet.x > floodLeft && feet.x < floodRight && feet.y >= floorY - 0.3f && feet.y <= top) {
                 freny.Slow(SlowFactor, 0.3f);
+                Player.NextDamageSource = PlayerStats.CauseVomit;
                 freny.TryDamage(Damage);
             }
         }
@@ -295,6 +296,7 @@ public class AcidPuddle : MonoBehaviour {
             Vector3 at = transform.position;
             if (Mathf.Abs(feet.x - at.x) < width / 2f && feet.y >= at.y - 0.3f && feet.y <= at.y + 0.35f) {
                 freny.Slow(SlowFactor, 0.3f);   // wading through it: slow while in it and a moment after
+                Player.NextDamageSource = PlayerStats.CauseVomit;
                 freny.TryDamage(Damage);        // and it burns (his blink after a hit sets the pace)
             }
         }
@@ -491,6 +493,7 @@ public class VomitStream : MonoBehaviour {
         for (float s = from; s <= head; s += 1f) {
             Vector3 p = At(s);
             if (Mathf.Abs(p.x - body.x) < 0.4f && Mathf.Abs(p.y - body.y) < 0.6f) {
+                Player.NextDamageSource = PlayerStats.CauseVomit;
                 freny.TryDamage(1);
                 return;
             }

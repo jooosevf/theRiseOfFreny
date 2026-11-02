@@ -109,11 +109,12 @@ public class ArenaRunManager : MonoBehaviour {
                 AddChoices(canvas.transform, "Jogar agora");   // skips the countdown
             }
         }
-        if (saveButton == null && Record == Online.OnlineServices.RecordStatus.CanSave) {
-            AddSaveButton(bannerCanvas.transform);
+        bool needsAccount = Record == Online.OnlineServices.RecordStatus.NeedsAccount;
+        if (saveButton == null && (Record == Online.OnlineServices.RecordStatus.CanSave || needsAccount)) {
+            AddSaveButton(bannerCanvas.transform, needsAccount);
         }
         if (saveButton != null) {
-            saveButton.SetActive(Record == Online.OnlineServices.RecordStatus.CanSave);
+            saveButton.SetActive(Record == Online.OnlineServices.RecordStatus.CanSave || needsAccount);
         }
         if (AutoRun) {
             int score = UIManager.Instance != null ? UIManager.Instance.Score : 0;
@@ -147,6 +148,7 @@ public class ArenaRunManager : MonoBehaviour {
         string status;
         switch (online.Record) {
             case Online.OnlineServices.RecordStatus.CanSave: status = "Salve o recorde para ele ir para o ranking"; break;
+            case Online.OnlineServices.RecordStatus.NeedsAccount: status = "<color=#FFD84A>Crie uma conta para salvar este recorde no ranking</color>"; break;
             case Online.OnlineServices.RecordStatus.Saving: status = "Salvando o recorde..."; break;
             case Online.OnlineServices.RecordStatus.Saved: status = "<color=#7CFC8A>Recorde salvo no ranking!</color>"; break;
             case Online.OnlineServices.RecordStatus.InReview: status = "<color=#FFD84A>Em revisão: entra no ranking quando for aprovado</color>"; break;
@@ -159,13 +161,16 @@ public class ArenaRunManager : MonoBehaviour {
                "<size=14>" + status + "</size>\n";
     }
 
-    private void AddSaveButton(Transform canvas) {
+    // a guest's record: the button creates the account, and the record goes right after it
+    private void AddSaveButton(Transform canvas, bool needsAccount) {
         MenuKit.EnsureEventSystem();
         RectTransform row = MenuKit.MakeRect("Save Record", canvas);
         row.anchorMin = row.anchorMax = row.pivot = new Vector2(0.5f, 0.5f);
         row.anchoredPosition = new Vector2(0f, -120f);   // under the record banner
-        row.sizeDelta = new Vector2(420f, 64f);
-        Button save = MenuKit.MakeButton(row, "SALVAR RECORDE", () => Online.OnlineServices.Instance?.SaveRecord(), MenuKit.TextSize + 6);
+        row.sizeDelta = new Vector2(needsAccount ? 620f : 420f, 64f);
+        Button save = needsAccount
+            ? MenuKit.MakeButton(row, "CRIAR CONTA PARA SALVAR", () => GameMenus.Instance?.ShowCreateAccount(), MenuKit.TextSize + 6)
+            : MenuKit.MakeButton(row, "SALVAR RECORDE", () => Online.OnlineServices.Instance?.SaveRecord(), MenuKit.TextSize + 6);
         MenuKit.Stretch(save.GetComponent<RectTransform>());
         save.Select();
         saveButton = row.gameObject;

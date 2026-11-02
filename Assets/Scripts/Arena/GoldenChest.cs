@@ -174,6 +174,7 @@ public class GoldenChest : MonoBehaviour, IDamageable {
     private void Open(Player player) {
         Opened = true;
         Health = 0;
+        StatsTracker.ChestOpened();
         openedAt = Time.time;
         Vector3 center = transform.position;
         Fx.Burst(center, BossKey.Gold, 40, 5f, 0.12f, 1f);

@@ -153,6 +153,7 @@ public class HexballEffect : MonoBehaviour
             Vector2 c = enemy.Center;
             if (Mathf.Abs(p.x - c.x) <= enemy.HalfWidth + EnemyHitRadius && Mathf.Abs(p.y - c.y) <= enemy.HalfHeight + EnemyHitRadius) {
                 if (fromFreny) {
+                    Enemy.NextHitSource = PlayerStats.WeaponStaff;
                     enemy.Damage(damage, 1f, transform.position);   // his hit: score, XP and combo
                 } else {
                     enemy.HitBy(caster, damage);
@@ -174,6 +175,7 @@ public class HexballEffect : MonoBehaviour
 
             if (player != null)
             {
+                Player.NextDamageSource = caster != null ? Online.RunLog.PrefabName(caster.gameObject.name) : "Sorcerer_Enemy";
                 if (player.TryDamage(damage + Enemy.BloodDamage) && knockback > 0f)
                 {
                     float side = direction.x >= 0f ? 1f : -1f;

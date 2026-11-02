@@ -71,6 +71,14 @@ namespace Online {
             });
         }
 
+        // the score with its signature, what the public profile shows. done(false, ...) on a network error
+        public IEnumerator GetOwnSigned(ArenaLevel level, Action<bool, long, string> done) {
+            yield return _db.Get(Collection(level) + "/" + _auth.UserId, (ok, body) => {
+                FsDoc doc = ok ? FsDoc.Parse(body) : null;
+                done?.Invoke(ok, doc?.Int("score") ?? 0, doc?.Text("sig"));
+            });
+        }
+
         // Renames the player's entry without touching the score.
         public IEnumerator Rename(ArenaLevel level, string playerName, Action<bool> done) {
             yield return Rename(Collection(level), playerName, done);

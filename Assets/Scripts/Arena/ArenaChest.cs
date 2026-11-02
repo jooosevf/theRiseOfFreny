@@ -63,6 +63,7 @@ public class ArenaChest : MonoBehaviour, IDamageable {
         }
         broken = true;
         Health = 0;
+        StatsTracker.ChestOpened();
 
         Vector3 center = transform.position + Vector3.up * 0.2f;
         Fx.Burst(center, new Color(0.45f, 0.48f, 0.55f), 18, 3f, 0.1f, 0.6f);   // steel

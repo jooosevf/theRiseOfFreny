@@ -132,6 +132,7 @@ public class Grenade : MonoBehaviour {
         }
         Achievements.GrenadeBlast(kills);
         // Freny caught in his own blast: hurt and thrown away from it
+        Player.NextDamageSource = PlayerStats.CauseGrenade;
         if (freny != null && !freny.IsDead && freny.TryDamage(SelfDamage)) {
             float side = Mathf.Sign(freny.transform.position.x - at.x);
             if (side == 0f) {

@@ -11,6 +11,10 @@ namespace Online {
         // the ranking API (ScoreApi); empty = the live site. "http://localhost:3000" to test
         // against freny-online's tools/api-server.js
         public string apiUrl;
+        // tests only, the Firebase Emulator Suite (docs/firebase/SETUP.md): empty = the real services.
+        // "http://127.0.0.1:9099" and "http://127.0.0.1:8080"
+        public string authUrl;
+        public string firestoreUrl;
 
         private const string ResourceName = "FirebaseConfig";
 

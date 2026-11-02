@@ -23,15 +23,20 @@ public static class OnlineScreens {
         ArenaLevel board = ArenaDifficulty.Ranked[start];
         Action fill = null;
         bool auto = false;   // the autopilot has its own board (José, 2026-11-01)
+        bool friends = false;   // you and your friends, read from their profiles (José, 2026-11-02)
+        Action reload = () => {
+            fill();
+            if (host == null || online == null) return;
+            host.StartCoroutine(friends ? RefreshFriends(online, page, fill) : Refresh(online, page, board, auto, fill));
+        };
         page.Choice("Dificuldade", Array.ConvertAll(ArenaDifficulty.Ranked, ArenaDifficulty.Label), start, i => {
             board = ArenaDifficulty.Ranked[i];
-            fill();
-            if (host != null && online != null) host.StartCoroutine(Refresh(online, page, board, auto, fill));
+            reload();
         });
-        page.Choice("Modo", new[] { "Manual", "Automático" }, 0, i => {
+        page.Choice("Modo", new[] { "Manual", "Automático", "Amigos" }, 0, i => {
             auto = i == 1;
-            fill();
-            if (host != null && online != null) host.StartCoroutine(Refresh(online, page, board, auto, fill));
+            friends = i == 2;
+            reload();
         });
         Text status = page.Label("", MenuKit.SmallTextSize);
         Text[] names = new Text[OnlineServices.LeaderboardSize];
@@ -48,7 +53,7 @@ public static class OnlineScreens {
         }
         Text best = page.Label("", MenuKit.SmallTextSize);
         page.Space(4f);
-        page.Button("Conta e nome", () => stack.Push(Account(stack)));
+        page.Button(PerfilScreens.ButtonLabel, () => stack.Push(PerfilScreens.Page(stack)));
         page.Button(closeLabel, stack.Back);
         page.SelectFirst = again;
 
@@ -61,6 +66,10 @@ public static class OnlineScreens {
                 ? auto ? "Corridas começadas no Automático" : "Só valem corridas manuais · o oficial é o do Freny"
                 : online.State == OnlineServices.Status.Connecting ? "Conectando..." : "Sem conexão: mostrando o último ranking";
             string self = online.Auth != null ? online.Auth.UserId : null;
+            if (friends) {
+                FillFriends(online, board, names, scores, status, best, self);
+                return;
+            }
             List<LeaderboardEntry> top = auto ? online.AutoTopFor(board) : online.TopFor(board);
             for (int i = 0; i < names.Length; i++) {
                 if (i >= top.Count) {
@@ -83,6 +92,24 @@ public static class OnlineScreens {
         return page;
     }
 
+    private static void FillFriends(OnlineServices online, ArenaLevel board, Text[] names, Text[] scores, Text status, Text best, string self) {
+        bool guest = online.Auth == null || online.Auth.IsAnonymous;
+        status.text = guest ? "Crie uma conta para ter amigos" : "Você e seus amigos no " + ArenaDifficulty.Label(board);
+        List<PerfilInfo> all = guest ? new List<PerfilInfo>() : FriendsBoard(online, board);
+        int place = all.FindIndex(p => p.uid == self);
+        for (int i = 0; i < names.Length; i++) {
+            if (i >= all.Count) {
+                names[i].text = "";
+                scores[i].text = "";
+                continue;
+            }
+            bool me = all[i].uid == self;
+            names[i].text = Mark((i + 1) + ". " + all[i].apelido, me);
+            scores[i].text = Mark(all[i].Best(board).ToString(), me);
+        }
+        best.text = place >= 0 ? "Sua posição entre os amigos: " + (place + 1) + "º de " + all.Count : "";
+    }
+
     private static string Mark(string text, bool me) {
         return me ? "<color=#EE8FFC>" + text + "</color>" : text;
     }
@@ -97,62 +124,23 @@ public static class OnlineScreens {
         }
     }
 
-    // the name on the ranking, and an email to keep the progress on other computers
-    public static MenuPage Account(MenuStack stack) {
-        OnlineServices online = OnlineServices.Instance;
-        MenuPage page = new MenuPage(stack.transform, "Conta", 640f, new Vector2(0.5f, 0.5f), 6f);
-        if (online == null) {
-            page.Label("O online está desligado nesta versão.", MenuKit.TextSize);
-            page.Button("Voltar", stack.Back);
-            return page;
+    // Amigos: this account and its friends by their best on this difficulty, from the friends'
+    // public profiles (read when the tab opens; FriendsService keeps them for a minute)
+    private static IEnumerator RefreshFriends(OnlineServices online, MenuPage page, Action fill) {
+        if (online.State == OnlineServices.Status.Online && online.Friends != null) {
+            yield return online.Friends.Refresh();
         }
-        Text message = null;
-        Action<string> done = error => {
-            if (message != null) {
-                message.text = error == null ? "Pronto!" : "Erro: " + error;
-            }
-            stack.ReplaceTop(Account(stack));
-        };
-
-        InputField name = page.Input("Nome", online.Save.playerName, false, OnlineServices.MaxNameLength);
-        page.Button("Salvar nome", () => {
-            online.SetPlayerName(name.text);
-            message.text = "Nome salvo: " + online.Save.playerName;
-        });
-
-        FirebaseAuthService auth = online.Auth;
-        if (auth != null && auth.IsSignedIn && !auth.IsAnonymous) {
-            page.Label("Conta: " + auth.Email, MenuKit.TextSize);
-            page.Button("Sair da conta", () => {
-                online.SignOut();
-                stack.ReplaceTop(Account(stack));
-            });
-        } else if (auth != null && auth.IsSignedIn) {
-            page.Label("Conta de visitante. Coloque um email para levar o progresso para outros computadores.");
-            InputField email = page.Input("Email", "");
-            InputField password = page.Input("Senha", "", true);
-            Button link = null, signIn = null;
-            Action<bool> busy = on => {
-                link.interactable = !on;
-                signIn.interactable = !on;
-                if (on) {
-                    message.text = "Aguarde...";
-                }
-            };
-            link = page.Button("Salvar progresso neste email", () => {
-                busy(true);
-                online.LinkEmail(email.text, password.text, done);
-            });
-            signIn = page.Button("Entrar com este email", () => {
-                busy(true);
-                online.SignInWithEmail(email.text, password.text, done);
-            });
-        } else {
-            page.Label(online.State == OnlineServices.Status.Connecting ? "Conectando..." : "Sem conexão agora.", MenuKit.TextSize);
+        if (page.Root != null) {
+            fill();
         }
-        message = page.Label("");
-        page.Button("Voltar", stack.Back);
-        return page;
+    }
+
+    private static List<PerfilInfo> FriendsBoard(OnlineServices online, ArenaLevel board) {
+        List<PerfilInfo> all = new List<PerfilInfo>();
+        if (online.Friends != null) all.AddRange(online.Friends.Perfis);
+        if (online.Profiles != null && online.Auth != null && online.Auth.IsSignedIn) all.Add(online.Profiles.Own());
+        all.Sort((a, b) => b.Best(board).CompareTo(a.Best(board)));
+        return all;
     }
 
     private static string JumpKey() {
