@@ -19,7 +19,7 @@ public enum FrenyUpgrade {
     // Pistol counts the pistol's levels above 1 (WeaponLevels); Net is the Rede (NetThrower)
     Pistol,
     Net,
-    // 2026-11-01 (José): the Armeiro sells buffs, not weapons. Espadão, Escopeta, Granada and the
+    // 2026-11-01 (José): the Armeira sells buffs, not weapons. Espadão, Escopeta, Granada and the
     // Capacete only come from the floor and chests; these make the weapons better (WeaponLevels).
     // Shotgun, GreatSword, Grenade, Pistol and AutoPotion above are retired (MaxLevel 0, refunded
     // by MigrateShop) but keep their places so old saves still read.
@@ -207,7 +207,7 @@ public static class FrenyProgress {
         return prices != null ? prices.Length : 1;
     }
 
-    // coins for the Armeiro's buffs (132,000 for all of it), brain points for the autopilot (33)
+    // coins for the Armeira's buffs (132,000 for all of it), brain points for the autopilot (33)
     public static int Cost(FrenyUpgrade upgrade) {
         return CostAt(upgrade, GetLevel(upgrade));
     }
@@ -282,7 +282,7 @@ public static class FrenyProgress {
         }
     }
 
-    // The Armeiro stopped selling weapons (2026-11-01): everything bought of a retired upgrade, the
+    // The Armeira stopped selling weapons (2026-11-01): everything bought of a retired upgrade, the
     // Capacete Berserker and the Velocidade/Recarga levels past the new maximum goes back as coins
     // (brain points for the poção sozinho). Run whenever the saved progress may have changed (menu
     // start, a cloud slot loaded): a save from the cloud with old levels is refunded the same way.
@@ -330,7 +330,7 @@ public static class FrenyProgress {
             return;
         }
         if (coins > 0) {
-            Debug.Log("[Armeiro] " + coins + " moedas devolvidas das armas que a loja não vende mais");
+            Debug.Log("[Armeira] " + coins + " moedas devolvidas das armas que a loja não vende mais");
         }
         PlayerPrefs.SetInt(CoinsKey, PlayerPrefs.GetInt(CoinsKey, 0) + coins);
         PlayerPrefs.Save();

@@ -79,7 +79,7 @@ public class MeleeAttack : MonoBehaviour
             Vector3 at = blade != null ? (Vector3)other.ClosestPoint(blade.bounds.center) : other.bounds.center;
             bool alive = !enemy.IsDead;
             if (alive) {
-                Enemy.NextHitPower = WeaponLevels.Roll(WeaponLevels.SwordPower, at);   // the Armeiro's buffs, crit
+                Enemy.NextHitPower = WeaponLevels.Roll(WeaponLevels.SwordPower, at);   // the Armeira's buffs, crit
                 Enemy.NextHitSource = owner && owner.Raging ? PlayerStats.WeaponFury
                     : owner && owner.GreatSwordActive ? PlayerStats.WeaponGreatSword : PlayerStats.WeaponSword;
             }

@@ -14,7 +14,7 @@ public class Grenade : MonoBehaviour {
     public const float ImpactFuse = 1f;    // with Features.GrenadeFuse off: at most this long in the air
 
     public float fuse = Player.GrenadeFuse;
-    // the Armeiro's grenade levels (WeaponLevels) widen the blast and raise the damage
+    // the Armeira's grenade levels (WeaponLevels) widen the blast and raise the damage
     public float radius = BlastRadius;
     public int damage = EnemyDamage;
 

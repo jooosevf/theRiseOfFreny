@@ -16,10 +16,10 @@ public static class Features {
     // ---- Freny ----
     public static readonly bool Net = true;                 // Rede
     public static readonly bool MageStaff = true;           // Cajado do Mago
-    public static readonly bool Fury = true;                // Fúria (the meter, the button and the Armeiro's +5 s)
+    public static readonly bool Fury = true;                // Fúria (the meter, the button and the Armeira's +5 s)
     public static readonly bool GrenadeFuse = true;         // 3 s fuse, bouncing, cooking; off, it bursts on impact
     public static readonly bool MultiKill = true;           // Double/Triple/Quadra/Penta Kill banners; nothing but the banner
-    public static readonly bool WeaponBuffs = true;         // the Armeiro's weapon levels and Crítico; the old weapon sales do not come back
+    public static readonly bool WeaponBuffs = true;         // the Armeira's weapon levels and Crítico; the old weapon sales do not come back
 
     // ---- the rare drops (ArenaPowerUps), one switch each ----
     public static readonly bool InstaKill = true;           // Insta-kill
@@ -38,7 +38,7 @@ public static class Features {
     public static readonly bool Looks = true;               // Visual: helmets, capes and colours
     public static readonly bool BerserkerSuit = true;       // Traje Berserker, the whole skin (needs Looks)
 
-    // the Armeiro's shelves, the Inventário and Renascer's list ask here
+    // the Armeira's shelves, the Inventário and Renascer's list ask here
     public static bool Sold(FrenyUpgrade upgrade) {
         switch (upgrade) {
             case FrenyUpgrade.Net: return Net;

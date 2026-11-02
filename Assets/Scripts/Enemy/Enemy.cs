@@ -1249,7 +1249,7 @@ public abstract class Enemy : MonoBehaviour, IDamageable
         HitPoint = null;
     }
 
-    // the next hit from Freny's sword or gun lands this much harder: the Armeiro's damage buffs and
+    // the next hit from Freny's sword or gun lands this much harder: the Armeira's damage buffs and
     // a critical (WeaponLevels.Roll). Set by MeleeAttack / RangedAttack right before the hit.
     public static float NextHitPower = 1f;
 

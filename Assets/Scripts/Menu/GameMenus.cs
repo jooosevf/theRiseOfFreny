@@ -316,11 +316,11 @@ public class GameMenus : MonoBehaviour {
         }
         // José, 2026-11-01: straight to the shop, without going through the main menu; what is bought
         // counts right away (FrenyProgress.Changed reaches Player)
-        page.Button("Armeiro", () => pauseStack.Push(InventoryScreens.Armory(pauseStack)));
+        page.Button("Armeira", () => pauseStack.Push(InventoryScreens.Armory(pauseStack)));
         page.Button("Inventário", () => pauseStack.Push(InventoryScreens.Inventory(pauseStack)));
         // two in a row each, or the arena's page wouldn't fit a 720p screen with the Perfil
-        page.ButtonRow("", new[] { 260f, 260f }, new[] { "Ajuda", "Guia" }, i => pauseStack.Push(i == 0 ? HelpScreen.Help(pauseStack) : GuideScreen.Guide(pauseStack)));
-        page.ButtonRow("", new[] { 260f, 260f }, new[] { "Conquistas", PerfilScreens.ButtonLabel },
+        page.ButtonRow("", new[] { 266f, 266f }, new[] { "Ajuda", "Guia" }, i => pauseStack.Push(i == 0 ? HelpScreen.Help(pauseStack) : GuideScreen.Guide(pauseStack)));
+        page.ButtonRow("", new[] { 266f, 266f }, new[] { "Conquistas", PerfilScreens.ButtonLabel },
             i => pauseStack.Push(i == 0 ? AchievementsScreen.Page(pauseStack) : PerfilScreens.Page(pauseStack)));
         page.Button("Configurações", () => pauseStack.Push(SettingsScreens.Settings(pauseStack)));
 

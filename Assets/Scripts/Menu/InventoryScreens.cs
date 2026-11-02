@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-// Jogar > Inventário (what Freny takes into the next stage, shown on Freny) and Jogar > Armeiro
+// Jogar > Inventário (what Freny takes into the next stage, shown on Freny) and Jogar > Armeira
 // (the shop, paid with the saved coins, with the merchant beside it). Same upgrades and prices
 // as the arena shop.
 public static class InventoryScreens {
 
-    private const float ItemRow = 34f;   // 38 before the pistol's levels and the Rede made the Armeiro longer
+    private const float ShelfRow = 40f;  // a shelf of the Armeira: its icon, its name, its progress
+    private const float ItemRow = 34f;   // 38 before the pistol's levels and the Rede made the Armeira longer
     private const float SideWidth = 360f;
 
     // what can be left at home: the weapons themselves only drop now (2026-11-01)
@@ -16,9 +17,12 @@ public static class InventoryScreens {
         FrenyUpgrade.Net, FrenyUpgrade.DoubleJump,
     }, Features.Sold);
 
-    // the Armeiro's shelves (José, 2026-11-01: buffs for the weapons instead of the weapons), each
+    // the Armeira's shelves (José, 2026-11-01: buffs for the weapons instead of the weapons), each
     // its own page so no list grows past the screen
     private static readonly (string title, string hint, FrenyUpgrade[] rows)[] Shelves = {
+        // José, 2026-11-02: the Rede on its own shelf, in the Freny shelf nobody found it
+        ("Rede", "Prende os inimigos no chão. Vai com o Freny em cada fase.",
+            new[] { FrenyUpgrade.Net }),
         ("Pistola", "A pistola vai sempre com o Freny.",
             new[] { FrenyUpgrade.PistolDamage, FrenyUpgrade.PistolDrum, FrenyUpgrade.PistolReserve, FrenyUpgrade.PistolReload }),
         ("Escopeta", "Vale para a escopeta que cair de inimigos e baús.",
@@ -29,7 +33,7 @@ public static class InventoryScreens {
             new[] { FrenyUpgrade.GrenadeBlast, FrenyUpgrade.GrenadePower, FrenyUpgrade.GrenadeCarry }),
         ("Freny", "Golpe crítico: dano dobrado em golpes e tiros.",
             new[] { FrenyUpgrade.MaxHealth, FrenyUpgrade.MoveSpeed, FrenyUpgrade.Critical, FrenyUpgrade.RageTime,
-                    FrenyUpgrade.DoubleJump, FrenyUpgrade.Net }),
+                    FrenyUpgrade.DoubleJump }),
     };
 
     private static readonly FrenyUpgrade[] Brain = {
@@ -61,19 +65,21 @@ public static class InventoryScreens {
                 });
                 Hover(choice, () => freny.Say(Description(item)));
             } else {
-                page.Button(ItemName(item) + ": no Armeiro", null, false, ItemRow);
+                page.Button(ItemName(item) + ": na Armeira", null, false, ItemRow);
             }
         }
         // the looks live on one page (VarietyScreens.Visual), the Berserker helmet among them
         if (Features.Looks) {
             Button looks = page.Button("Visual", () => stack.Push(VarietyScreens.Visual(stack)), true, ItemRow);
-            Hover(looks, () => freny.Say("Elmo, capa e cor da roupa. Só para ficar bonito."));
+            MenuKit.Opens(looks);
+            Hover(looks, () => freny.Say("Traje, elmo, capa e torso. Só para ficar bonito."));
         }
 
         page.Space(4f);
         page.Label("O que cai dos inimigos (espadão, capacete, munição) vale só na fase em que caiu.");
         page.Space(4f);
-        Button armory = page.Button("Armeiro", () => stack.Push(Armory(stack)));
+        Button armory = page.Button("Armeira", () => stack.Push(Armory(stack)));
+        MenuKit.Opens(armory);
         Hover(armory, () => freny.Say("Dá pra comprar mais coisa com a armeira."));
         page.Button("Voltar", stack.Back);
 
@@ -193,10 +199,10 @@ public static class InventoryScreens {
         return "Atributos: " + (parts.Count > 0 ? string.Join(" · ", parts) : "nenhum ainda");
     }
 
-    // ---- Armeiro ----
+    // ---- Armeira ----
 
     public static MenuPage Armory(MenuStack stack) {
-        MenuPage page = new MenuPage(stack.transform, "Armeiro", 600f, new Vector2(0.5f, 0.5f), 6f);
+        MenuPage page = new MenuPage(stack.transform, "Armeira", 600f, new Vector2(0.5f, 0.5f), 6f);
         MenuArt art = MenuArt.Get;
         MenuSpeech speech = MerchantSide(page);
 
@@ -215,27 +221,40 @@ public static class InventoryScreens {
             if (current.rows.Length == 0) {
                 continue;
             }
-            Button open = page.Button("", () => stack.Push(ShelfPage(stack, current.title, current.hint, current.rows)), true, ItemRow);
-            Hover(open, () => speech.Say(current.hint));
-            Text label = open.GetComponentInChildren<Text>();
-            label.fontSize = MenuKit.SmallTextSize;
-            refresh.Add(() => label.text = current.title + " · " + Progress(current.rows));
+            Text progress = ShelfButton(page, current.title, ShelfIcon(current.rows[0], art),
+                () => stack.Push(ShelfPage(stack, current.title, current.hint, current.rows)), () => speech.Say(current.hint));
+            refresh.Add(() => progress.text = Progress(current.rows));
         }
         page.Space(4f);
         if (Features.Looks) {
-            Button looks = page.Button("Cosméticos", () => stack.Push(VarietyScreens.Visual(stack)), true, ItemRow);
-            Hover(looks, () => speech.Say("Coisas só para ficar bonito, querido. Não dão força nenhuma."));
+            ShelfButton(page, "Cosméticos", art != null ? MenuArt.Trim(art.berserkerHelmet) : null,
+                () => stack.Push(VarietyScreens.Visual(stack)), () => speech.Say("Coisas só para ficar bonito, querido. Não dão força nenhuma."));
         }
-        Button brain = page.Button("", () => stack.Push(BrainPage(stack)), true, ItemRow);
-        Hover(brain, () => speech.Say("O piloto automático da Arena aprende com pontos de nível, não com moedas."));
-        Text brainText = brain.GetComponentInChildren<Text>();
-        brainText.fontSize = MenuKit.SmallTextSize;
-        refresh.Add(() => brainText.text = "Piloto automático · " + PointsText());
+        Text brainText = ShelfButton(page, "Piloto automático", art != null ? MenuArt.Trim(art.run) : null,
+            () => stack.Push(BrainPage(stack)), () => speech.Say("O piloto automático da Arena aprende com pontos de nível, não com moedas."));
+        refresh.Add(() => brainText.text = PointsText());
         page.Button("Voltar", stack.Back);
 
         refreshAll();
         speech.Say(Greetings[UnityEngine.Random.Range(0, Greetings.Length)]);
         return page;
+    }
+
+    // a line of the Armeira's first page: an icon, the name and, on the right, the returned text to fill
+    private static Text ShelfButton(MenuPage page, string title, Sprite icon, Action onClick, Action onFocus) {
+        Text right = ItemButton(page, "", icon, onClick, out Text name, out Button button, ShelfRow);
+        name.text = title;
+        name.fontSize = MenuKit.TextSize;
+        Hover(button, onFocus);
+        return right;
+    }
+
+    // what shows a shelf: Freny's shelf his face, the others their weapon
+    private static Sprite ShelfIcon(FrenyUpgrade first, MenuArt art) {
+        if (first == FrenyUpgrade.MaxHealth && art != null && art.frenyFace != null && art.frenyFace.Length > 0) {
+            return art.frenyFace[0];
+        }
+        return Icon(first);
     }
 
     // the merchant beside a shop page, with her speech box
@@ -265,7 +284,7 @@ public static class InventoryScreens {
         return have + "/" + all + " níveis";
     }
 
-    // one shelf of the Armeiro, paid with the saved coins
+    // one shelf of the Armeira, paid with the saved coins
     private static MenuPage ShelfPage(MenuStack stack, string title, string hint, FrenyUpgrade[] rows) {
         MenuPage page = new MenuPage(stack.transform, title, 640f, new Vector2(0.5f, 0.5f), 6f);
         Text coins = page.Label("", MenuKit.TextSize);
@@ -355,8 +374,9 @@ public static class InventoryScreens {
     }
 
     // a shop row: the item's icon and name on the left, its price on the right
-    private static Text ItemButton(MenuPage page, string label, Sprite icon, Action onClick, out Text name, out Button button) {
-        button = page.Button(label, onClick, true, ItemRow);
+    public static Text ItemButton(MenuPage page, string label, Sprite icon, Action onClick, out Text name, out Button button,
+                                  float height = ItemRow) {
+        button = page.Button(label, onClick, true, height);
         name = button.GetComponentInChildren<Text>();
         name.alignment = TextAnchor.MiddleLeft;
         name.fontSize = MenuKit.SmallTextSize;
@@ -506,7 +526,7 @@ public static class InventoryScreens {
         }
     }
 
-    private const float IconBox = 30f;      // icons are trimmed (MenuArt.Trim), so they all fill it
+    public const float IconBox = 30f;      // icons are trimmed (MenuArt.Trim), so they all fill it
     private const float PriceWidth = 116f;
 
     private static string ItemName(FrenyUpgrade upgrade) {
