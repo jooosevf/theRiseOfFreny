@@ -100,10 +100,12 @@ namespace Online {
             UIManager.KillScored += OnKillScored;
             Achievements.Happened += OnAchievementMoment;
             Player.Vital += OnVital;
+            Blessings.Chosen += OnBlessing;
         }
 
         private void OnDestroy() {
             Player.Vital -= OnVital;
+            Blessings.Chosen -= OnBlessing;
             SceneManager.sceneLoaded -= OnSceneLoaded;
             UIManager.KillScored -= OnKillScored;
             Achievements.Happened -= OnAchievementMoment;
@@ -115,6 +117,10 @@ namespace Online {
 
         private void OnAchievementMoment(string kind, int count) {
             if (_runLog != null && !_reported) _runLog.AddMoment(kind, count);
+        }
+
+        private void OnBlessing(Blessing blessing) {
+            if (_runLog != null && !_reported) _runLog.AddBlessing(Blessings.Of(blessing).key);
         }
 
         private void OnVital(string kind, int count) {

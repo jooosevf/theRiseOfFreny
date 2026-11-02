@@ -4,9 +4,9 @@ using UnityEngine;
 
 public enum Blessing { ExtraHeart, Strength, CoinMagnet, QuickDash, FullFlask, LightFeet, QuickHands, Grenadier, StoneSkin, Vampire }
 
-// The Bênçãos (José, 2026-11-01, "cada corrida diferente"): at the start of every Arena run the player
-// picks any of them and keeps it for the whole run (ArenaRunVariety's picker; the autopilot takes
-// AutopilotChoice). None of them touches the score, the combo or the spawns (a longer combo would
+// The Bênçãos (José, 2026-11-02): each golden chest (GoldenChest) offers three drawn among those
+// he doesn't hold yet, and the one picked adds to the others until the run ends (the autopilot
+// picks by AutopilotOrder). None of them touches the score, the combo or the spawns (a longer combo would
 // need the ranking API's COMBO_SECONDS to change), so blessed runs go to the normal ranking; the
 // run log names the blessing (RunLog.ToJson) for the record.
 // The numbers live in the effects: RunModifiers (stats), ArenaRunVariety (the run's extras).
@@ -30,46 +30,69 @@ public static class Blessings {
         new Info { id = Blessing.QuickDash, key = "quick_dash", name = "Dash veloz",
             what = "Dash 30% mais longo, e recarrega na metade do tempo.", icon = a => a.jump },
         new Info { id = Blessing.FullFlask, key = "full_flask", name = "Frasco cheio",
-            what = "Começa com uma poção guardada e ganha outra 45 s depois de beber.", icon = a => a.potion },
+            what = "Dá uma poção na hora e outra 45 s depois de beber.", icon = a => a.potion },
         new Info { id = Blessing.LightFeet, key = "light_feet", name = "Pés leves",
             what = "+15% de velocidade.", icon = a => a.run },
         new Info { id = Blessing.QuickHands, key = "quick_hands", name = "Mãos rápidas",
             what = "A espada recarrega 20% mais rápido.", icon = a => a.sword },
         new Info { id = Blessing.Grenadier, key = "grenadier", name = "Granadeiro",
-            what = "Começa com 3 granadas a mais.", icon = a => a.grenade },
+            what = "Dá 3 granadas na hora.", icon = a => a.grenade },
         new Info { id = Blessing.StoneSkin, key = "stone_skin", name = "Pele de pedra",
-            what = "Começa com a armadura cheia, e ela volta cheia a cada 2 minutos.", icon = a => a.berserkerHelmet },
+            what = "Enche a armadura na hora, e ela volta cheia a cada 2 minutos.", icon = a => a.berserkerHelmet },
         new Info { id = Blessing.Vampire, key = "vampire", name = "Vampiro",
             what = "A cada 20 inimigos derrotados, recupera 1 coração.", icon = a => a.rageHelmet },
     };
 
-    // José, 2026-11-01: no luck in a run: the player picks any of them. The autopilot always takes
-    // this one, armor that keeps coming back suits how it plays
-    public const Blessing AutopilotChoice = Blessing.StoneSkin;
+    public const int Choices = 3;
 
-    // the blessing of the run being played (null before the pick and outside the arena)
-    public static Blessing? Current { get; private set; }
+    // what the autopilot takes first among those offered: staying alive, then hitting harder
+    public static readonly Blessing[] AutopilotOrder = {
+        Blessing.StoneSkin, Blessing.ExtraHeart, Blessing.Strength, Blessing.Vampire, Blessing.FullFlask,
+        Blessing.QuickHands, Blessing.LightFeet, Blessing.QuickDash, Blessing.Grenadier, Blessing.CoinMagnet,
+    };
 
+    // the blessings of the run being played, in the order they were taken (empty outside the arena)
+    public static readonly List<Blessing> Held = new List<Blessing>();
+
+    // each one taken (the run log writes it down with the time)
     public static event Action<Blessing> Chosen;
 
     public static Info Of(Blessing b) => All[(int)b];
 
-    public static bool Has(Blessing b) => Current.HasValue && Current.Value == b;
-
-    public static string RunKey => Current.HasValue ? Of(Current.Value).key : "";
+    public static bool Has(Blessing b) => Held.Contains(b);
 
     public static Sprite Icon(Blessing b) {
         MenuArt art = MenuArt.Get;
         return art != null ? MenuArt.Trim(Of(b).icon(art)) : null;
     }
 
-    // a new arena run (or no run at all): nothing picked yet
+    // a new arena run (or no run at all): none yet
     public static void Clear() {
-        Current = null;
+        Held.Clear();
+    }
+
+    // up to Choices different ones he doesn't hold yet, at random; empty once he holds them all
+    public static Blessing[] Draw() {
+        List<Blessing> pool = new List<Blessing>();
+        foreach (Info info in All) {
+            if (!Has(info.id)) {
+                pool.Add(info.id);
+            }
+        }
+        Blessing[] drawn = new Blessing[Mathf.Min(Choices, pool.Count)];
+        for (int i = 0; i < drawn.Length; i++) {
+            int pick = UnityEngine.Random.Range(0, pool.Count);
+            drawn[i] = pool[pick];
+            pool.RemoveAt(pick);
+        }
+        return drawn;
     }
 
     public static void Choose(Blessing b) {
-        Current = b;
+        if (Has(b)) {
+            return;
+        }
+        Held.Add(b);
         Chosen?.Invoke(b);
     }
 }

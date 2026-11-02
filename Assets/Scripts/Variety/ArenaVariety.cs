@@ -28,6 +28,7 @@ public static class ArenaVariety {
         if (newRun) {
             // (the first scene can be set up twice: by sceneLoaded and by Init; the second keeps the run)
             Blessings.Clear();
+            RunModifiers.CyclopsSlain = 0;
             WeeklyMutators.BeginRun(arena);
         }
         if (playerObj == null || playerObj.GetComponent<Player>() == null) {

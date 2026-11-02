@@ -28,7 +28,7 @@ public static class PlayerTitles {
 
     public static readonly Title[] All = {
         new Title { id = "played", name = "Gladiador", how = "Termine uma corrida manual que o servidor aceite." },
-        new Title { id = King, name = "Rei da Arena", how = "Seja o 1º do Difícil, no geral ou no do dia. Só aparece enquanto você for o 1º." },
+        new Title { id = King, name = "Rei da Arena", how = "Seja o 1º do Freny, no geral ou no do dia. Só aparece enquanto você for o 1º." },
         new Title { id = "cyclops", name = "Matador de Gigantes", how = "Conquista Quanto Maior o Gigante." },
         new Title { id = "supreme", name = "Caçador de Magos", how = "Conquista Feitiço Contra o Feiticeiro." },
         new Title { id = "million", name = "Milionário", how = "Conquista Freny Milionário." },
