@@ -251,7 +251,7 @@ public static class FrenyProgress {
             case FrenyUpgrade.PistolDamage: return "Pistola: dano +25%";
             case FrenyUpgrade.PistolDrum: return "Pistola: +1 bala no tambor";
             case FrenyUpgrade.PistolReserve: return "Pistola: reserva +8 balas";
-            case FrenyUpgrade.PistolReload: return "Pistola: recarga 20% mais rápida";
+            case FrenyUpgrade.PistolReload: return "Pistola: recarga -20%";
             case FrenyUpgrade.ShotgunDamage: return "Escopeta: dano +25%";
             case FrenyUpgrade.ShotgunShells: return "Escopeta: +10 cartuchos no máximo";
             case FrenyUpgrade.ShotgunSpread: return "Escopeta: leque de 5 tiros";
