@@ -306,6 +306,7 @@ public class FrenyMotion : MonoBehaviour {
         if (rig == null || dead) {
             return;
         }
+        FrenyLook.Dress(body);   // first of all: the afterimages copy this frame
         float dt = Mathf.Min(Time.deltaTime, 0.05f);
         if (dt <= 0f) {
             return;
@@ -489,6 +490,7 @@ public class FrenyMotion : MonoBehaviour {
         }
         if (pose != null && poses.TryGetValue(pose, out Sprite sprite)) {
             body.sprite = sprite;
+            FrenyLook.Dress(body);
         }
     }
 

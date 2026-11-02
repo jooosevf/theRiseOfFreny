@@ -10,7 +10,7 @@ public static class VarietyScreens {
 
     // ---- Visual ----
 
-    private static readonly LookSlot[] Slots = { LookSlot.Helmet, LookSlot.Cape, LookSlot.Color };
+    private static readonly LookSlot[] Slots = { LookSlot.Suit, LookSlot.Helmet, LookSlot.Cape, LookSlot.Color };
 
     public static MenuPage Visual(MenuStack stack) {
         MenuPage page = new MenuPage(stack.transform, "Visual", 620f, new Vector2(0.5f, 0.5f), 6f);
@@ -25,18 +25,21 @@ public static class VarietyScreens {
 
         // what each picker shows (maybe not owned yet: he tries it on), and the slot touched last
         Dictionary<LookSlot, FrenyLook.Item> shown = new Dictionary<LookSlot, FrenyLook.Item>();
-        LookSlot current = LookSlot.Helmet;
+        LookSlot current = LookSlot.Suit;
         Text status = null;
         Button action = null;
         Action refresh = () => {
             coins.text = "Moedas: " + FrenyProgress.Coins;
-            preview.Show(shown[LookSlot.Helmet], shown[LookSlot.Cape], shown[LookSlot.Color]);
+            preview.Show(shown[LookSlot.Helmet], shown[LookSlot.Cape], shown[LookSlot.Color], shown[LookSlot.Suit]);
             FrenyLook.Item item = shown[current];
             bool owned = FrenyLook.Owns(item);
             bool worn = owned && (FrenyLook.Worn(current) ?? FrenyLook.InSlot(current)[0]) == item;
             status.text = item.name + ": " + (worn ? "usando" : owned ? "é seu" : FrenyLook.HowToGet(item));
+            if (shown[LookSlot.Suit].unlock != FrenyLook.Unlock.Free && (current == LookSlot.Helmet || current == LookSlot.Color)) {
+                status.text += " (não aparece com o Traje)";
+            }
             action.GetComponentInChildren<Text>().text = worn ? "Usando" : owned ? "Usar"
-                : item.unlock == FrenyLook.Unlock.Coins ? "Comprar · " + item.price : "Bloqueado";
+                : FrenyLook.ForSale(item) ? "Comprar · " + item.price : "Bloqueado";
         };
 
         foreach (LookSlot slot in Slots) {
@@ -44,6 +47,9 @@ public static class VarietyScreens {
             List<FrenyLook.Item> items = FrenyLook.InSlot(s);
             FrenyLook.Item worn = FrenyLook.Worn(s) ?? items[0];
             shown[s] = worn;
+            if (items.Count < 2) {
+                continue;   // a look switched off (Features)
+            }
             string[] names = items.ConvertAll(i => FrenyLook.Owns(i) ? i.name : i.name + " (?)").ToArray();
             page.Choice(SlotName(s), names, items.IndexOf(worn), i => {
                 current = s;
@@ -61,15 +67,17 @@ public static class VarietyScreens {
                 FrenyLook.Wear(item);
             } else if (!FrenyLook.TryBuy(item)) {
                 Sfx.Ui("ui_error");
-                status.text = item.unlock == FrenyLook.Unlock.Coins ? "Faltam moedas: " + item.price + " para " + item.name + "."
+                status.text = FrenyLook.ForSale(item) ? "Faltam moedas: " + item.price + " para " + item.name + "."
                     : item.name + ": " + FrenyLook.HowToGet(item) + ".";
                 return;
             } else {
                 FrenyLook.Wear(item);
+                stack.ReplaceTop(Visual(stack));   // the pickers' names lose their (?)
+                return;
             }
             refresh();
         });
-        page.Label("Elmos, capas e cores não mudam nada na luta: são só para o Freny ficar bonito.");
+        page.Label("Trajes, elmos, capas e cores não mudam nada na luta: são só para o Freny ficar bonito.");
         page.Button("Voltar", stack.Back);
         refresh();
         return page;
@@ -79,6 +87,7 @@ public static class VarietyScreens {
         switch (slot) {
             case LookSlot.Helmet: return "Elmo";
             case LookSlot.Cape: return "Capa";
+            case LookSlot.Suit: return "Traje";
             default: return "Cor da roupa";
         }
     }

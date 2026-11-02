@@ -192,7 +192,7 @@ public static class GuideScreen {
         if (Features.WeaponBuffs) ShopBuffs(parent, art);
         if (Features.Looks) Entry(parent, art ? art.berserkerHelmet : null, "Visual",
             "Elmos (o Capacete Berserker custa 1.000 e só muda o visual: um chifre quebrado, inteiro quando ele tem armadura), " +
-            "capas e cores ficam em Armeiro > Cosméticos ou Inventário > Visual. O Armeiro e o Inventário também abrem direto da pausa.");
+            "capas, cores e o Traje Berserker ficam em Armeiro > Cosméticos ou Inventário > Visual. O Armeiro e o Inventário também abrem direto da pausa.");
         Entry(parent, art ? art.heart : null, "Freny",
             "Vida máxima +1 (" + Prices(FrenyUpgrade.MaxHealth) + "), velocidade +5% (" + Prices(FrenyUpgrade.MoveSpeed) +
             "), pulo duplo (" + Prices(FrenyUpgrade.DoubleJump) + ")" +
@@ -385,8 +385,14 @@ public static class GuideScreen {
             "Em Jogar > Visual o Freny troca de elmo, de capa e de cor da roupa. Uns se compram com moedas, " +
             "outros abrem com uma conquista, renascendo ou só no baú dourado do Ciclope. Só muda o visual, não a luta. Na Fúria e com " +
             "armadura ele ainda mostra os capacetes deles.");
+        if (Features.BerserkerSuit) Entry(parent, art ? art.berserkerHelmet : null, "Traje Berserker",
+            "O primeiro traje: troca a roupa inteira do Freny. Abre depois de derrotar um Ciclope e custa " +
+            FrenyLook.Find(FrenyLook.TrajeId).price + " moedas, à parte do Capacete Berserker. Com ele o elmo tem um chifre " +
+            "quebrado, e fica inteiro quando ele tem armadura. A capa continua; o elmo e a cor ficam guardados. Renascer não tira. " +
+            "Só muda o visual, não a luta.");
         foreach (FrenyLook.Item item in FrenyLook.All) {
-            if (item.unlock != FrenyLook.Unlock.Free && item.unlock != FrenyLook.Unlock.Coins && FrenyLook.Reachable(item)) {
+            if (item.unlock != FrenyLook.Unlock.Free && item.unlock != FrenyLook.Unlock.Coins &&
+                    item.unlock != FrenyLook.Unlock.CoinsAfterAchievement && FrenyLook.Reachable(item)) {
                 Entry(parent, null, item.name, FrenyLook.HowToGet(item) + ".");
             }
         }

@@ -17,8 +17,9 @@ public static class Loadout {
     // (FrenyProgress.MigrateShop). The list is empty so saves and rebirths leave it alone.
     public static readonly string[] GearIds = { };
 
-    // the cosmetic is on: Freny always wears the Berserker helmet (FrenyMotion, CombatHud)
-    public static bool WearsCosmeticHelmet => FrenyLook.WearsBerserker;
+    // the cosmetic is on, or the suit that comes with it: Freny always wears the Berserker helmet
+    // (FrenyMotion, CombatHud)
+    public static bool WearsCosmeticHelmet => FrenyLook.WearsBerserker || FrenyLook.WearsTraje;
 
     public static bool Owns(string gear) {
         return PlayerPrefs.GetInt(GearKeyPrefix + gear, 0) > 0;

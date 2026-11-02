@@ -122,6 +122,7 @@ public static class InventoryScreens {
 
         public void Refresh() {
             body.OverlaySprites = Loadout.WearsCosmeticHelmet ? Heads(ref brokenHeads, "FrenyHeads/berserker_broken") : null;
+            body.FrameSkin = FrenyLook.WearsTraje ? FrenyLook.TrajeFrame : (Func<Sprite, Sprite>)null;
             foreach (Action slot in slots) {
                 slot();
             }
