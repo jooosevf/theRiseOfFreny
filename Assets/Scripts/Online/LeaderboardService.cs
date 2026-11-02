@@ -9,6 +9,7 @@ namespace Online {
         public string userId;
         public string name;
         public long score;
+        public int rebirths;   // Renascer: the star after the name (Rebirth.RankingName)
     }
 
     // One board per arena difficulty ("leaderboard_hard", "leaderboard_freny", "_medium", "_easy"), with
@@ -50,6 +51,7 @@ namespace Online {
                 .Set("score", score)
                 .Set("sig", sig)
                 .SetServerTime("updatedAt");
+            AddRebirths(fields);
             yield return _db.Patch(collection + "/" + _auth.UserId, fields, done);
         }
 
@@ -76,7 +78,16 @@ namespace Online {
 
         public IEnumerator Rename(string collection, string playerName, Action<bool> done) {
             FirestoreFields fields = new FirestoreFields().Set("name", playerName).SetServerTime("updatedAt");
+            AddRebirths(fields);   // a new star shows on the boards with the next rename too
             yield return _db.Patch(collection + "/" + _auth.UserId, fields, done);
+        }
+
+        // Renascer's count, for the star after the name (firestore.rules: validEntry). Only once
+        // there is one, so players who never rebirth write what they always did
+        private static void AddRebirths(FirestoreFields fields) {
+            if (Rebirth.Count > 0) {
+                fields.Set("rebirths", (long)Mathf.Min(Rebirth.Count, 999));
+            }
         }
 
         public IEnumerator GetTop(ArenaLevel level, int limit, Action<List<LeaderboardEntry>> done) {
@@ -98,7 +109,8 @@ namespace Online {
                         entries.Add(new LeaderboardEntry {
                             userId = item.document.name.Substring(item.document.name.LastIndexOf('/') + 1),
                             name = item.document.fields.name.stringValue,
-                            score = item.document.fields.score.Value
+                            score = item.document.fields.score.Value,
+                            rebirths = item.document.fields.rebirths != null ? (int)Mathf.Clamp(item.document.fields.rebirths.Value, 0, 999) : 0
                         });
                     }
                 }
@@ -115,6 +127,7 @@ namespace Online {
         [Serializable] private class LeaderboardFields {
             public FsString name;
             public FsInteger score;
+            public FsInteger rebirths;
         }
     }
 }

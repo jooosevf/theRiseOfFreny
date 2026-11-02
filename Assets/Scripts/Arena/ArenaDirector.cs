@@ -11,7 +11,7 @@ using UnityEngine;
 // his reach, so they leave after a few casts), one per tower so both sides get one; with both towers
 // taken they appear on the platforms like everyone else. How many sorcerers (either kind) can be
 // around at once goes with the score: one up to 50 000 points, two past that, three past 100 000.
-// The scene's EnemySpawners are only a fallback. The Escudeiro joins the list at runtime, and every
+// The scene's EnemySpawners are only a fallback. The Escudeiro and the Mina-aranha join the list at runtime, and every
 // FirstBossAt points (then AfterBossKill points after each one falls) the Ciclope is called onto the floor; while it lives nobody else comes.
 public class ArenaDirector : MonoBehaviour {
 
@@ -97,8 +97,9 @@ public class ArenaDirector : MonoBehaviour {
     }
 
     private void OnEnemyDied(Enemy enemy) {
-        if (enemy is Sorcerer) {
+        if (enemy is Sorcerer sorcerer) {
             sorcererDeaths.Add(Time.time);
+            MageStaff.RollDrop(sorcerer);   // now and then it leaves the Cajado do Mago
         }
         if (enemy is Cyclops && chestPrefab != null) {
             // the boss leaves a chest where it fell
@@ -122,6 +123,11 @@ public class ArenaDirector : MonoBehaviour {
     private void AddRuntimeEnemies() {
         GameObject golem = null;
         foreach (Entry entry in enemies) {
+            if (entry.prefab != null && entry.prefab.GetComponent<Sorcerer>() is Sorcerer caster) {
+                MageStaff.Remember(caster.hexballEffectPrefab);   // a staff picked up before any sorcerer came still casts
+            }
+        }
+        foreach (Entry entry in enemies) {
             if (entry.prefab != null && entry.prefab.GetComponent<Golem>() != null && entry.unlockScore == 0) {
                 golem = entry.prefab;
                 break;
@@ -136,8 +142,22 @@ public class ArenaDirector : MonoBehaviour {
             list.Add(new Entry { prefab = shielded, unlockAt = 0.4f, weight = 1f });
             enemies = list.ToArray();
         }
-        cyclopsTemplate = EnemyTemplates.Make<Cyclops>(golem, "Cyclops_Boss", new Vector2(1.9f * Cyclops.Size, 2.45f * Cyclops.Size), new Vector2(0f, Cyclops.Size * 1.225f - 1.585f));
+        // the Mina-aranha (2026-11-01): from the middle of the curve, as often as the others; its
+        // name, score and unlockAt are in the API's rules.js (SpiderMine_Enemy)
+        GameObject spider = Features.SpiderMine ? SpiderMine.MakeTemplate(golem) : null;
+        if (spider != null) {
+            List<Entry> list = new List<Entry>(enemies);
+            list.Add(new Entry { prefab = spider, unlockAt = SpiderMineUnlockAt, weight = 1f });
+            enemies = list.ToArray();
+        }
+        if (Features.Cyclops) {
+            cyclopsTemplate = EnemyTemplates.Make<Cyclops>(golem, "Cyclops_Boss", new Vector2(1.9f * Cyclops.Size, 2.45f * Cyclops.Size), new Vector2(0f, Cyclops.Size * 1.225f - 1.585f));
+        }
+        // the Poço de Ácido has a list of its own (no-op in the classic arena)
+        enemies = AcidPitArena.EnemyTable(enemies, golem);
     }
+
+    public const float SpiderMineUnlockAt = 0.45f;
 
     private bool BossAround => bossPending || Cyclops.Current != null;
     // after a Ciclope falls the arena fills up again at the usual pace, not all at once
@@ -159,8 +179,8 @@ public class ArenaDirector : MonoBehaviour {
     // from the towers (José, 2026-10-29)
     // 2 plain sorcerers with the first Ciclope, one more with each next one, up to 5; from the
     // second Ciclope (150k) the usual enemies keep coming too, 2 more at once with each fight
-    private int BossHelpers => Mathf.Min(5, 1 + bossesCalled);
-    private int BossCompany => Mathf.Max(0, 2 * (bossesCalled - 1));
+    private int BossHelpers => Features.BossEscalation ? Mathf.Min(5, 1 + bossesCalled) : 2;
+    private int BossCompany => Features.BossEscalation ? Mathf.Max(0, 2 * (bossesCalled - 1)) : 0;
     private const float BossHelperGap = 4f;
     private float nextHelperTime;
 
@@ -238,6 +258,15 @@ public class ArenaDirector : MonoBehaviour {
         AddRuntimeEnemies();
     }
 
+    // the Nuke (ArenaPowerUps): nobody comes for a moment, and the portals already open close empty
+    private float spawnPauseUntil;
+    private bool SpawnsPaused => Time.time < spawnPauseUntil;
+
+    public void PauseSpawns(float seconds) {
+        spawnPauseUntil = Time.time + seconds;
+        nextSpawnTime = Mathf.Max(nextSpawnTime, spawnPauseUntil);
+    }
+
     private void Update() {
         CurrentDifficulty = Difficulty;
         CurrentOvertime = Overtime;
@@ -248,9 +277,11 @@ public class ArenaDirector : MonoBehaviour {
         if (Score < RampPausedFrom || Score >= RampResumesAt) {
             rampElapsed += Time.deltaTime;
         }
-        UpdateBoss();
-        UpdateBossHelpers();
-        UpdateBossFodder();
+        if (!SpawnsPaused) {
+            UpdateBoss();
+            UpdateBossHelpers();
+            UpdateBossFodder();
+        }
         int present = AliveEnemies() + pendingSpawns;
         if (bossWasAround && !BossAround) {
             calmUntil = Time.time + AfterBossCalm;
@@ -644,6 +675,7 @@ public class ArenaDirector : MonoBehaviour {
         if (entry.flying) {
             position += Vector3.up * Random.Range(1.5f, 2.5f);
         }
+        AcidPitArena.SpawnSpot(entry.prefab, ref floorPoint, ref position);   // a Tentáculo comes out of an acid pool
 
         pendingSpawns++;
         pendingPoints.Add(floorPoint);
@@ -662,6 +694,9 @@ public class ArenaDirector : MonoBehaviour {
         }
         if (tower >= 0) {
             pendingTower[tower]--;
+        }
+        if (SpawnsPaused) {
+            yield break;
         }
 #if UNITY_EDITOR
         Debug.Log($"[Arena] {entry.prefab.name} em {platform} x {floorPoint.x:0.0}, a {HeroDistance(floorPoint):0.0} do Freny");
@@ -706,7 +741,7 @@ public class ArenaDirector : MonoBehaviour {
             pendingSorcerers--;
         }
 
-        if (spawner == null) {
+        if (spawner == null || SpawnsPaused) {
             yield break;
         }
         if (entry.flying) {

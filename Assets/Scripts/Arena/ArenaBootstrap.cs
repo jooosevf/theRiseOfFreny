@@ -46,6 +46,26 @@ public static class ArenaBootstrap {
             SceneManager.MoveGameObjectToScene(dayNight, scene);
             dayNight.AddComponent<ArenaDayNight>();
         }
+        // the Ciclope's key, golden chest, music and red torches
+        if (!System.Array.Exists(FindCompat.All<ArenaBossLoot>(), l => l.gameObject.scene == scene)) {
+            GameObject loot = new GameObject("Boss Loot");
+            SceneManager.MoveGameObjectToScene(loot, scene);
+            loot.AddComponent<ArenaBossLoot>();
+        }
+
+        // the rare drops: Insta-kill, Nuke and Ímã
+        if (!System.Array.Exists(FindCompat.All<ArenaPowerUps>(), p => p.gameObject.scene == scene)) {
+            GameObject powerUps = new GameObject("Power Ups");
+            SceneManager.MoveGameObjectToScene(powerUps, scene);
+            powerUps.AddComponent<ArenaPowerUps>();
+        }
+
+        // the Poço de Ácido is this same scene, turned toxic at runtime (ArenaVariant, AcidPitArena)
+        if (ArenaVariant.Current == ArenaKind.AcidPit && AcidPitArena.Instance == null) {
+            GameObject pit = new GameObject("Acid Pit");
+            SceneManager.MoveGameObjectToScene(pit, scene);
+            pit.AddComponent<AcidPitArena>();
+        }
 
         GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
         if (playerObj == null || playerObj.GetComponent<Player>() == null) {

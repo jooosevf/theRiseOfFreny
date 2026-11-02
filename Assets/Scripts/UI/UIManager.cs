@@ -114,6 +114,20 @@ public class UIManager : MonoBehaviour {
         }
     }
 
+    // José, 2026-11-01: while a Ciclope is on the floor every other kill is worth 1 point, combo or
+    // not, so nobody farms points off the small ones around it (the kill log tells the server, RunLog)
+    public static bool ScoresFlat(Enemy enemy) {
+        return enemy.OnePointKill || (Features.CyclopsFlatScore && !(enemy is Cyclops) && Cyclops.AnyFighting);
+    }
+
+    // what killing it right now would pay (the Nuke's cap, ArenaPowerUps)
+    public int PointsFor(Enemy enemy) {
+        if (!comboManager) {
+            comboManager = FindAnyObjectByType<ComboManager>();
+        }
+        return ScoresFlat(enemy) ? 1 : Mathf.RoundToInt(enemy.scoreToAdd * (comboManager ? comboManager.GetCombo() : 1f));
+    }
+
         public void HandleComboManager(Enemy enemy) {
         if (!comboManager) {
             comboManager = FindAnyObjectByType<ComboManager>();
@@ -121,12 +135,13 @@ public class UIManager : MonoBehaviour {
 
         if (!comboManager) {
             // scenes without a combo counter just score the base value
-            UpdateScore(enemy.scoreToAdd, true);
+            UpdateScore(ScoresFlat(enemy) ? 1 : enemy.scoreToAdd, true);
             KillScored?.Invoke(enemy, 1f);
             return;
         }
 
-        UpdateScore(enemy.scoreToAdd * comboManager.GetCombo(), true); // todo -> each enemy = combo multiplier
+        // the combo still counts up on a 1-point kill
+        UpdateScore(ScoresFlat(enemy) ? 1f : enemy.scoreToAdd * comboManager.GetCombo(), true); // todo -> each enemy = combo multiplier
         KillScored?.Invoke(enemy, comboManager.GetCombo());
         comboManager.HandleComboManager();
     }

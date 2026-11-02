@@ -8,19 +8,32 @@ using UnityEngine.UI;
 // as the arena shop.
 public static class InventoryScreens {
 
-    private const float ItemRow = 38f;
+    private const float ItemRow = 34f;   // 38 before the pistol's levels and the Rede made the Armeiro longer
     private const float SideWidth = 360f;
 
-    private static readonly FrenyUpgrade[] Equipment = {
-        FrenyUpgrade.GreatSword, FrenyUpgrade.Shotgun, FrenyUpgrade.Grenade, FrenyUpgrade.DoubleJump,
-    };
+    // what can be left at home: the weapons themselves only drop now (2026-11-01)
+    private static readonly FrenyUpgrade[] Equipment = Array.FindAll(new[] {
+        FrenyUpgrade.Net, FrenyUpgrade.DoubleJump,
+    }, Features.Sold);
 
-    private static readonly FrenyUpgrade[] Attributes = {
-        FrenyUpgrade.MaxHealth, FrenyUpgrade.MoveSpeed, FrenyUpgrade.AttackSpeed,
+    // the Armeiro's shelves (José, 2026-11-01: buffs for the weapons instead of the weapons), each
+    // its own page so no list grows past the screen
+    private static readonly (string title, string hint, FrenyUpgrade[] rows)[] Shelves = {
+        ("Pistola", "A pistola vai sempre com o Freny.",
+            new[] { FrenyUpgrade.PistolDamage, FrenyUpgrade.PistolDrum, FrenyUpgrade.PistolReserve, FrenyUpgrade.PistolReload }),
+        ("Escopeta", "Vale para a escopeta que cair de inimigos e baús.",
+            new[] { FrenyUpgrade.ShotgunDamage, FrenyUpgrade.ShotgunShells, FrenyUpgrade.ShotgunSpread }),
+        ("Espada", "O dano vale para a espada e o espadão do chão.",
+            new[] { FrenyUpgrade.SwordDamage, FrenyUpgrade.AttackSpeed, FrenyUpgrade.GreatSwordSwings }),
+        ("Granada", "Vale para as granadas que caem de inimigos, vasos e baús.",
+            new[] { FrenyUpgrade.GrenadeBlast, FrenyUpgrade.GrenadePower, FrenyUpgrade.GrenadeCarry }),
+        ("Freny", "Golpe crítico: dano dobrado em golpes e tiros.",
+            new[] { FrenyUpgrade.MaxHealth, FrenyUpgrade.MoveSpeed, FrenyUpgrade.Critical, FrenyUpgrade.RageTime,
+                    FrenyUpgrade.DoubleJump, FrenyUpgrade.Net }),
     };
 
     private static readonly FrenyUpgrade[] Brain = {
-        FrenyUpgrade.Reaction, FrenyUpgrade.DashDodge, FrenyUpgrade.AutoPotion, FrenyUpgrade.SmartTarget,
+        FrenyUpgrade.Reaction, FrenyUpgrade.DashDodge, FrenyUpgrade.ItemSense, FrenyUpgrade.SmartTarget, FrenyUpgrade.BossHunter,
     };
 
     private static readonly string[] EquipOptions = { "Guardado", "Equipado" };
@@ -51,16 +64,10 @@ public static class InventoryScreens {
                 page.Button(ItemName(item) + ": no Armeiro", null, false, ItemRow);
             }
         }
-        string helmet = Loadout.Helmet;
-        if (Loadout.Owns(helmet)) {
-            MenuChoice choice = page.Choice("Capacete", EquipOptions, Loadout.IsEquipped(helmet) ? 1 : 0, i => {
-                Loadout.SetEquipped(helmet, i == 1);
-                freny.Refresh();
-                freny.Say(i == 1 ? "Capacete na cabeça. Pode vir!" : "Hoje vou sem o capacete.");
-            });
-            Hover(choice, () => freny.Say(HelmetDescription));
-        } else {
-            page.Button(Loadout.DisplayName(helmet) + ": no Armeiro", null, false, ItemRow);
+        // the looks live on one page (VarietyScreens.Visual), the Berserker helmet among them
+        if (Features.Looks) {
+            Button looks = page.Button("Visual", () => stack.Push(VarietyScreens.Visual(stack)), true, ItemRow);
+            Hover(looks, () => freny.Say("Elmo, capa e cor da roupa. Só para ficar bonito."));
         }
 
         page.Space(4f);
@@ -107,8 +114,6 @@ public static class InventoryScreens {
                 slots.Add(Slot(row, Icon(item), ShortName(item),
                     () => FrenyProgress.GetLevel(item) > 0, () => FrenyProgress.IsEquipped(item)));
             }
-            slots.Add(Slot(row, art != null ? MenuArt.Trim(art.berserkerHelmet) : null, "Capacete",
-                () => Loadout.Owns(Loadout.Helmet), () => Loadout.IsEquipped(Loadout.Helmet)));
 
             attributes = MenuKit.MakeText(side, "", MenuKit.SmallTextSize, MenuKit.DimTextColor, TextAnchor.MiddleCenter);
             MenuKit.Size(attributes, -1f, -1f).flexibleWidth = 1f;
@@ -116,7 +121,8 @@ public static class InventoryScreens {
         }
 
         public void Refresh() {
-            body.OverlaySprites = Loadout.IsEquipped(Loadout.Helmet) ? BerserkerHeads() : null;
+            body.OverlaySprites = Loadout.WearsCosmeticHelmet ? Heads(ref brokenHeads, "FrenyHeads/berserker_broken") : null;
+            body.FrameSkin = FrenyLook.WearsTraje ? FrenyLook.TrajeFrame : (Func<Sprite, Sprite>)null;
             foreach (Action slot in slots) {
                 slot();
             }
@@ -128,17 +134,17 @@ public static class InventoryScreens {
         }
     }
 
-    private static Dictionary<string, Sprite> berserkerHeads;
+    private static Dictionary<string, Sprite> brokenHeads;
 
     // the same helmet layer the game puts on Freny (FrenyMotion)
-    private static Dictionary<string, Sprite> BerserkerHeads() {
-        if (berserkerHeads == null) {
-            berserkerHeads = new Dictionary<string, Sprite>();
-            foreach (Sprite head in Resources.LoadAll<Sprite>("FrenyHeads/berserker")) {
-                berserkerHeads[head.name] = head;
+    private static Dictionary<string, Sprite> Heads(ref Dictionary<string, Sprite> cache, string path) {
+        if (cache == null) {
+            cache = new Dictionary<string, Sprite>();
+            foreach (Sprite head in Resources.LoadAll<Sprite>(path)) {
+                cache[head.name] = head;
             }
         }
-        return berserkerHeads;
+        return cache;
     }
 
     // one equipment slot: lit when equipped, dim when stored, almost gone when not bought
@@ -192,6 +198,49 @@ public static class InventoryScreens {
     public static MenuPage Armory(MenuStack stack) {
         MenuPage page = new MenuPage(stack.transform, "Armeiro", 600f, new Vector2(0.5f, 0.5f), 6f);
         MenuArt art = MenuArt.Get;
+        MenuSpeech speech = MerchantSide(page);
+
+        Text coins = page.Label("", MenuKit.TextSize);
+        List<Action> refresh = new List<Action>();
+        Action refreshAll = () => {
+            coins.text = "Moedas: " + FrenyProgress.Coins;
+            foreach (Action action in refresh) {
+                action();
+            }
+        };
+
+        foreach (var shelf in Shelves) {
+            // what Features switched off leaves the shelf, and an empty shelf leaves the page
+            var current = (shelf.title, shelf.hint, rows: Array.FindAll(shelf.rows, Features.Sold));
+            if (current.rows.Length == 0) {
+                continue;
+            }
+            Button open = page.Button("", () => stack.Push(ShelfPage(stack, current.title, current.hint, current.rows)), true, ItemRow);
+            Hover(open, () => speech.Say(current.hint));
+            Text label = open.GetComponentInChildren<Text>();
+            label.fontSize = MenuKit.SmallTextSize;
+            refresh.Add(() => label.text = current.title + " · " + Progress(current.rows));
+        }
+        page.Space(4f);
+        if (Features.Looks) {
+            Button looks = page.Button("Cosméticos", () => stack.Push(VarietyScreens.Visual(stack)), true, ItemRow);
+            Hover(looks, () => speech.Say("Coisas só para ficar bonito, querido. Não dão força nenhuma."));
+        }
+        Button brain = page.Button("", () => stack.Push(BrainPage(stack)), true, ItemRow);
+        Hover(brain, () => speech.Say("O piloto automático da Arena aprende com pontos de nível, não com moedas."));
+        Text brainText = brain.GetComponentInChildren<Text>();
+        brainText.fontSize = MenuKit.SmallTextSize;
+        refresh.Add(() => brainText.text = "Piloto automático · " + PointsText());
+        page.Button("Voltar", stack.Back);
+
+        refreshAll();
+        speech.Say(Greetings[UnityEngine.Random.Range(0, Greetings.Length)]);
+        return page;
+    }
+
+    // the merchant beside a shop page, with her speech box
+    private static MenuSpeech MerchantSide(MenuPage page) {
+        MenuArt art = MenuArt.Get;
         RectTransform side = SidePanel(page, "Armeira");
         RectTransform frame = MenuKit.MakeRect("Portrait", side);
         MenuKit.Size(frame, 200f, 279f);
@@ -203,9 +252,24 @@ public static class InventoryScreens {
         bool canBlink = faces != null && faces.Length > 5;
         merchant.Init(canBlink ? new[] { faces[4], faces[0], faces[2], faces[1], faces[3] } : faces,
             canBlink ? faces[5] : null, 9f, 3f);
-        MenuSpeech speech = SpeechBox(side, null, merchant, 96f);
+        return SpeechBox(side, null, merchant, 96f);
+    }
 
+    // "3/12 níveis" on a shelf's button
+    private static string Progress(FrenyUpgrade[] rows) {
+        int have = 0, all = 0;
+        foreach (FrenyUpgrade upgrade in rows) {
+            have += Mathf.Min(FrenyProgress.GetLevel(upgrade), FrenyProgress.MaxLevel(upgrade));
+            all += FrenyProgress.MaxLevel(upgrade);
+        }
+        return have + "/" + all + " níveis";
+    }
+
+    // one shelf of the Armeiro, paid with the saved coins
+    private static MenuPage ShelfPage(MenuStack stack, string title, string hint, FrenyUpgrade[] rows) {
+        MenuPage page = new MenuPage(stack.transform, title, 640f, new Vector2(0.5f, 0.5f), 6f);
         Text coins = page.Label("", MenuKit.TextSize);
+        Text message = null;
         List<Action> refresh = new List<Action>();
         Action refreshAll = () => {
             coins.text = "Moedas: " + FrenyProgress.Coins;
@@ -213,37 +277,13 @@ public static class InventoryScreens {
                 action();
             }
         };
-
-        foreach (FrenyUpgrade upgrade in Equipment) {
-            UpgradeRow(page, upgrade, refresh, refreshAll, speech);
+        foreach (FrenyUpgrade upgrade in rows) {
+            UpgradeRow(page, upgrade, refresh, refreshAll, null, () => message);
         }
-        foreach (FrenyUpgrade upgrade in Attributes) {
-            UpgradeRow(page, upgrade, refresh, refreshAll, speech);
-        }
-
-        string helmet = Loadout.Helmet;
-        Button helmetButton = null;
-        Text helmetPrice = ItemButton(page, Loadout.DisplayName(helmet), art != null ? MenuArt.Trim(art.berserkerHelmet) : null, () => {
-            if (Loadout.TryBuy(helmet)) {
-                speech.Say("O capacete é seu! Cada fase você começa com armadura cheia.");
-                refreshAll();
-            } else {
-                Refuse(speech, Loadout.Owns(helmet) ? "Esse capacete você já tem, querido." : NoCoins());
-            }
-        }, out _, out helmetButton);
-        Hover(helmetButton, () => speech.Say(HelmetDescription));
-        refresh.Add(() => helmetPrice.text = Loadout.Owns(helmet) ? "comprado" : Loadout.Cost(helmet).ToString());
-
         page.Space(4f);
-        Button brain = page.Button("", () => stack.Push(BrainPage(stack)), true, ItemRow);
-        Hover(brain, () => speech.Say("O piloto automático da Arena aprende com pontos de nível, não com moedas."));
-        Text brainText = brain.GetComponentInChildren<Text>();
-        brainText.fontSize = MenuKit.SmallTextSize;
-        refresh.Add(() => brainText.text = "Piloto automático · " + PointsText());
+        message = page.Label(hint + " Cada nível vale para sempre.");
         page.Button("Voltar", stack.Back);
-
         refreshAll();
-        speech.Say(Greetings[UnityEngine.Random.Range(0, Greetings.Length)]);
         return page;
     }
 
@@ -302,6 +342,8 @@ public static class InventoryScreens {
         }, out Text name, out Button button);
         if (speech != null) {
             Hover(button, () => speech.Say(Description(upgrade)));
+        } else if (message != null) {
+            Hover(button, () => { if (message() != null) message().text = Description(upgrade); });
         }
         refresh.Add(() => {
             int level = FrenyProgress.GetLevel(upgrade);
@@ -310,11 +352,6 @@ public static class InventoryScreens {
             price.text = FrenyProgress.IsMaxed(upgrade) ? (max > 1 ? "máximo" : "comprado")
                 : FrenyProgress.CostText(upgrade);
         });
-    }
-
-    private static void Refuse(MenuSpeech speech, string why) {
-        Sfx.Ui("ui_error");
-        speech.Say(why);
     }
 
     // a shop row: the item's icon and name on the left, its price on the right
@@ -421,6 +458,12 @@ public static class InventoryScreens {
     }
 
     private static Sprite Icon(FrenyUpgrade upgrade) {
+        if (upgrade == FrenyUpgrade.Net) {
+            return NetThrower.Icon;
+        }
+        if (upgrade == FrenyUpgrade.BossHunter && BossKey.Icon != null) {
+            return BossKey.Icon;
+        }
         MenuArt art = MenuArt.Get;
         if (art == null) {
             return null;
@@ -437,6 +480,28 @@ public static class InventoryScreens {
             case FrenyUpgrade.AttackSpeed: return art.sword;
             case FrenyUpgrade.DoubleJump: return art.jump;
             case FrenyUpgrade.MoveSpeed: return art.run;
+            case FrenyUpgrade.Pistol:
+            case FrenyUpgrade.PistolDamage:
+            case FrenyUpgrade.PistolDrum:
+            case FrenyUpgrade.PistolReserve:
+            case FrenyUpgrade.PistolReload: return art.revolver;
+            case FrenyUpgrade.ShotgunDamage:
+            case FrenyUpgrade.ShotgunShells:
+            case FrenyUpgrade.ShotgunSpread: return art.shotgun;
+            case FrenyUpgrade.SwordDamage:
+            case FrenyUpgrade.Critical: return art.sword;
+            case FrenyUpgrade.GreatSwordSwings: return art.greatSword;
+            case FrenyUpgrade.GrenadeBlast:
+            case FrenyUpgrade.GrenadePower:
+            case FrenyUpgrade.GrenadeCarry: return art.grenade;
+            case FrenyUpgrade.RageTime: return art.rageHelmet;
+            // autopilot brain: generic icons from the art we already have
+            case FrenyUpgrade.Reaction:
+                return art.frenyFace != null && art.frenyFace.Length > 0 ? art.frenyFace[0] : art.run;
+            case FrenyUpgrade.DashDodge: return art.run;
+            case FrenyUpgrade.ItemSense: return art.armorHeart;
+            case FrenyUpgrade.SmartTarget: return art.revolver;
+            case FrenyUpgrade.BossHunter: return art.grenade;
             default: return null;
         }
     }
@@ -450,6 +515,8 @@ public static class InventoryScreens {
             case FrenyUpgrade.Shotgun: return "Escopeta";
             case FrenyUpgrade.Grenade: return "Granadas";
             case FrenyUpgrade.DoubleJump: return "Pulo duplo";
+            case FrenyUpgrade.Net: return "Rede";
+            case FrenyUpgrade.Pistol: return "Pistola";
             default: return FrenyProgress.DisplayName(upgrade);
         }
     }
@@ -459,11 +526,10 @@ public static class InventoryScreens {
             case FrenyUpgrade.GreatSword: return "Espadão";
             case FrenyUpgrade.Shotgun: return "Escopeta";
             case FrenyUpgrade.Grenade: return "Granada";
+            case FrenyUpgrade.Net: return "Rede";
             default: return "Pulo";
         }
     }
-
-    private const string HelmetDescription = "Capacete Berserker: começa cada fase com 3 de armadura.";
 
     private static string Description(FrenyUpgrade upgrade) {
         switch (upgrade) {
@@ -472,8 +538,23 @@ public static class InventoryScreens {
             case FrenyUpgrade.Grenade: return "Granadas pra limpar a sala inteira.";
             case FrenyUpgrade.DoubleJump: return "Botas leves: dá pra pular de novo no ar.";
             case FrenyUpgrade.MaxHealth: return "Mais um coração pra aguentar o tranco.";
-            case FrenyUpgrade.MoveSpeed: return "Pernas mais rápidas: corre e foge melhor.";
-            case FrenyUpgrade.AttackSpeed: return "Uma poção que deixa os golpes e tiros mais rápidos.";
+            case FrenyUpgrade.MoveSpeed: return "Pernas mais rápidas: +5%, uma vez só.";
+            case FrenyUpgrade.AttackSpeed: return "A espada recupera 10% mais rápido entre os golpes.";
+            case FrenyUpgrade.PistolDamage: return "Cada tiro da pistola tira 25% a mais.";
+            case FrenyUpgrade.PistolDrum: return "Tambor maior: mais tiros antes de recarregar (4, 5, 6).";
+            case FrenyUpgrade.PistolReserve: return "Bolsa de balas maior: guarda 16, 24 ou 32.";
+            case FrenyUpgrade.PistolReload: return "Recarrega a pistola 20% mais rápido por nível.";
+            case FrenyUpgrade.ShotgunDamage: return "Cada bala da escopeta tira 25% a mais.";
+            case FrenyUpgrade.ShotgunShells: return "Guarda mais cartuchos: 30, 40 ou 50.";
+            case FrenyUpgrade.ShotgunSpread: return "A escopeta solta 5 balas no leque em vez de 3.";
+            case FrenyUpgrade.SwordDamage: return "Cada golpe de espada tira 25% a mais.";
+            case FrenyUpgrade.GreatSwordSwings: return "O espadão do chão dura 3 golpes a mais (6, 9, 12).";
+            case FrenyUpgrade.GrenadeBlast: return "A explosão da granada fica 30% maior.";
+            case FrenyUpgrade.GrenadePower: return "A granada tira 4 em vez de 3: derruba até o Golem Vermelho mais rápido.";
+            case FrenyUpgrade.GrenadeCarry: return "Carrega mais granadas: 6, 8 ou 10.";
+            case FrenyUpgrade.Critical: return "+5% de chance por nível de um golpe ou tiro tirar o dobro.";
+            case FrenyUpgrade.RageTime: return "A Fúria dura 5 s a mais por nível (20, 25, 30).";
+            case FrenyUpgrade.Net: return "Rede: " + NetThrower.NetsPerStage + " por fase. Prende os inimigos por " + NetTrap.Seconds + " s; o Ciclope só fica lento.";
             default: return FrenyProgress.DisplayName(upgrade);
         }
     }

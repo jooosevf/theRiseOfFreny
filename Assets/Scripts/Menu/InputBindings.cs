@@ -2,6 +2,10 @@ using System;
 using UnityEngine;
 
 public enum GameAction {
+    Left,
+    Right,
+    Up,
+    Down,
     Jump,
     Melee,
     Ranged,
@@ -13,10 +17,14 @@ public enum GameAction {
     Shotgun,
     Interact,
     Pause,
+    Fury,      // 2026-11-01: after the older ones, so the saved bindings keep their names and order
+    Net,       // the Rede (NetThrower)
 }
 
 // Which key and which gamepad button do each action, editable in Settings > Controls and saved
-// in PlayerPrefs. Walking stays on the Horizontal axis (arrows, A/D, left stick, d-pad).
+// in PlayerPrefs. Left/Right/Up/Down are the keyboard walk, aim up and crouch keys (the arrows also
+// work while no other action took them); the gamepad walks with the stick and d-pad only, read from
+// the "Pad Horizontal"/"Pad Vertical" axes, so a rebound key never leaks in through the old axes.
 // Gamepad buttons follow the Xbox layout on Windows (0 = A, 1 = B, 2 = X, 3 = Y, 4 = LB, 5 = RB,
 // 6 = Back, 7 = Start, 8 = left stick click, 9 = right stick click).
 public static class InputBindings {
@@ -27,7 +35,7 @@ public static class InputBindings {
     private const string GamepadPrefix = "freny.bind.pad.";
     private const float StickUpThreshold = 0.6f;
 
-    public static readonly GameAction[] All = (GameAction[])Enum.GetValues(typeof(GameAction));
+    public static readonly GameAction[] All = Array.FindAll((GameAction[])Enum.GetValues(typeof(GameAction)), Features.HasAction);
 
     // while a menu is open (and for a frame after it closes) Freny ignores the controls, so the
     // button that closed the menu does not also jump or dash
@@ -45,6 +53,10 @@ public static class InputBindings {
 
     public static KeyCode DefaultKeyboard(GameAction action) {
         switch (action) {
+            case GameAction.Left: return KeyCode.A;
+            case GameAction.Right: return KeyCode.D;
+            case GameAction.Up: return KeyCode.W;
+            case GameAction.Down: return KeyCode.S;
             case GameAction.Jump: return KeyCode.Space;
             case GameAction.Melee: return KeyCode.Mouse0;
             case GameAction.Ranged: return KeyCode.Mouse1;
@@ -56,6 +68,8 @@ public static class InputBindings {
             case GameAction.Shotgun: return KeyCode.Alpha2;
             case GameAction.Interact: return KeyCode.W;
             case GameAction.Pause: return KeyCode.Escape;
+            case GameAction.Fury: return KeyCode.F;
+            case GameAction.Net: return KeyCode.G;
             default: return KeyCode.None;
         }
     }
@@ -73,9 +87,27 @@ public static class InputBindings {
             case GameAction.Shotgun: return KeyCode.JoystickButton9;  // right stick click
             case GameAction.Interact: return KeyCode.None;            // stick or d-pad up
             case GameAction.Pause: return KeyCode.JoystickButton7;    // Start
+            case GameAction.Fury: return KeyCode.None;                // every button is taken: set it in Controles
+            case GameAction.Net: return KeyCode.None;
             default: return KeyCode.None;
         }
     }
+
+    // walking and crouching: rebindable on the keyboard, always the stick / d-pad on a gamepad
+    public static bool IsMovement(GameAction action) {
+        return action == GameAction.Left || action == GameAction.Right || action == GameAction.Up || action == GameAction.Down;
+    }
+
+    // -1..1 from the keyboard keys of two opposite directions
+    public static float KeyAxis(GameAction negative, GameAction positive) {
+        if (GameplayBlocked) {
+            return 0f;
+        }
+        return (Get(positive) ? 1f : 0f) - (Get(negative) ? 1f : 0f);
+    }
+
+    public static float PadHorizontal => Input.GetAxisRaw("Pad Horizontal");
+    public static float PadVertical => Input.GetAxisRaw("Pad Vertical");
 
     public static KeyCode Keyboard(GameAction action) {
         return (KeyCode)PlayerPrefs.GetInt(KeyboardPrefix + action, (int)DefaultKeyboard(action));
@@ -90,6 +122,9 @@ public static class InputBindings {
     }
 
     public static void SetGamepad(GameAction action, KeyCode button) {
+        if (IsMovement(action)) {
+            return;
+        }
         Set(GamepadPrefix, action, button, Gamepad);
     }
 
@@ -97,7 +132,9 @@ public static class InputBindings {
     private static void Set(string prefix, GameAction action, KeyCode key, Func<GameAction, KeyCode> current) {
         KeyCode previous = current(action);
         foreach (GameAction other in All) {
-            if (other != action && key != KeyCode.None && current(other) == key) {
+            // the door shares the up key by default; moving one of them must not drag the other along
+            bool sharesUp = (action == GameAction.Up && other == GameAction.Interact) || (action == GameAction.Interact && other == GameAction.Up);
+            if (other != action && !sharesUp && key != KeyCode.None && current(other) == key) {
                 PlayerPrefs.SetInt(prefix + other, (int)previous);
             }
         }
@@ -133,11 +170,26 @@ public static class InputBindings {
     // fixed second keys that were there before the bindings existed
     private static bool Extra(GameAction action, Func<KeyCode, bool> read) {
         switch (action) {
+            case GameAction.Left: return Arrow(action, KeyCode.LeftArrow, read);
+            case GameAction.Right: return Arrow(action, KeyCode.RightArrow, read);
+            case GameAction.Up: return Arrow(action, KeyCode.UpArrow, read);
+            case GameAction.Down: return Arrow(action, KeyCode.DownArrow, read);
             case GameAction.Run: return read(KeyCode.RightShift);
-            case GameAction.Interact: return read(KeyCode.UpArrow);
+            case GameAction.Interact: return Arrow(action, KeyCode.UpArrow, read);
             case GameAction.Pause: return read(KeyCode.P);
             default: return false;
         }
+    }
+
+    // the arrows keep walking as a second set, unless the player gave that arrow to another action
+    private static bool Arrow(GameAction action, KeyCode arrow, Func<KeyCode, bool> read) {
+        foreach (GameAction other in All) {
+            bool upPair = arrow == KeyCode.UpArrow && (other == GameAction.Up || other == GameAction.Interact);
+            if (other != action && !upPair && Keyboard(other) == arrow) {
+                return false;
+            }
+        }
+        return read(arrow);
     }
 
     private static bool Key(KeyCode key) => key != KeyCode.None && Input.GetKey(key);
@@ -153,7 +205,7 @@ public static class InputBindings {
     private static bool StickUpPressed() {
         if (stickFrame != Time.frameCount) {
             stickFrame = Time.frameCount;
-            float vertical = Input.GetAxisRaw("Vertical");
+            float vertical = PadVertical;
             stickUpNow = stickUpArmed && vertical > StickUpThreshold;
             if (stickUpNow) {
                 stickUpArmed = false;
@@ -168,6 +220,10 @@ public static class InputBindings {
 
     public static string ActionName(GameAction action) {
         switch (action) {
+            case GameAction.Left: return "Esquerda";
+            case GameAction.Right: return "Direita";
+            case GameAction.Up: return "Mirar p/ cima";
+            case GameAction.Down: return "Agachar";
             case GameAction.Jump: return "Pular";
             case GameAction.Melee: return "Espada";
             case GameAction.Ranged: return "Atirar";
@@ -179,6 +235,8 @@ public static class InputBindings {
             case GameAction.Shotgun: return "Escopeta";
             case GameAction.Interact: return "Porta";
             case GameAction.Pause: return "Pausar";
+            case GameAction.Fury: return "Fúria";
+            case GameAction.Net: return "Rede";
             default: return action.ToString();
         }
     }

@@ -22,15 +22,16 @@ public static class OnlineScreens {
         int start = Mathf.Max(0, Array.IndexOf(ArenaDifficulty.Ranked, first));
         ArenaLevel board = ArenaDifficulty.Ranked[start];
         Action fill = null;
+        bool auto = false;   // the autopilot has its own board (José, 2026-11-01)
         page.Choice("Dificuldade", Array.ConvertAll(ArenaDifficulty.Ranked, ArenaDifficulty.Label), start, i => {
             board = ArenaDifficulty.Ranked[i];
             fill();
+            if (host != null && online != null) host.StartCoroutine(Refresh(online, page, board, auto, fill));
         });
-        // the autopilot has its own board (José, 2026-11-01)
-        bool auto = false;
         page.Choice("Modo", new[] { "Manual", "Automático" }, 0, i => {
             auto = i == 1;
             fill();
+            if (host != null && online != null) host.StartCoroutine(Refresh(online, page, board, auto, fill));
         });
         Text status = page.Label("", MenuKit.SmallTextSize);
         Text[] names = new Text[OnlineServices.LeaderboardSize];
@@ -57,7 +58,7 @@ public static class OnlineScreens {
                 return;
             }
             status.text = online.State == OnlineServices.Status.Online
-                ? auto ? "Corridas começadas no Automático" : "Só valem corridas manuais · o oficial é o do Difícil"
+                ? auto ? "Corridas começadas no Automático" : "Só valem corridas manuais · o oficial é o do Freny"
                 : online.State == OnlineServices.Status.Connecting ? "Conectando..." : "Sem conexão: mostrando o último ranking";
             string self = online.Auth != null ? online.Auth.UserId : null;
             List<LeaderboardEntry> top = auto ? online.AutoTopFor(board) : online.TopFor(board);
@@ -69,7 +70,7 @@ public static class OnlineScreens {
                 }
                 LeaderboardEntry entry = top[i];
                 bool me = entry.userId == self;
-                names[i].text = Mark((i + 1) + ". " + entry.name, me);
+                names[i].text = Mark((i + 1) + ". " + Rebirth.RankingName(PlayerTitles.Decorate(entry.name, entry.userId), entry.rebirths), me);
                 scores[i].text = Mark(entry.score.ToString(), me);
             }
             best.text = "Seu recorde no " + ArenaDifficulty.Label(board) + (auto ? " (automático)" : "") + ": " +
@@ -77,7 +78,7 @@ public static class OnlineScreens {
         };
         fill();
         if (host != null && online != null) {
-            host.StartCoroutine(Refresh(online, page, fill));
+            host.StartCoroutine(Refresh(online, page, board, auto, fill));
         }
         return page;
     }
@@ -86,9 +87,10 @@ public static class OnlineScreens {
         return me ? "<color=#EE8FFC>" + text + "</color>" : text;
     }
 
-    private static IEnumerator Refresh(OnlineServices online, MenuPage page, Action fill) {
+    private static IEnumerator Refresh(OnlineServices online, MenuPage page, ArenaLevel board, bool auto, Action fill) {
         if (online.State == OnlineServices.Status.Online) {
-            yield return online.RefreshLeaderboard();
+            yield return online.RefreshBoard(board, auto);
+            yield return PlayerTitles.Refresh(online);
         }
         if (page.Root != null) {   // still open
             fill();

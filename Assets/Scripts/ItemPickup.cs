@@ -6,10 +6,11 @@ using UnityEngine;
 // one now and then where they die; chests and vases hold them too. Built at runtime (no prefab): a
 // sprite, a soft halo behind it, a trigger and the same small arc as the coins, falling to rest
 // just above the floor. Freny collects it by touching it; an item he has no use for (a potion at
-// full health, a full reserve, full armor) stays where it is until it fades.
+// full health, a full reserve, full armor) stays where it is until it fades. The three rare
+// power-ups are items too; ArenaPowerUps rolls them, spins them and does what they do.
 public class ItemPickup : MonoBehaviour {
 
-    public enum Kind { Potion, Bullets, Shells, Grenades, Shotgun, GreatSword, Armor, Diamond }
+    public enum Kind { Potion, Bullets, Shells, Grenades, Shotgun, GreatSword, Armor, Diamond, Staff, InstaKill, Nuke, Magnet }
 
     // enemy drops, rolled once per death on top of its coin. These are the chances when Freny is
     // half short of that item; each one is scaled by what he needs right now (Need: none at full
@@ -52,6 +53,7 @@ public class ItemPickup : MonoBehaviour {
 
     private Vector2 velocity;
     private bool tossing;
+    private bool pulled;   // on its way to Freny (the Ímã, ArenaPowerUps)
     private float hoverY;
     private float restLift = 0.25f;  // from the floor to the pivot, so the art's bottom sits just above it
     private float bobPhase;
@@ -99,7 +101,7 @@ public class ItemPickup : MonoBehaviour {
         haloObj.transform.localPosition = art.center;
         SpriteRenderer haloRenderer = haloObj.AddComponent<SpriteRenderer>();
         haloRenderer.sprite = HaloSprite();
-        haloRenderer.color = HaloColor;
+        haloRenderer.color = HaloFor(kind);
         haloRenderer.sortingOrder = 39;
         if (UnlitMaterial != null) {
             haloRenderer.sharedMaterial = UnlitMaterial;
@@ -228,6 +230,8 @@ public class ItemPickup : MonoBehaviour {
             case Kind.GreatSword: return WorldSize * 1.4f;
             case Kind.Diamond: return WorldSize * 0.8f;
             case Kind.Potion: return WorldSize * 0.7f;
+            case Kind.Staff: return WorldSize * 1.4f;   // the Cajado do Mago (MageStaff), long and thin
+            case Kind.InstaKill: case Kind.Nuke: case Kind.Magnet: return WorldSize * 1.25f;   // rare: they stand out
             default: return WorldSize;
         }
     }
@@ -247,7 +251,17 @@ public class ItemPickup : MonoBehaviour {
                 case Kind.Diamond: sprite = assets.diamondFrames != null && assets.diamondFrames.Length > 0 ? assets.diamondFrames[0] : null; break;
             }
         }
+        if (kind == Kind.Staff) {
+            sprite = MageStaff.Icon;
+        }
+        if (ArenaPowerUps.IsPowerUp(kind)) {
+            sprite = ArenaPowerUps.Icon(kind);
+        }
         return sprite != null ? sprite : FallbackSprite();
+    }
+
+    private static Color HaloFor(Kind kind) {
+        return ArenaPowerUps.IsPowerUp(kind) ? ArenaPowerUps.ColorOf(kind) : HaloColor;
     }
 
     // icons reused for several items get a tint so they read apart (bullets gold, shells red...)
@@ -348,13 +362,28 @@ public class ItemPickup : MonoBehaviour {
             if (halo) {
                 // breathes gently, so it catches the eye without looking like a hit flash
                 halo.enabled = sprite.enabled;
-                Color c = HaloColor;
+                Color c = HaloFor(kind);
                 c.a *= 0.7f + 0.3f * Mathf.Sin(Time.time * 4f + bobPhase);
                 halo.color = c;
             }
             if (kind == Kind.Diamond) {
                 AnimateDiamond();
+            } else if (ArenaPowerUps.IsPowerUp(kind)) {
+                sprite.sprite = ArenaPowerUps.FrameAt(kind, Time.time + bobPhase);
             }
+        }
+        // the Ímã brings what he can use; the rest stays where it is
+        if (ArenaPowerUps.PullTarget(out Vector3 pullTo) && UsefulTo(FindPlayer())) {
+            pulled = true;
+            tossing = false;
+            transform.position = ArenaPowerUps.PulledFrom(transform.position, pullTo);
+            return;
+        }
+        if (pulled) {
+            // the magnet ran out with it in the air: it falls from there
+            pulled = false;
+            tossing = true;
+            velocity = Vector2.zero;
         }
         if (!tossing) {
             // rests just above the floor, bobbing a little like the coins
@@ -416,6 +445,8 @@ public class ItemPickup : MonoBehaviour {
             case Kind.GreatSword: return player.WantsGreatSword;
             case Kind.Armor: return player.WantsArmor;
             case Kind.Diamond: return true;
+            case Kind.Staff: return true;
+            case Kind.InstaKill: case Kind.Nuke: case Kind.Magnet: return true;
             default: return false;
         }
     }
@@ -430,6 +461,10 @@ public class ItemPickup : MonoBehaviour {
             case Kind.GreatSword: return "o espadão";
             case Kind.Armor: return "a armadura";
             case Kind.Diamond: return "o diamante";
+            case Kind.Staff: return "o cajado";
+            case Kind.InstaKill: return "o Insta-kill";
+            case Kind.Nuke: return "o Nuke";
+            case Kind.Magnet: return "o Ímã";
             default: return "o item";
         }
     }
@@ -457,7 +492,9 @@ public class ItemPickup : MonoBehaviour {
             case Kind.Shotgun: return player.GiveShotgun(amount);
             case Kind.GreatSword: return player.GiveGreatSword();
             case Kind.Armor: return player.GiveArmor();
-            case Kind.Diamond: player.AddCoins(DiamondValue * amount); return true;
+            case Kind.Diamond: player.AddCoins(RunModifiers.ScaleCoins(DiamondValue * amount)); return true;
+            case Kind.Staff: return MageStaff.Give(player);
+            case Kind.InstaKill: case Kind.Nuke: case Kind.Magnet: return ArenaPowerUps.Take(kind);
             default: return false;
         }
     }
@@ -468,7 +505,9 @@ public class ItemPickup : MonoBehaviour {
             case Kind.Shotgun: return "pistol_reload";
             case Kind.GreatSword: return "weapon_switch";
             case Kind.Armor: return "upgrade";
+            case Kind.Staff: return "hexball_launch";
             case Kind.Diamond: return "coin";
+            case Kind.InstaKill: case Kind.Nuke: case Kind.Magnet: return "upgrade";
             default: return "pickup_ammo";
         }
     }

@@ -38,8 +38,10 @@ public static class SettingsScreens {
     }
 
     public static MenuPage Controls(MenuStack stack) {
-        MenuPage page = new MenuPage(stack.transform, "Controles", 720f, new Vector2(0.5f, 0.5f), 5f);
-        page.Label("Andar: setas, A/D ou analógico. Esc cancela.", MenuKit.SmallTextSize);
+        // 17 actions since the walk keys, the Fúria and the Rede (2026-11-01): lower rows, closer together, so the
+        // page still fits a 720p screen
+        MenuPage page = new MenuPage(stack.transform, "Controles", 720f, new Vector2(0.5f, 0.5f), 2f);
+        page.Label("As setas também andam. No controle, anda com o analógico. Esc cancela.", MenuKit.SmallTextSize);
 
         MenuKeyCapture capture = stack.GetComponent<MenuKeyCapture>();
         if (capture == null) {
@@ -51,9 +53,9 @@ public static class SettingsScreens {
             GameAction bound = action;
             Button[] buttons = null;
             buttons = page.ButtonRow(InputBindings.ActionName(action), widths,
-                new[] { InputBindings.KeyName(InputBindings.Keyboard(action)), InputBindings.KeyName(InputBindings.Gamepad(action)) },
+                new[] { InputBindings.KeyName(InputBindings.Keyboard(action)), PadLabel(action) },
                 column => {
-                    if (capture.Waiting) {
+                    if (capture.Waiting || (column == 1 && InputBindings.IsMovement(bound))) {
                         return;
                     }
                     bool gamepad = column == 1;
@@ -71,7 +73,7 @@ public static class SettingsScreens {
                         stack.StartCoroutine(Release(stack));
                         Refresh(page);
                     });
-                }, 34f);
+                }, 28f);
             buttons[0].name = "kb:" + action;
             buttons[1].name = "pad:" + action;
         }
@@ -94,9 +96,14 @@ public static class SettingsScreens {
             if (parts.Length != 2 || !System.Enum.TryParse(parts[1], out GameAction action)) {
                 continue;
             }
-            KeyCode key = parts[0] == "pad" ? InputBindings.Gamepad(action) : InputBindings.Keyboard(action);
-            button.GetComponentInChildren<Text>().text = InputBindings.KeyName(key);
+            button.GetComponentInChildren<Text>().text = parts[0] == "pad"
+                ? PadLabel(action) : InputBindings.KeyName(InputBindings.Keyboard(action));
         }
+    }
+
+    // the gamepad walks with the stick, so those rows only show it
+    private static string PadLabel(GameAction action) {
+        return InputBindings.IsMovement(action) ? "Analógico" : InputBindings.KeyName(InputBindings.Gamepad(action));
     }
 
     // the key that finished the capture must not also press the selected button
