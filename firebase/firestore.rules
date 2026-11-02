@@ -206,15 +206,12 @@ service cloud.firestore {
           && o.get('runsEasy', 0) <= d.get('runsEasy', 0)
           && o.get('runsMedium', 0) <= d.get('runsMedium', 0)
           && o.get('runsHard', 0) <= d.get('runsHard', 0)
-          && o.get(0) <= d.get(0)
           && o.get('bestEasy', 0) <= d.get('bestEasy', 0)
           && o.get('bestMedium', 0) <= d.get('bestMedium', 0)
           && o.get('bestHard', 0) <= d.get('bestHard', 0)
-          && o.get(0) <= d.get(0)
           && o.get('bestAutoEasy', 0) <= d.get('bestAutoEasy', 0)
           && o.get('bestAutoMedium', 0) <= d.get('bestAutoMedium', 0)
-          && o.get('bestAutoHard', 0) <= d.get('bestAutoHard', 0)
-          && o.get(0) <= d.get(0);
+          && o.get('bestAutoHard', 0) <= d.get('bestAutoHard', 0);
     }
 
     function num(d, f) {
@@ -252,8 +249,7 @@ service cloud.firestore {
           && ownsNick(d, userId) && ownsCode(d, userId)
           && bestOk(d, userId, 'bestEasy', 'sigEasy', 'leaderboard_easy')
           && bestOk(d, userId, 'bestMedium', 'sigMedium', 'leaderboard_medium')
-          && bestOk(d, userId, 'bestHard', 'sigHard', 'leaderboard_hard')
-          && bestOk(d, userId, 'leaderboard_freny');
+          && bestOk(d, userId, 'bestHard', 'sigHard', 'leaderboard_hard');
     }
 
     function ownsNick(d, userId) {
