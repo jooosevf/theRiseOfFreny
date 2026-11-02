@@ -75,8 +75,9 @@ public class CombatHud : MonoBehaviour {
             // the weapons in a row under the Corrida and Fúria bars (José, 2026-10-29: beside the
             // hearts they pushed the score onto the coins once he had bought hearts)
             float size = 84f * scale;   // the sword and gun sprites are small inside their frames
+            // (José, 2026-11-01: a little lower, clear of the Fúria bar, each on its own dark square)
             float barsBottom = head.yMax + 6f * scale + BarsHeight * scale;
-            float rowEnd = DrawWeapons(head.xMin, barsBottom - size * 0.15f, size, scale);
+            float rowEnd = DrawWeapons(head.xMin, barsBottom + 8f * scale, size, scale);
             // the gun just switched: its name at the end of the row (above are the bars, under the counts)
             if (Time.time - switchedAt < 1.2f) {
                 ShadowLabel(new Rect(rowEnd + 12f * scale, gunLabelY, 160f * scale, 28f * scale), lastShotgun ? "Escopeta" : "Pistola");
@@ -193,8 +194,13 @@ public class CombatHud : MonoBehaviour {
             DrawIcon(Icon(grenadeIcon, a => a.grenadeIcon), ref x, y, size);
             ShadowLabel(new Rect(gx + size - 14f * scale, y + size + 10f * scale, 60f * scale, 26f * scale), $"x{player.Grenades}");
             if (player.ChargingGrenade) {
-                // power bar while G is held
-                DrawMeter(new Rect(gx, y + size + 2f, size, 6f * scale), player.GrenadeCharge, Color.Lerp(Color.yellow, Color.red, player.GrenadeCharge));
+                // the fuse burning in his hand while the button is held: a bar and the seconds beside
+                // the grenade icon, and the seconds beside Freny
+                float left = player.GrenadeFuseLeft / Player.GrenadeFuse;
+                DrawMeter(new Rect(gx, y + size + 2f, size, 6f * scale), left, Color.Lerp(Color.red, Color.yellow, left));
+                ShadowLabel(new Rect(gx + size + 2f * scale, y + size * 0.35f, 60f * scale, 26f * scale), player.GrenadeFuseLeft.ToString("0.0"), FuseStyle(left));
+                x += 44f * scale;
+                DrawFuseBesideFreny(scale, left);
             }
         }
         return x;
@@ -215,8 +221,33 @@ public class CombatHud : MonoBehaviour {
         gunLabelY = r.center.y - 14f * scale;   // drawn after the row, at its end (OnGUI)
     }
 
-    // Corrida is an energy bar (yellow), always shown; Rage (red) under it,
-    // filled by kills and drained over the 20 s of Rage
+    // a small timer at his side, at chest height, on the side he faces
+    private void DrawFuseBesideFreny(float scale, float left) {
+        Camera cam = Camera.main;
+        if (cam == null) {
+            return;
+        }
+        float side = player.FacingRight ? 0.65f : -0.65f;
+        Vector3 screen = cam.WorldToScreenPoint(player.Feet + new Vector3(side, 1.1f, 0f));
+        GUIStyle style = FuseStyle(left);
+        style.fontSize = Mathf.Max(9, Mathf.RoundToInt(16f * scale));
+        ShadowLabel(new Rect(screen.x - 30f * scale, Screen.height - screen.y - 12f * scale, 60f * scale, 24f * scale),
+            player.GrenadeFuseLeft.ToString("0.0"), style);
+    }
+
+    private GUIStyle fuseStyle;
+
+    private GUIStyle FuseStyle(float left) {
+        if (fuseStyle == null) {
+            fuseStyle = new GUIStyle(labelStyle) { alignment = TextAnchor.MiddleCenter };
+        }
+        fuseStyle.fontSize = labelStyle.fontSize;
+        fuseStyle.normal.textColor = left < 0.3f ? new Color(1f, 0.4f, 0.35f) : Color.white;
+        return fuseStyle;
+    }
+
+    // Corrida is an energy bar (yellow), always shown; Rage (red) under it, filled by kills; full, it
+    // waits for the Fúria key and then drains over the 20 s of Rage
     private const float BarsHeight = 32f;   // both bars and their gaps, at 1920 wide
 
     private void DrawBars(float x, float y, float width, float scale) {
@@ -227,8 +258,28 @@ public class CombatHud : MonoBehaviour {
         DrawMeter(new Rect(x, y, width, height), player.Raging ? player.RageLeft : player.Rage, player.Raging ? RageColor : RageFillColor, RageBack);
         if (player.Raging) {
             ShadowLabel(new Rect(x + width + 8f * scale, y - 6f * scale, 160f * scale, 22f * scale), $"FÚRIA! {Mathf.CeilToInt(player.RageLeft * 20f)}s");
+        } else if (player.RageReady) {
+            // full: a pulsing glow around the bar and the key to press at its end (no text)
+            float pulse = 0.55f + 0.45f * Mathf.Sin(Time.unscaledTime * 6f);
+            float g = Mathf.Max(2f, 3f * scale);
+            Color glow = new Color(1f, 0.55f, 0.2f, pulse);
+            Rect bar = new Rect(x, y, width, height);
+            Fill(new Rect(bar.x - g, bar.y - g, bar.width + 2f * g, g), glow);
+            Fill(new Rect(bar.x - g, bar.yMax, bar.width + 2f * g, g), glow);
+            Fill(new Rect(bar.x - g, bar.y, g, bar.height), glow);
+            Fill(new Rect(bar.xMax, bar.y, g, bar.height), glow);
+            string key = GameMenus.SawTouch ? "Fúria" : Key(GameAction.Fury);
+            float kw = Mathf.Max(24f, 14f * key.Length + 12f) * scale, kh = 24f * scale;
+            Rect box = new Rect(bar.xMax + 8f * scale, bar.center.y - kh / 2f, kw, kh);
+            Fill(box, glow);
+            Fill(new Rect(box.x + g * 0.7f, box.y + g * 0.7f, box.width - 1.4f * g, box.height - 1.4f * g), MeterBack);
+            keyStyle = keyStyle ?? new GUIStyle(labelStyle) { alignment = TextAnchor.MiddleCenter };
+            keyStyle.fontSize = labelStyle.fontSize;
+            ShadowLabel(box, key, keyStyle);
         }
     }
+
+    private GUIStyle keyStyle;
 
     // ---- the uGUI part: helmet and armor hearts ------------------------------------------------
 
@@ -364,6 +415,18 @@ public class CombatHud : MonoBehaviour {
         }
     }
 
+    // the cosmetic Berserker helmet without armor: one horn snapped (freny_heads.py too)
+    private static Sprite brokenBerserkerIcon;
+    private static Sprite BrokenBerserkerIcon {
+        get {
+            if (brokenBerserkerIcon == null) {
+                Sprite[] sprites = Resources.LoadAll<Sprite>("FrenyHeads/berserker_broken_icon");
+                brokenBerserkerIcon = sprites.Length > 0 ? sprites[0] : null;
+            }
+            return brokenBerserkerIcon;
+        }
+    }
+
     private void UpdatePortrait() {
         if (portrait == null) {
             foreach (Image image in UIManager.Instance.GetComponentsInChildren<Image>(true)) {
@@ -380,6 +443,7 @@ public class CombatHud : MonoBehaviour {
         Sprite want = player.Raging && player.Armor > 0 && RageBerserkerIcon != null ? RageBerserkerIcon
             : player.Raging ? Icon(rageHelmetIcon, a => a.rageHelmetIcon)
             : player.Armor > 0 ? Icon(armorHelmetIcon, a => a.armorHelmetIcon)
+            : Loadout.WearsCosmeticHelmet ? BrokenBerserkerIcon
             : null;
         if (want == null) {
             want = portraitDefault;
@@ -490,6 +554,7 @@ public class CombatHud : MonoBehaviour {
     }
 
     private static readonly Color ButtonEdge = new Color(0.36f, 0.22f, 0.55f, 1f);
+    private static readonly Color IconBack = new Color(0.08f, 0.05f, 0.13f, 0.78f);
 
     private static void Fill(Rect rect, Color color) {
         Color old = GUI.color;
@@ -507,6 +572,8 @@ public class CombatHud : MonoBehaviour {
             return;
         }
         float scale = Screen.width / 1920f;
+        // a fixed dark square behind every icon, so it reads over any background
+        Fill(new Rect(x, y, size, size), IconBack);
         Color old = GUI.color;
         if (!selected) {
             GUI.color = new Color(old.r, old.g, old.b, old.a * 0.35f);
