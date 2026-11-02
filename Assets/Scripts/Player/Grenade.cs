@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // Thrown by Freny (E, or the autopilot): flies in an arc, bounces and rolls, and goes off when its
-// fuse runs out (5 s from the pin, Player.GrenadeFuse; José, 2026-11-01: no more bursting on impact),
+// fuse runs out (3 s from the pin, Player.GrenadeFuse; José, 2026-11-01: no more bursting on impact),
 // damaging every enemy around it, and Freny too when he is caught in the blast. Built at runtime by
 // Player.SpawnGrenade, so no prefab is needed. The seconds left show over it.
 public class Grenade : MonoBehaviour {
@@ -131,6 +131,7 @@ public class Grenade : MonoBehaviour {
             if (enemy.IsDead) kills++;
         }
         Achievements.GrenadeBlast(kills);
+        MultiKill.BlastKills(kills);
         // Freny caught in his own blast: hurt and thrown away from it
         Player.NextDamageSource = PlayerStats.CauseGrenade;
         if (freny != null && !freny.IsDead && freny.TryDamage(SelfDamage)) {

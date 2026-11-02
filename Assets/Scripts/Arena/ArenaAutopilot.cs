@@ -93,7 +93,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
 
     private float FeetY => player.feetPos ? player.feetPos.position.y : transform.position.y;
 
-    // ---- José, 2026-11-01: the Fúria waits for its button and grenades for their 5 s fuse ----
+    // ---- José, 2026-11-01: the Fúria waits for its button and grenades for their fuse ----
 
     private bool cooking;              // a grenade cooking in his hand
     private bool cookSeen;             // ...and Player has pulled its pin

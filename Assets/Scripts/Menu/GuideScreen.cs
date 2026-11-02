@@ -96,9 +96,9 @@ public static class GuideScreen {
         Entry(parent, art ? art.grenade : null, "Granada",
             "Aperte para lançar em arco, sempre à mesma distância (uns 6 m); sem espera entre uma e outra. " +
             (Features.GrenadeFuse ?
-            "Ela quica, rola e só explode 5 s depois de puxar o pino, onde estiver (os segundos aparecem em cima dela). " +
+            "Ela quica, rola e só explode " + (int)Player.GrenadeFuse + " s depois de puxar o pino, onde estiver (os segundos aparecem em cima dela). " +
             "Segurar o botão já puxa o pino: o pavio queima na mão e, ao soltar, ela vai com o tempo que sobrou; " +
-            "segurou 5 s, explode na mão. " : "Ela explode onde bater. ") +
+            "segurou " + (int)Player.GrenadeFuse + " s, explode na mão. " : "Ela explode onde bater. ") +
             "3 de dano em todos num raio " +
             "grande (mata quase todos; o Golem Vermelho aguenta uma) e quebra baús e vasos. Cuidado: perto demais, o Freny " +
             "também leva 2 de dano e é arremessado. Até 6 (8 ou 10 com o Armeiro).");
@@ -293,9 +293,12 @@ public static class GuideScreen {
             "Durante a partida o ponteiro some e fica preso no jogo, para um clique não sair da tela " +
             "(no navegador, ele prende no primeiro clique). Esc solta o mouse e pausa; ele volta nos menus.");
         Entry(parent, null, "Lua de Sangue",
-            "Dia de 1 minuto, noite de 4. A cada 3 noites a lua fica vermelha por 30 s no meio da noite (a primeira uns 10 minutos de corrida). Nesse tempo, " +
+            "Dia de 1 minuto, noite de 2. A cada 3 noites a lua fica vermelha por 30 s no meio da noite (a primeira uns 6 minutos de corrida), com música própria. Nesse tempo, " +
             "os inimigos ficam 25% mais rápidos, tiram 1 coração a mais, recuperam vida (1 a cada 3 s, o Ciclope também) " +
             "e ficam de olhos vermelhos, deixando um rastro vermelho.");
+        if (Features.MultiKill) Entry(parent, null, "Multi-kill",
+            "Um ataque só que mata 2, 3, 4 ou 5 inimigos mostra Double, Triple, Quadra ou Penta Kill. Conta uma explosão de granada, " +
+            "um golpe de espada ou um tiro de escopeta. Não dá pontos a mais: é só a glória.");
         Entry(parent, art ? art.rageHelmet : null, "Dificuldade",
             "Fácil, Médio ou Freny: quanto maior, mais inimigos, mais rápidos e mais cedo. " +
             "Com o tempo e os pontos a Arena aperta, mas para de apertar no primeiro Ciclope (50 mil) e só volta em 1 milhão." +

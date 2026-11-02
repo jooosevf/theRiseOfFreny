@@ -16,13 +16,14 @@ Para desligar uma mecânica, troque `true` por `false` na linha dela e salve. A 
 | `Net` | Rede | Sai do Armeiro, do Inventário, do HUD, dos Controles e dos botões de toque. |
 | `MageStaff` | Cajado do Mago | Os feiticeiros não deixam mais o cajado. |
 | `Fury` | Fúria | Some a barra, o botão, o "+5 s" do Armeiro e a Fúria do baú dourado. |
-| `GrenadeFuse` | Pavio de 5 s da granada | A granada explode onde bater (no máximo 1 s no ar), sem segurar para queimar o pavio. |
+| `GrenadeFuse` | Pavio de 3 s da granada | A granada explode onde bater (no máximo 1 s no ar), sem segurar para queimar o pavio. |
+| `MultiKill` | Banners de Double, Triple, Quadra e Penta Kill | Os banners e o som somem. Nada mais muda, porque eles não dão pontos. |
 | `WeaponBuffs` | Armeiro por níveis | As melhorias de arma e o Crítico saem da loja e param de valer, mesmo para quem já comprou. Ficam vida, velocidade, pulo duplo, espada mais rápida e Rede. **As armas não voltam à venda**: esse código foi removido em 2026-11-01. |
 | `InstaKill`, `Nuke`, `Magnet` | Drops raros | Aquele drop para de cair; os outros mantêm as chances. Cada um sai do Guia. |
 | `Blessings` | Bênçãos | O baú dourado para de oferecer bênçãos. |
 | `WeeklyMutators` | Mutador da semana (**desligado** desde 2026-11-02, a pedido do José) | Nenhuma regra extra. Some do menu da Arena. |
 | `GoldenChest` | Chave e baú dourado | O Ciclope só deixa o baú prateado. Os visuais exclusivos somem da tela Visual e, como as bênçãos só vêm desse baú, também não há bênçãos. |
-| `AcidPit` | Poço de Ácido | Só existe a arena clássica, mesmo para quem já abriu o Poço. |
+| `AcidPit` | Poço de Ácido (**desligado** desde 2026-11-02, a pedido do José, para o release) | Só existe a arena clássica, mesmo para quem já abriu o Poço. |
 | `DailyMissions` | Missões do dia | Some o botão do menu e nada mais conta nem paga. |
 | `Rebirth` | Renascer | Some o botão, o bônus de 5% para de valer e os visuais de renascer somem. A estrela de quem já renasceu continua no ranking. |
 | `Looks` | Visual | Some a tela e o Freny aparece com o visual original. O que foi comprado continua salvo. |

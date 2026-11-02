@@ -55,7 +55,8 @@ public class Cyclops : Enemy {
         return 1f;
     }
 
-    // it laughs at Freny when it arrives and when it hurts him (José: "risadas do ciclope"):
+    // it laughs at Freny when it arrives, when it hurts him (José: "risadas do ciclope") and every
+    // time it throws the bomb (José, 2026-11-02):
     // the Sorcerer Supreme's laugh, much deeper
     private const float LaughGap = 6f;
     private float nextLaugh;
@@ -276,6 +277,7 @@ public class Cyclops : Enemy {
         frames.Play("attack", 0.4f);
         Vector3 from = Center + Vector3.up * (HalfHeight * 0.7f) + Vector3.right * (Facing * HalfWidth);
         GolemMine.ThrowAt(this, from, player.transform.position, BombAngle, BombGravity, BombMaxSpeed, BombSize);
+        Laugh();
     }
 
     // José, 2026-10-30: each blow holds its pose a moment. The smash: it jumps with its arms up

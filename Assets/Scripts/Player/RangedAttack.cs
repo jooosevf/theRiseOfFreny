@@ -69,6 +69,7 @@ public class RangedAttack : MonoBehaviour {
                 enemy.ShotDamage(push, transform.position);
                 if (alive && enemy.IsDead && ShotgunShot > 0) {
                     Achievements.ShotKill(ShotgunShot);
+                    MultiKill.ShotKill(ShotgunShot);
                 }
             } else {
                 hit.Damage();

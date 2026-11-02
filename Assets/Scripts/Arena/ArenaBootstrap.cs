@@ -60,6 +60,13 @@ public static class ArenaBootstrap {
             powerUps.AddComponent<ArenaPowerUps>();
         }
 
+        // Double, Triple, Quadra and Penta Kill
+        if (!System.Array.Exists(FindCompat.All<MultiKill>(), m => m.gameObject.scene == scene)) {
+            GameObject multiKill = new GameObject("Multi Kill");
+            SceneManager.MoveGameObjectToScene(multiKill, scene);
+            multiKill.AddComponent<MultiKill>();
+        }
+
         // the Poço de Ácido is this same scene, turned toxic at runtime (ArenaVariant, AcidPitArena)
         if (ArenaVariant.Current == ArenaKind.AcidPit && AcidPitArena.Instance == null) {
             GameObject pit = new GameObject("Acid Pit");

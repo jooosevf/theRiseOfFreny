@@ -7,6 +7,8 @@
 #   python3 dark_fantasy.py menu    <out.ogg>   ~87 s, D minor, 66 BPM: guitar, drone, choir, bells
 #   python3 dark_fantasy.py arena   <out.ogg>   ~96 s, C minor, 120 BPM: string gallop, war drums, brass, choir
 #   python3 dark_fantasy.py ciclope <out.ogg>   ~55 s, E Phrygian, 140 BPM: organ, chanting choir, taiko
+#   python3 dark_fantasy.py lua_de_sangue <out.ogg>   30 s, B Phrygian, 128 BPM: bell, heartbeat, choir, then war
+#   python3 dark_fantasy.py multi_kill <out.ogg>      2 s sound effect: a low bell and a taiko
 #
 # Every track loops without a seam: note tails and the reverb wrap around to the start (the
 # reverb is a circular convolution over the whole loop). Needs numpy and ffmpeg.
@@ -262,7 +264,7 @@ CHORDS = {
     'Dm': ['D', 'F', 'A'], 'Bb': ['Bb', 'D', 'F'], 'Gm': ['G', 'Bb', 'D'], 'A': ['A', 'C#', 'E'],
     'F': ['F', 'A', 'C'], 'Eb': ['Eb', 'G', 'Bb'], 'Cm': ['C', 'Eb', 'G'], 'Ab': ['Ab', 'C', 'Eb'],
     'G': ['G', 'B', 'D'], 'Fm': ['F', 'Ab', 'C'], 'Db': ['Db', 'F', 'Ab'], 'Em': ['E', 'G', 'B'],
-    'E': ['E', 'G#', 'B'], 'C': ['C', 'E', 'G'],
+    'E': ['E', 'G#', 'B'], 'C': ['C', 'E', 'G'], 'Bm': ['B', 'D', 'F#'], 'F#': ['F#', 'A#', 'C#'],
 }
 
 
@@ -491,5 +493,75 @@ def ciclope(out):
     }, 3.0, 0.4, out, 0.13)
 
 
+def lua_de_sangue(out):
+    # "A Lua Rubra": the 30 s of the Lua de Sangue (16 bars at 128 BPM), so it plays through once.
+    # A dread that climbs: bell and heartbeat under the choir, then drums, strings and brass over
+    # the half step B-C, and the choir up high for the last four bars.
+    s = Song(128, 16, 53)
+    prog = ['Bm', 'C', 'Bm', 'C', 'Bm', 'G', 'C', 'F#']
+    theme = ('B4:1 C5:0.5 B4:0.5 F#5:2 | G5:1 F#5:0.5 E5:0.5 C5:2 | D5:1 C5:0.5 B4:0.5 D5:1 F#5:1 | '
+             'E5:1.5 D5:0.5 C5:2 | B4:1 C5:0.5 B4:0.5 F#5:2 | G5:1 E5:1 B4:2 | C5:1 E5:1 G5:1 C6:1 | '
+             'A#5:2 F#5:1 C#5:1')
+    climax = 'B5:1 C6:0.5 B5:0.5 F#5:2 | G5:1 F#5:0.5 E5:0.5 C6:2 | B5:1 C6:0.5 B5:0.5 F#5:2 | C6:2 A#5:1 F#5:1'
+    for bar in range(16):
+        c = prog[bar % 8]
+        r = chord(c, 2)[0]
+        # the choir holds the chord all the way through, louder as it goes
+        for m in chord(c, 3):
+            s.add('pad', choir(s, m, s.bar * 0.98, attack=0.3), s.t(bar), pan=s.rng.uniform(-0.6, 0.6),
+                  gain=0.28 if bar < 4 else 0.36)
+        s.add('low', strings(s, r - 12, s.bar, attack=0.1, release=0.3), s.t(bar), gain=0.7)
+        if bar < 4:
+            # heartbeat
+            for beat in (0, 0.75, 2, 2.75):
+                s.add('taiko', taiko(s, 0.9), s.t(bar, beat), gain=0.8 if beat in (0, 2) else 0.5)
+        else:
+            # the gallop leans on the half step, and the drums come in whole
+            for step in [0, 2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15]:
+                m = r + 1 if step in (7, 15) else r
+                s.add('gallop', spiccato(s, m, 0.12), s.t(bar, step / 4), pan=-0.3, gain=1.0 if step % 4 == 0 else 0.65)
+                s.add('gallop', spiccato(s, m + 12, 0.12), s.t(bar, step / 4), pan=0.3, gain=0.5)
+            for step in (0, 3, 6, 8, 11, 14):
+                s.add('taiko', taiko(s), s.t(bar, step / 4), gain=1.0 if step in (0, 8) else 0.65)
+            for step in (4, 12):
+                s.add('perc', frame_drum(s), s.t(bar, step / 4), gain=0.8)
+        if bar >= 12:
+            for step in (1, 5, 9, 13):
+                s.add('taiko', taiko(s, 1.6, 0.4), s.t(bar, step / 4), pan=0.3, gain=0.4)
+        # the bell tolls on every other bar, then on every one
+        if bar % 2 == 0 or bar >= 12:
+            s.add('bells', bell(s, midi('B2'), 4.0), s.t(bar), pan=-0.2, gain=0.7)
+        if bar in (3, 11):
+            s.add('fx', swell(s, s.bar), s.t(bar), gain=0.6)
+    hb = lambda song, m, d: brass(song, m, d)
+    play(s, 'brass', 4, theme, hb, legato=0.95, shift=-12)
+    play(s, 'brass', 12, climax, hb, legato=0.95, shift=-12)
+    play(s, 'choir', 12, climax, lambda song, m, d: choir(song, m, d, attack=0.1, release=0.4), legato=0.97)
+    mixdown(s, {
+        'pad': (0.32, formant(VOWEL_OH), 0.8),
+        'low': (0.4, lowpass(600), 0.35),
+        'gallop': (0.42, lowpass(2200), 0.25),
+        'brass': (0.5, lowpass(3000), 0.4),
+        'choir': (0.7, formant(VOWEL_AH), 0.8),
+        'taiko': (1.0, lowpass(3000), 0.3),
+        'perc': (0.35, None, 0.3),
+        'bells': (0.5, lowpass(5000), 0.9),
+        'fx': (0.15, None, 0.5),
+    }, 3.0, 0.42, out, 0.13)
+
+
+def multi_kill(out):
+    # the sound of the multi-kill banners: a low bell and one taiko hit, gone in 2 s
+    s = Song(120, 1, 61)
+    s.add('bells', bell(s, midi('B2'), 1.8), 0, gain=1.0)
+    s.add('bells', bell(s, midi('F#3'), 1.6), 0, gain=0.5)
+    s.add('taiko', taiko(s, 1.0, 1.0), 0, gain=1.0)
+    mixdown(s, {
+        'bells': (0.7, lowpass(6000), 0.6),
+        'taiko': (1.0, lowpass(3000), 0.3),
+    }, 0.8, 0.3, out, 0.2)
+
+
 if __name__ == '__main__':
-    {'menu': menu, 'arena': arena, 'ciclope': ciclope}[sys.argv[1]](sys.argv[2])
+    {'menu': menu, 'arena': arena, 'ciclope': ciclope, 'lua_de_sangue': lua_de_sangue,
+     'multi_kill': multi_kill}[sys.argv[1]](sys.argv[2])
