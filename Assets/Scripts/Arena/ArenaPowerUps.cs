@@ -9,7 +9,8 @@ using UnityEngine;
 //   never touches the Ciclope, which has to stay strong, and doesn't drop while one is alive.
 // - Nuke: every enemy on screen dies at once (the screen is the whole arena), the Ciclope excepted,
 //   and nothing spawns for NukeSpawnPause seconds (ArenaDirector.PauseSpawns). They are Freny's kills
-//   like any other, one by one in the run's log, so the ranking API needs nothing new.
+//   like any other, one by one in the run's log, but one Nuke pays at most NukeMaxPoints (José,
+//   2026-11-02): past that a kill is worth 1 point, the flat kill the ranking API already knows.
 // - Ímã: for MagnetSeconds coins, diamonds and the items he can use fly to Freny (Coin, ItemPickup).
 // Nothing here goes into the save: a run's power-ups end with it.
 public class ArenaPowerUps : MonoBehaviour {
@@ -17,6 +18,7 @@ public class ArenaPowerUps : MonoBehaviour {
     public const float InstaKillSeconds = 10f;
     public const float MagnetSeconds = 10f;
     public const float NukeSpawnPause = 3f;
+    public const int NukeMaxPoints = 2500;
 
     // per kill by Freny: small on purpose, about one every 55 kills
     private const float InstaKillChance = 0.006f;
@@ -203,6 +205,8 @@ public class ArenaPowerUps : MonoBehaviour {
         targets.Sort((a, b) => Vector2.Distance(a.Center, from).CompareTo(Vector2.Distance(b.Center, from)));
         float farthest = targets.Count > 0 ? Mathf.Max(0.01f, Vector2.Distance(targets[targets.Count - 1].Center, from)) : 1f;
         float start = Time.time;
+        // every kill pays at least 1 point, so what can still be shared out is the cap minus those
+        int spare = NukeMaxPoints - targets.Count;
         // (nuking stays on until the last one: a kill during the wave rolls no power-up)
         nuking = true;
         foreach (Enemy enemy in targets) {
@@ -214,6 +218,12 @@ public class ArenaPowerUps : MonoBehaviour {
                 yield return null;
             }
             if (enemy != null) {
+                int extra = UIManager.Instance ? UIManager.Instance.PointsFor(enemy) - 1 : 0;
+                if (extra > spare) {
+                    enemy.OnePointKill = true;
+                    extra = 0;
+                }
+                spare -= extra;
                 enemy.Nuked();
             }
         }

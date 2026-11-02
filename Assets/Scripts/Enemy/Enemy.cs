@@ -1288,7 +1288,10 @@ public abstract class Enemy : MonoBehaviour, IDamageable
         }
     }
 
-    // the Nuke: dead on the spot, Freny's kill like any other (score, combo, coin, drops)
+    // this kill pays 1 point whatever it is worth (UIManager.ScoresFlat): the Nuke past its cap
+    public bool OnePointKill { get; set; }
+
+    // the Nuke: dead on the spot, Freny's kill like any other (combo, coin, drops)
     public virtual void Nuked() {
         if (isDead) {
             return;

@@ -123,7 +123,8 @@ public static class GuideScreen {
             "Raro. Por " + ArenaPowerUps.InstaKillSeconds + " s todos os inimigos ficam com 1 coração, inclusive os que chegarem: " +
             "qualquer golpe mata, até no escudo do Escudeiro. Não pega no Ciclope, e não cai enquanto ele está vivo.");
         Entry(parent, ArenaPowerUps.Icon(ItemPickup.Kind.Nuke), "Nuke",
-            "Raro. Mata na hora todos os inimigos da tela, menos o Ciclope, e valem pontos e moedas. " +
+            "Raro. Mata na hora todos os inimigos da tela, menos o Ciclope. Dá moedas e, no máximo, " +
+            ArenaPowerUps.NukeMaxPoints.ToString("N0", System.Globalization.CultureInfo.InvariantCulture).Replace(",", ".") + " pontos. " +
             "Nada surge por " + ArenaPowerUps.NukeSpawnPause + " s, e os portais abertos fecham vazios.");
         Entry(parent, ArenaPowerUps.Icon(ItemPickup.Kind.Magnet), "Ímã",
             "Raro. Por " + ArenaPowerUps.MagnetSeconds + " s moedas, diamantes e os itens de que o Freny precisa voam até ele, de qualquer lugar da tela.");
