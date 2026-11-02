@@ -313,7 +313,9 @@ public class Player : MonoBehaviour, IDamageable {
         ApplyUpgrades();
         FrenyProgress.Changed += ApplyUpgrades;
         Enemy.Killed += OnEnemyKilled;
-        NetThrower.Attach(this);   // the Rede, when bought (its own component, so the prefab stays as it is)
+        if (Features.Net) {
+            NetThrower.Attach(this);   // the Rede, when bought (its own component, so the prefab stays as it is)
+        }
 
         Health = MaxHealth;
         if (UIManager.Instance) {
@@ -824,6 +826,15 @@ public class Player : MonoBehaviour, IDamageable {
     // what is left. The autopilot sends the power it wants, and may cook one the same way.
     private void ThrowGrenade() {
         PlayerInputFrame input = _input.Current;
+        if (!Features.GrenadeFuse) {
+            // nothing to cook: the press throws it, and it bursts where it hits (Grenade)
+            bool press = input.grenadePressed || (input.grenadeHeld && !grenadeNeedsRelease);
+            grenadeNeedsRelease = input.grenadeHeld;
+            if (press) {
+                Throw(input.grenadeCharge, Grenade.ImpactFuse);
+            }
+            return;
+        }
         if (ChargingGrenade) {
             if (Time.time - cookStart >= GrenadeFuse) {
                 // held too long: it goes off in his hand
@@ -1050,7 +1061,7 @@ public class Player : MonoBehaviour, IDamageable {
     }
 
     private void AddRage(float amount) {
-        if (isDead || Raging || RageReady) {
+        if (!Features.Fury || isDead || Raging || RageReady) {
             return;
         }
         lastRageAction = Time.time;
@@ -1075,7 +1086,7 @@ public class Player : MonoBehaviour, IDamageable {
 
     // the golden chest (GoldenChest): the Fúria right away, whatever the meter says
     public void GiftRage() {
-        if (isDead || Raging) {
+        if (!Features.Fury || isDead || Raging) {
             return;
         }
         Rage = 1f;

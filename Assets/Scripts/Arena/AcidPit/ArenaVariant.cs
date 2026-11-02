@@ -43,7 +43,7 @@ public static class ArenaVariant {
         }
     }
 
-    public static bool Unlocked => forced || BestScore >= AcidPitScore;
+    public static bool Unlocked => Features.AcidPit && (forced || BestScore >= AcidPitScore);
 
     // the end of every arena run (ArenaRunManager)
     public static void NoteScore(int score) {
@@ -58,6 +58,9 @@ public static class ArenaVariant {
 
     // the arena picker of the menus (the main menu's Arena page and the pause menu's Nova corrida)
     public static void AddChoice(MenuPage page) {
+        if (!Features.AcidPit) {
+            return;
+        }
         if (!Unlocked) {
             page.Label("Poço de Ácido: faça " + AcidPitScore / 1000 + " mil pontos numa corrida da Arena para abrir.");
             return;

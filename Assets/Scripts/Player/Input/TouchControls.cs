@@ -143,17 +143,17 @@ public class TouchControls : MonoBehaviour {
 
         Vector2 c = DiamondCenter;
         float s = DiamondSpread;
-        pads = new[] {
+        pads = System.Array.FindAll(new[] {
             MakeFace(root, GameAction.Jump, "Pular", c + new Vector2(0f, -s), JumpColor),
             MakeFace(root, GameAction.Ranged, "Tiro", c + new Vector2(-s, 0f), ShootColor),
             MakeFace(root, GameAction.Melee, "Golpe", c + new Vector2(s, 0f), MeleeColor),
             MakeFace(root, GameAction.Grenade, "Gran.", c + new Vector2(0f, s), GrenadeColor),
             MakeShoulder(root, GameAction.Potion, "Poção", c + new Vector2(s, s * 2.25f)),
             swap = MakeShoulder(root, GameAction.Shotgun, "Arma", c + new Vector2(-s, s * 2.25f)),
-            MakeShoulder(root, GameAction.Net, "Rede", c + new Vector2(0f, s * 3.1f)),
+            Features.Net ? MakeShoulder(root, GameAction.Net, "Rede", c + new Vector2(0f, s * 3.1f)) : null,
             // left of the diamond, low: the Fúria is pressed once in a while, not mid-combo
-            MakeShoulder(root, GameAction.Fury, "Fúria", c + new Vector2(-s * 2.6f, -s)),
-        };
+            Features.Fury ? MakeShoulder(root, GameAction.Fury, "Fúria", c + new Vector2(-s * 2.6f, -s)) : null,
+        }, pad => pad != null);
     }
 
     private Pad MakeFace(Transform root, GameAction action, string label, Vector2 fromBottomRight, Color color) {

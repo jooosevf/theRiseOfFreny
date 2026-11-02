@@ -103,10 +103,10 @@ public static class DailyMissions {
         Mission[] picked = new Mission[3];
         for (int tier = 0; tier < 3; tier++) {
             int count = 0;
-            foreach (Mission m in Pool) if (m.tier == tier) count++;
+            foreach (Mission m in Pool) if (m.tier == tier && Available(m)) count++;
             int pick = (int)(Mix((uint)number * 3u + (uint)tier) % (uint)count);
             foreach (Mission m in Pool) {
-                if (m.tier != tier) continue;
+                if (m.tier != tier || !Available(m)) continue;
                 if (pick-- == 0) {
                     picked[tier] = m;
                     break;
@@ -117,6 +117,9 @@ public static class DailyMissions {
     }
 
     public static Mission[] Current => For(Today);
+
+    // with the Ciclope switched off (Features) its missions can't be done: they leave the day's pick
+    private static bool Available(Mission m) => Features.Cyclops || (m.kind != Kind.EyeHits && m.id != "cyclops");
 
     // days since 2026-01-01 (any fixed day works; this one keeps the numbers small)
     private static int DayNumber(string day) {
@@ -181,6 +184,7 @@ public static class DailyMissions {
     // ---- what a manual Arena run reports (ProgressTracker) ----
 
     public static void Kill(string prefab, string weapon, string mark) {
+        if (!Features.DailyMissions) return;
         Mission[] today = Current;
         for (int i = 0; i < 3; i++) {
             Mission m = today[i];
@@ -194,6 +198,7 @@ public static class DailyMissions {
     }
 
     public static void EyeHit() {
+        if (!Features.DailyMissions) return;
         Mission[] today = Current;
         for (int i = 0; i < 3; i++) {
             if (today[i].kind == Kind.EyeHits) Add(i, 1);
@@ -202,6 +207,7 @@ public static class DailyMissions {
 
     // the run as it stands: points, seconds alive, the combo on screen (tenths) and whether he healed
     public static void RunTick(int score, float seconds, int comboTenths, bool healed) {
+        if (!Features.DailyMissions) return;
         Mission[] today = Current;
         for (int i = 0; i < 3; i++) {
             switch (today[i].kind) {

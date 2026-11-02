@@ -33,7 +33,7 @@ public static class ArenaVariety {
         if (playerObj == null || playerObj.GetComponent<Player>() == null) {
             return;
         }
-        if (playerObj.GetComponent<FrenyLookRenderer>() == null) {
+        if (Features.Looks && playerObj.GetComponent<FrenyLookRenderer>() == null) {
             playerObj.AddComponent<FrenyLookRenderer>();
         }
         if (arena && newRun) {

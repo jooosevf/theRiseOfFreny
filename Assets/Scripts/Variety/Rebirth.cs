@@ -25,14 +25,14 @@ public static class Rebirth {
         }
     }
 
-    public static float DamageMultiplier => 1f + BonusPerRebirth * Count;
-    public static float CoinMultiplier => 1f + BonusPerRebirth * Count;
+    public static float DamageMultiplier => Features.Rebirth ? 1f + BonusPerRebirth * Count : 1f;
+    public static float CoinMultiplier => Features.Rebirth ? 1f + BonusPerRebirth * Count : 1f;
 
     // what is still missing at the Armeiro, by name (empty: Freny can be reborn)
     public static List<string> Missing() {
         List<string> missing = new List<string>();
         foreach (FrenyUpgrade upgrade in Enum.GetValues(typeof(FrenyUpgrade))) {
-            if (!FrenyProgress.IsBrain(upgrade) && !FrenyProgress.IsMaxed(upgrade)) {
+            if (!FrenyProgress.IsBrain(upgrade) && Features.Sold(upgrade) && !FrenyProgress.IsMaxed(upgrade)) {
                 int max = FrenyProgress.MaxLevel(upgrade);
                 missing.Add(FrenyProgress.DisplayName(upgrade) +
                             (max > 1 ? " (" + FrenyProgress.GetLevel(upgrade) + "/" + max + ")" : ""));

@@ -51,13 +51,15 @@ public class ArenaRunVariety : MonoBehaviour {
         Enemy.Killed += OnKilled;
         GameCursor.ShowWhile(this, () => picking);
         offered = System.Array.ConvertAll(Blessings.All, info => info.id);
-        if (input == null || !input.AutoEnabled) {
+        if (Features.Blessings && (input == null || !input.AutoEnabled)) {
             OpenPicker();   // at once, before the first frame of play
         }
         yield return null;  // the Player's Start (loadout, the Armeiro's helmet) has run
         yield return null;
         StartMutator();
-        if (!picking && !Blessings.Current.HasValue) {
+        if (!Features.Blessings) {
+            announcedAt = Time.time;   // the week's mutator still gets its announcement
+        } else if (!picking && !Blessings.Current.HasValue) {
             Choose(Blessings.AutopilotChoice);
         }
     }
@@ -223,7 +225,7 @@ public class ArenaRunVariety : MonoBehaviour {
         Place(title.rectTransform, new Vector2(0f, 250f), new Vector2(1000f, 50f));
         Mutator mutator = WeeklyMutators.ThisRun ?? WeeklyMutators.ThisWeek;
         Text sub = MenuKit.MakeText(panel.transform,
-            "Vale a corrida toda. " + WeeklyMutators.Title(mutator) + ": " + WeeklyMutators.Of(mutator).what,
+            "Vale a corrida toda." + (Features.WeeklyMutators ? " " + WeeklyMutators.Title(mutator) + ": " + WeeklyMutators.Of(mutator).what : ""),
             MenuKit.SmallTextSize, MenuKit.DimTextColor, TextAnchor.MiddleCenter);
         Place(sub.rectTransform, new Vector2(0f, 205f), new Vector2(1100f, 44f));
 
@@ -355,28 +357,30 @@ public class ArenaRunVariety : MonoBehaviour {
     // ==== the badge and the announcement ======================================================
 
     private void OnGUI() {
-        if (picking || GameMenus.Paused || player == null || !Blessings.Current.HasValue) {
+        Mutator? mutator = WeeklyMutators.ThisRun;
+        if (picking || GameMenus.Paused || player == null || (!Blessings.Current.HasValue && !mutator.HasValue)) {
             return;
         }
         float scale = Screen.width / 1920f;
         if (textStyle == null) {
             textStyle = new GUIStyle(GUI.skin.label) { font = MenuKit.Font, wordWrap = false, clipping = TextClipping.Overflow };
         }
-        Blessing blessing = Blessings.Current.Value;
-        Mutator? mutator = WeeklyMutators.ThisRun;
+        Blessing? blessing = Blessings.Current;
 
         if (!player.IsDead) {
             // under the weapons row of CombatHud, at the portrait's left edge
             float x = 74f * scale, y = 300f * scale, box = 46f * scale;
-            GUI.color = new Color(0.04f, 0.02f, 0.08f, 0.7f);
-            GUI.DrawTexture(new Rect(x, y, box, box), Texture2D.whiteTexture);
-            GUI.color = Color.white;
-            Sprite icon = Blessings.Icon(blessing);
-            if (icon != null) {
-                DrawSprite(new Rect(x + 4f * scale, y + 4f * scale, box - 8f * scale, box - 8f * scale), icon);
+            if (blessing.HasValue) {
+                GUI.color = new Color(0.04f, 0.02f, 0.08f, 0.7f);
+                GUI.DrawTexture(new Rect(x, y, box, box), Texture2D.whiteTexture);
+                GUI.color = Color.white;
+                Sprite icon = Blessings.Icon(blessing.Value);
+                if (icon != null) {
+                    DrawSprite(new Rect(x + 4f * scale, y + 4f * scale, box - 8f * scale, box - 8f * scale), icon);
+                }
+                textStyle.fontSize = Mathf.Max(7, Mathf.RoundToInt(12f * scale));
+                Label(new Rect(x + box + 8f * scale, y + 2f * scale, 400f * scale, 20f * scale), Blessings.Of(blessing.Value).name, MenuKit.TitleColor);
             }
-            textStyle.fontSize = Mathf.Max(7, Mathf.RoundToInt(12f * scale));
-            Label(new Rect(x + box + 8f * scale, y + 2f * scale, 400f * scale, 20f * scale), Blessings.Of(blessing).name, MenuKit.TitleColor);
             if (mutator.HasValue) {
                 textStyle.fontSize = Mathf.Max(6, Mathf.RoundToInt(10f * scale));
                 Label(new Rect(x + box + 8f * scale, y + 24f * scale, 400f * scale, 18f * scale), WeeklyMutators.Of(mutator.Value).name, MenuKit.DimTextColor);
@@ -390,7 +394,9 @@ public class ArenaRunVariety : MonoBehaviour {
             textStyle.alignment = TextAnchor.MiddleCenter;
             float y = Screen.height * 0.24f;
             textStyle.fontSize = Mathf.Max(9, Mathf.RoundToInt(22f * scale));
-            Label(new Rect(0f, y, Screen.width, 40f * scale), "Bênção: " + Blessings.Of(blessing).name, Fade(MenuKit.TitleColor, alpha));
+            if (blessing.HasValue) {
+                Label(new Rect(0f, y, Screen.width, 40f * scale), "Bênção: " + Blessings.Of(blessing.Value).name, Fade(MenuKit.TitleColor, alpha));
+            }
             if (mutator.HasValue) {
                 Label(new Rect(0f, y + 44f * scale, Screen.width, 36f * scale), WeeklyMutators.Title(mutator.Value), Fade(new Color(1f, 0.85f, 0.29f), alpha));
                 textStyle.fontSize = Mathf.Max(7, Mathf.RoundToInt(13f * scale));

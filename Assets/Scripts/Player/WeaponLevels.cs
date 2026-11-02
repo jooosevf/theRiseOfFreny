@@ -13,7 +13,7 @@ using UnityEngine;
 public static class WeaponLevels {
 
     private static int L(FrenyUpgrade upgrade) {
-        return Mathf.Min(FrenyProgress.GetLevel(upgrade), FrenyProgress.MaxLevel(upgrade));
+        return Features.WeaponBuffs ? Mathf.Min(FrenyProgress.GetLevel(upgrade), FrenyProgress.MaxLevel(upgrade)) : 0;
     }
 
     // ---- pistol ----

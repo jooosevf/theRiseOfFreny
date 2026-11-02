@@ -77,7 +77,7 @@ public class ArenaBossLoot : MonoBehaviour {
             return;
         }
         cyclopsKilled++;
-        if (cyclopsKilled == 1 || Random.value < KeyChance) {
+        if (Features.GoldenChest && (cyclopsKilled == 1 || Random.value < KeyChance)) {
             DropKey(enemy.Center, enemy.coinPrefab);
         }
     }

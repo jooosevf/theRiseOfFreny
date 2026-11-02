@@ -69,7 +69,7 @@ public static class WeeklyMutators {
 
     // ArenaVariety: an arena run starts (or the scene is something else: inRun false)
     public static void BeginRun(bool inRun) {
-        ThisRun = inRun ? ThisWeek : (Mutator?)null;
+        ThisRun = inRun && Features.WeeklyMutators ? ThisWeek : (Mutator?)null;
     }
 
     public static bool Active(Mutator m) => ThisRun.HasValue && ThisRun.Value == m;
