@@ -166,7 +166,7 @@ public class CombatHud : MonoBehaviour {
     private float DrawWeapons(float x, float y, float size, float scale) {
         float swordX = x;
         DrawIcon(player.GreatSwordActive ? Icon(greatSwordIcon, a => a.greatSwordIcon) : Icon(swordIcon, a => a.swordIcon), ref x, y, size);
-        if (player.GreatSwordSwings > 0 && !FrenyProgress.HasGreatSword) {
+        if (player.GreatSwordSwings > 0) {
             // swings left with the dropped great sword
             ShadowLabel(new Rect(swordX + size - 14f * scale, y + size + 10f * scale, 60f * scale, 26f * scale), $"x{player.GreatSwordSwings}");
         }

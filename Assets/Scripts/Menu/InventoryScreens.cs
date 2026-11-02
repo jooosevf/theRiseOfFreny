@@ -119,8 +119,7 @@ public static class InventoryScreens {
         }
 
         public void Refresh() {
-            body.OverlaySprites = Loadout.IsEquipped(Loadout.Helmet) ? BerserkerHeads()
-                : Loadout.WearsCosmeticHelmet ? Heads(ref brokenHeads, "FrenyHeads/berserker_broken") : null;
+            body.OverlaySprites = Loadout.WearsCosmeticHelmet ? Heads(ref brokenHeads, "FrenyHeads/berserker_broken") : null;
             foreach (Action slot in slots) {
                 slot();
             }
@@ -132,13 +131,9 @@ public static class InventoryScreens {
         }
     }
 
-    private static Dictionary<string, Sprite> berserkerHeads, brokenHeads;
+    private static Dictionary<string, Sprite> brokenHeads;
 
     // the same helmet layer the game puts on Freny (FrenyMotion)
-    private static Dictionary<string, Sprite> BerserkerHeads() {
-        return Heads(ref berserkerHeads, "FrenyHeads/berserker");
-    }
-
     private static Dictionary<string, Sprite> Heads(ref Dictionary<string, Sprite> cache, string path) {
         if (cache == null) {
             cache = new Dictionary<string, Sprite>();
@@ -348,11 +343,6 @@ public static class InventoryScreens {
             price.text = FrenyProgress.IsMaxed(upgrade) ? (max > 1 ? "máximo" : "comprado")
                 : FrenyProgress.CostText(upgrade);
         });
-    }
-
-    private static void Refuse(MenuSpeech speech, string why) {
-        Sfx.Ui("ui_error");
-        speech.Say(why);
     }
 
     // a shop row: the item's icon and name on the left, its price on the right

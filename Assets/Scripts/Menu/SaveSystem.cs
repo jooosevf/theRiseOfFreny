@@ -37,7 +37,6 @@ public class SaveData {
         rebirths > 0 || (looks != null && looks.Count > 0) ||
         !string.IsNullOrEmpty(lastScene);
 
-    public DateTime SavedAt => new DateTime(savedAtTicks, DateTimeKind.Utc);
 
     public int Level {
         get {
@@ -166,16 +165,6 @@ public static class SaveSystem {
         unsavedPlaySeconds = 0f;
         Apply(new SaveData());
         SaveNow();
-    }
-
-    public static void Delete(int slot) {
-        PlayerPrefs.DeleteKey(SlotKeyPrefix + slot);
-        if (slot == ActiveSlot) {
-            unsavedPlaySeconds = 0f;
-            Apply(new SaveData());
-        }
-        PlayerPrefs.Save();
-        Saved?.Invoke(slot);
     }
 
     // a copy that came from somewhere else (the cloud); applyLive also puts it into play when

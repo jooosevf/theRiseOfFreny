@@ -43,8 +43,6 @@ public class ArenaRunVariety : MonoBehaviour {
 
     private GUIStyle textStyle;
 
-    public bool Picking => picking;
-
     private IEnumerator Start() {
         player = GetComponent<Player>();
         input = GetComponent<FrenyInput>();

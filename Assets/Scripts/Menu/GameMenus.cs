@@ -153,7 +153,6 @@ public class GameMenus : MonoBehaviour {
         runAssisted = false;
         if (CampaignLevels.IsStage(scene.name) || scene.name == ArenaScene) {
             SaveSystem.SetLastScene(scene.name);
-            StartCoroutine(Loadout.ApplyAtStageStart());
             if (HelpScreen.FirstTime) {
                 StartCoroutine(ShowHelpFirstTime());
             }

@@ -53,7 +53,6 @@ public class Tentacle : Enemy {
 
     // the top of the tentacle, where the jet leaves from
     public Vector3 Mouth => transform.position + Vector3.up * MouthHeight;
-    public bool Winding => state == State.Windup && !isDead;
 
     public override void Init() {
         health = Life;

@@ -82,13 +82,4 @@ public class ComboManager : MonoBehaviour
         this.combo = combo;
     }
 
-    public float GetTimeRemaining() {
-        return timeRemaining;
-    }
-
-
-    public void SetTimeRemaining(float newTime) {
-        this.timeRemaining = newTime;
-    }
-
 }

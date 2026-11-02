@@ -273,11 +273,6 @@ public static class GuideScreen {
             "têm ranking próprio e recomeçam sozinhas.");
     }
 
-    // "Pistola nv. 2 · 2500": the price of a level (level = levels already bought)
-    private static string Price(FrenyUpgrade weapon, int level) {
-        return FrenyProgress.CostAt(weapon, level).ToString();
-    }
-
     private static Sprite spiderIcon;
 
     private static Sprite SpiderMineIcon() {
