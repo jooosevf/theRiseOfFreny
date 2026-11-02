@@ -259,7 +259,7 @@ public static class PerfilScreens {
         label.fontSize = MenuKit.SmallTextSize;
         label.supportRichText = true;
         label.text = friend.apelido + "\n<size=" + (MenuKit.SmallTextSize - 2) + "><color=#" + ColorUtility.ToHtmlStringRGB(MenuKit.DimTextColor) + ">Recorde " +
-                     Points(friend.Best(ArenaLevel.Hard)) + " no Difícil · online " + friend.SeenText() + "</color></size>";
+                     Points(friend.Best(ArenaLevel.Hard)) + " no " + ArenaDifficulty.Label(ArenaLevel.Hard) + " · online " + friend.SeenText() + "</color></size>";
         Button open = MenuKit.MakeButton(row.transform, "Ver", () => stack.Push(Friend(stack, friend)), MenuKit.SmallTextSize);
         MenuKit.Size(open, 90f, -1f);
         Button remove = null;
