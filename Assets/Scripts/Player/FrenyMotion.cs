@@ -25,7 +25,7 @@ public class FrenyMotion : MonoBehaviour {
     [Header("Slash")]
     public float windup = 0f;              // delay before the arc appears
     public float swordReach = 1.0f;        // the sword hitbox length, in units ahead of his hand
-    public float hitStop = 0.09f;          // the game stands still on a hit (the finisher 1.8x)
+    public float hitStop = 0.09f;          // the whole game stands still on a hit (the finisher 1.8x), real seconds
     public float hitRecoil = 1.4f;         // he is pushed back a touch by his own hit
 
     private const float SpringStiff = 320f, SpringDamp = 16f;    // squash: bouncy
@@ -293,7 +293,9 @@ public class FrenyMotion : MonoBehaviour {
         if (dead || Time.time - slashStart > 0.6f) {
             return;
         }
-        frozenUntil = Time.time + (slashStep == 3 ? hitStop * 1.8f : hitStop);
+        // the whole game stands still (HitStop), then he shakes for a couple of frames
+        HitStop.Freeze(slashStep == 3 ? hitStop * 1.8f : hitStop);
+        frozenUntil = Time.time + 0.03f;
         if (anim) {
             anim.speed = 0f;
         }
@@ -402,9 +404,9 @@ public class FrenyMotion : MonoBehaviour {
             if (arcPending) {
                 // the smear follows the tip of the blade, around his shoulder
                 arcPending = false;
-                float radius = (GreatSword ? ArmAndGreatBlade : ArmAndBlade) * (slashStep == 3 ? 1.5f : 1.25f);
+                float radius = (GreatSword ? ArmAndGreatBlade : ArmAndBlade) * (slashStep == 3 ? 1.4f : 1.25f);
                 SlashArc.Spawn(this, body.transform, body, Shoulder, radius, CutFrom[slashStep - 1], CutTo[slashStep - 1], GreatSword,
-                    slashStep == 3, slashStep == 3 ? 0.22f : SlashArc.DefaultLife, slashStep == 3 ? 1.2f : 1f);
+                    slashStep == 3, slashStep == 3 ? 0.22f : SlashArc.DefaultLife, slashStep == 3 ? 1.05f : 1f);
             }
         }
         UpdateSwingAngles(swing);
@@ -639,6 +641,7 @@ public class FrenyMotion : MonoBehaviour {
                 arc.tint = Color.Lerp(arc.tint, new Color(1f, 0.82f, 0.45f), 0.6f); // warmer
                 arc.rim = new Color(0.6f, 0.3f, 0.1f, 0.8f);
             }
+            arc.age = Sweep * 0.7f;        // most of it is there on the very frame of the cut
             arc.Build(body);
         }
 
