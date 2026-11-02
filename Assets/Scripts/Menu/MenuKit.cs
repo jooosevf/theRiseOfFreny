@@ -141,6 +141,14 @@ public static class MenuKit {
         return button;
     }
 
+    // a ">" at the end of a button that opens another page, so it reads as a thing to click even
+    // when it came selected
+    public static void Opens(Button button) {
+        Text arrow = MakeText(button.transform, ">", TextSize, TextColor, TextAnchor.MiddleRight);
+        Stretch(arrow.rectTransform);
+        arrow.rectTransform.offsetMax = new Vector2(-14f, 0f);
+    }
+
     // a row with the label on the left and a control on the right; the row lights up when selected
     public static Image MakeRow(Transform parent, string label, out Text labelText) {
         Image row = MakeImage("Row", parent, Color.white);

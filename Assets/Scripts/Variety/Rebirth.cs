@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-// Renascer (José, 2026-11-01): once everything the Armeiro sells for coins is bought (and at its
+// Renascer (José, 2026-11-01): once everything the Armeira sells for coins is bought (and at its
 // last level), Freny can trade it all, the autopilot's brain and his level too, for a bonus that
 // stays: +5% damage and +5% coins per rebirth, adding up, and a star next to his name on the
 // rankings (the game's and the site's). The count is part of the save (SaveSystem, so the cloud
@@ -10,7 +10,7 @@ using UnityEngine;
 //
 // What it takes is read from the game's own lists, so new upgrades and new levels count by
 // themselves: every FrenyUpgrade that is not the autopilot's (FrenyProgress.IsBrain) at
-// FrenyProgress.MaxLevel, and every Armeiro gear (Loadout.GearIds).
+// FrenyProgress.MaxLevel, and every Armeira gear (Loadout.GearIds).
 // The level goes back to 1 with the brain: the brain is bought with level points, and keeping the
 // level would hand them all back at once.
 public static class Rebirth {
@@ -28,7 +28,7 @@ public static class Rebirth {
     public static float DamageMultiplier => Features.Rebirth ? 1f + BonusPerRebirth * Count : 1f;
     public static float CoinMultiplier => Features.Rebirth ? 1f + BonusPerRebirth * Count : 1f;
 
-    // what is still missing at the Armeiro, by name (empty: Freny can be reborn)
+    // what is still missing at the Armeira, by name (empty: Freny can be reborn)
     public static List<string> Missing() {
         List<string> missing = new List<string>();
         foreach (FrenyUpgrade upgrade in Enum.GetValues(typeof(FrenyUpgrade))) {

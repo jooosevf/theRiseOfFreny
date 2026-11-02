@@ -19,7 +19,7 @@ public class SaveData {
     public List<Entry> upgrades = new List<Entry>();
     public List<Entry> bestTimes = new List<Entry>();
     public List<string> unequipped = new List<string>();   // bought, but left at home
-    public List<string> gear = new List<string>();         // Armeiro items that aren't upgrades (Loadout)
+    public List<string> gear = new List<string>();         // Armeira items that aren't upgrades (Loadout)
     public string stats;      // AccountStats' JSON (the Estatísticas); empty in older saves
     public string missions;   // DailyMissions' JSON (today's progress); empty in older saves
     public int rebirths;                                   // Renascer (Rebirth)
@@ -266,11 +266,11 @@ public static class SaveSystem {
             SaveData.Entry entry = data.bestTimes.Find(e => e.id == stage.id);
             SetOrDelete(CampaignProgress.BestTimeKeyPrefix + stage.id, entry != null ? entry.value : 0f);
         }
-        // a slot saved before the Armeiro sold buffs: its helmet and weapons go back as coins
+        // a slot saved before the Armeira sold buffs: its helmet and weapons go back as coins
         if (Has(data.gear, Loadout.Helmet)) {
             PlayerPrefs.SetInt(Loadout.GearKeyPrefix + Loadout.Helmet, 1);
         }
-        // and one saved when the cosmetic helmet was Armeiro gear: it stays his, as a look
+        // and one saved when the cosmetic helmet was Armeira gear: it stays his, as a look
         if (Has(data.gear, Loadout.CosmeticHelmet)) {
             PlayerPrefs.SetInt(Loadout.GearKeyPrefix + Loadout.CosmeticHelmet, 1);
             if (Has(data.unequipped, Loadout.CosmeticHelmet)) {

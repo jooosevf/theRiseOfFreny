@@ -42,7 +42,7 @@ public static class FrenyLook {
 
     private static Color C(int r, int g, int b) => new Color32((byte)r, (byte)g, (byte)b, 255);
 
-    // the first item of each slot is "as he is" (free); prices against the Armeiro's ~67,600 coins
+    // the first item of each slot is "as he is" (free); prices against the Armeira's ~67,600 coins
     public static readonly Item[] All = {
         new Item { id = "helmet.none", slot = LookSlot.Helmet, name = "Original", unlock = Unlock.Free },
         // José, 2026-11-01: the Berserker helmet just for the look, one horn snapped; with armor on,
@@ -212,7 +212,7 @@ public static class FrenyLook {
         }
     }
 
-    // whoever bought the cosmetic helmet when it was gear of the Armeiro (Loadout.CosmeticHelmet)
+    // whoever bought the cosmetic helmet when it was gear of the Armeira (Loadout.CosmeticHelmet)
     // keeps it, and keeps it on unless it was taken off or another helmet is on
     public static void MigrateBerserker() {
         string key = Loadout.GearKeyPrefix + Loadout.CosmeticHelmet;

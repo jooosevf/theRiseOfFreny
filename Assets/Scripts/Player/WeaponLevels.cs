@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// The Armeiro's buffs for the weapons (José, 2026-11-01: "comprar buff pra esses itens"). The
+// The Armeira's buffs for the weapons (José, 2026-11-01: "comprar buff pra esses itens"). The
 // weapons themselves are no longer sold: the pistol is always carried, and the shotgun, the great
 // sword, the grenades and the helmet come from the floor and chests. Each buff is a FrenyUpgrade
 // with its own levels (prices in FrenyProgress):
