@@ -47,7 +47,7 @@ public class CombatHud : MonoBehaviour {
         }
 
         // a menu is up: nothing (the menus hide the uGUI HUD too)
-        if (GameMenus.Paused) {
+        if (GameMenus.Paused || ArenaRunVariety.PickerOpen) {
             return;
         }
 

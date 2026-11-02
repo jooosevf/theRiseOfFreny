@@ -32,6 +32,7 @@ public class ArenaRunVariety : MonoBehaviour {
     private Button[] cards;
     private readonly System.Collections.Generic.List<Outline> cardEdges = new System.Collections.Generic.List<Outline>();
     private Blessing[] offered;
+    public static bool PickerOpen { get; private set; }   // CombatHud draws over canvases: it waits
     private bool picking;
     private float announcedAt = -100f;
 
@@ -203,6 +204,7 @@ public class ArenaRunVariety : MonoBehaviour {
 
     private void OpenPicker() {
         picking = true;
+        PickerOpen = true;
         KeepPaused();
         MenuKit.EnsureEventSystem();
         // under the pause menu (30000), over the HUD
@@ -214,6 +216,7 @@ public class ArenaRunVariety : MonoBehaviour {
         RectTransform rect = panel.rectTransform;
         rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
         rect.sizeDelta = new Vector2(1180f, 560f);
+        rect.anchoredPosition = new Vector2(0f, -20f);   // under the score
         Outline edge = panel.gameObject.AddComponent<Outline>();
         edge.effectColor = MenuKit.ButtonColor;
         edge.effectDistance = new Vector2(3f, -3f);
@@ -341,6 +344,7 @@ public class ArenaRunVariety : MonoBehaviour {
 
     private void ClosePicker() {
         picking = false;
+        PickerOpen = false;
         if (pickerCanvas != null) {
             Destroy(pickerCanvas.gameObject);
         }
@@ -365,7 +369,7 @@ public class ArenaRunVariety : MonoBehaviour {
 
         if (!player.IsDead) {
             // under the weapons row of CombatHud, at the portrait's left edge
-            float x = 74f * scale, y = 268f * scale, box = 46f * scale;
+            float x = 74f * scale, y = 300f * scale, box = 46f * scale;
             GUI.color = new Color(0.04f, 0.02f, 0.08f, 0.7f);
             GUI.DrawTexture(new Rect(x, y, box, box), Texture2D.whiteTexture);
             GUI.color = Color.white;
