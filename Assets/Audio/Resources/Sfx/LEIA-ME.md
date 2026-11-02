@@ -38,6 +38,9 @@ atribuição obrigatória), cortados, convertidos para mono 44,1 kHz e normaliza
 | `freny_death` | SoundMorph - Bloody Nightmare / Bloody Nightmare - Death Pacts_32.wav (0–2.2 s) |
 | `freny_rage` | o grito da Fúria (tecla F): `freny_death` 0–1,5 s 8% mais grave, com `supreme_scream` 0,3–1,9 s baixo e abafado por baixo (2026-11-01) |
 | `blood_moon` | o começo da Lua de Sangue: dois uivos de lobo sintetizados (Python, sem gravação) com eco, e a risada do Supremo (`supreme_laugh`) 40% mais grave entrando no fim (2026-11-01) |
+| `narrator_welcome` | "Bem-vindo à arena": voz Microsoft Daniel (pt-BR) do Windows, bem grave e um pouco mais rápida (`Tools/VoiceGen/narrador.ps1`). **Versão provisória**: confirmar a licença ou trocar por voz própria (2026-11-02) |
+| `narrator_double`, `_triple`, `_quadra`, `_penta`, `_multi` | as falas dos multi-kills: ainda sem áudio. Solte aqui os arquivos com esses nomes e elas passam a tocar (2026-11-02) |
+| `multi_kill` | o Double/Triple/Quadra/Penta/Multi Kill: sino grave e taiko sintetizados (`Tools/MusicGen/dark_fantasy.py multi_kill`), mais agudo a cada banner (2026-11-02) |
 | `freny_land` | Timothy McHugh -  Barefoot on Metal / FOOTSTEP - Metal Plate Land Barefoot Male - 1.wav (0–0.5 s) |
 | `freny_step_1` | Timothy McHugh -  Barefoot on Metal / FOOTSTEP - Metal Plate Walk Barefoot Male - 1.wav (0–0.3 s) |
 | `freny_step_2` | Timothy McHugh -  Barefoot on Metal / FOOTSTEP - Metal Plate Walk Barefoot Male - 2.wav (0–0.3 s) |

@@ -13,7 +13,8 @@ using UnityEngine;
 //   inventory: the Arena stays self-contained, nothing new goes into the save, the cloud save or the
 //   ranked run's log, and a key can't be farmed in one run and spent in another.
 // - The music: the Ciclope's own track ("ciclope", Tools/MusicGen/dark_fantasy.py) while one is alive,
-//   crossfaded by MusicPlayer, then back to the Arena's.
+//   crossfaded by MusicPlayer, then back to the Arena's. The Lua de Sangue ("lua_de_sangue", José,
+//   2026-11-02) plays over both while it lasts: it is the rarer of the two and only 30 s.
 // - The torches flicker faster and burn redder while it is out (BossTorches).
 // It also draws the short texts over the loot (Say) and the key next to the weapons (CombatHud
 // calls DrawKeyIcon).
@@ -23,10 +24,11 @@ public class ArenaBossLoot : MonoBehaviour {
     private const float ChestDelay = 1.5f;
     private const float PortalSeconds = 2f;
     private const string BossTrack = "ciclope";
+    private const string BloodTrack = "lua_de_sangue";
     private static readonly Color ChestPortalColor = new Color(1f, 0.8f, 0.25f);
 
     private int cyclopsKilled;      // this run
-    private bool bossMusic;
+    private string track;           // what the Arena asked MusicPlayer for; null: the scene's own
     private Player hero;
 
     private void Awake() {
@@ -65,10 +67,10 @@ public class ArenaBossLoot : MonoBehaviour {
     }
 
     private void Update() {
-        bool boss = BossOut;
-        if (boss != bossMusic && MusicPlayer.Instance != null) {
-            bossMusic = boss;
-            MusicPlayer.Instance.Play(boss ? BossTrack : null);   // null: the scene's own track again
+        string wanted = ArenaDayNight.Blood > 0f ? BloodTrack : BossOut ? BossTrack : null;
+        if (wanted != track && MusicPlayer.Instance != null) {
+            track = wanted;
+            MusicPlayer.Instance.Play(wanted);   // null: the scene's own track again
         }
     }
 

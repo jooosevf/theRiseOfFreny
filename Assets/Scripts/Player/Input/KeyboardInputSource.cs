@@ -34,7 +34,8 @@ public class KeyboardInputSource : IPlayerInputSource {
             meleePressed = InputBindings.GetDown(GameAction.Melee),
             rangedPressed = InputBindings.GetDown(GameAction.Ranged),
             // Shift is the sprint on the ground and the dash in the air (Dash only fires in the air)
-            dashPressed = InputBindings.GetDown(GameAction.Dash) || InputBindings.GetDown(GameAction.Run),
+            dashPressed = InputBindings.GetDown(GameAction.Dash),
+            runPressed = InputBindings.GetDown(GameAction.Run),
             runHeld = InputBindings.Get(GameAction.Run),
             crouchHeld = stick.Down,
             aimUpHeld = stick.Up,

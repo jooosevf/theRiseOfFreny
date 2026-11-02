@@ -143,6 +143,6 @@ public class UIManager : MonoBehaviour {
         // the combo still counts up on a 1-point kill
         UpdateScore(ScoresFlat(enemy) ? 1f : enemy.scoreToAdd * comboManager.GetCombo(), true); // todo -> each enemy = combo multiplier
         KillScored?.Invoke(enemy, comboManager.GetCombo());
-        comboManager.HandleComboManager();
+        comboManager.HandleComboManager(enemy.WeakKill);
     }
 }

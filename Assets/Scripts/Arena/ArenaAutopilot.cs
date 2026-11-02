@@ -93,7 +93,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
 
     private float FeetY => player.feetPos ? player.feetPos.position.y : transform.position.y;
 
-    // ---- José, 2026-11-01: the Fúria waits for its button and grenades for their 5 s fuse ----
+    // ---- José, 2026-11-01: the Fúria waits for its button and grenades for their fuse ----
 
     private bool cooking;              // a grenade cooking in his hand
     private bool cookSeen;             // ...and Player has pulled its pin
@@ -628,7 +628,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         bool atBodyHeight = Mathf.Abs(target.Center.y - (me.y + 0.5f)) <= verticalTolerance;
         bool walkable = flying ? atBodyHeight : targetPlatform == myPlatform;
         if (walkable) {
-            bool dashIn = Mathf.Abs(dx) > dashCloseDistance && player.AttackReady && striker == null && dash && dash.CanDash; // CanDash: only in the air
+            bool dashIn = Mathf.Abs(dx) > dashCloseDistance && player.AttackReady && striker == null && dash && dash.CanAirDash;
             if (dashIn) {
                 if (!facingTarget) {
                     Turn(ref frame, towardTarget);
@@ -1112,7 +1112,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
 
     private bool Dodge(ref PlayerInputFrame frame, float away, string what) {
         bool facingAway = (away > 0) == player.FacingRight;
-        if (FrenyProgress.HasDashDodge && facingAway && dash && dash.CanDash) {
+        if (FrenyProgress.HasDashDodge && facingAway && dash && dash.CanAirDash) {
             frame.dashPressed = true;
             action = "Esquivando com dash de " + what;
         } else if ((player.IsGrounded && Time.time >= nextJumpTime) || player.CanAirJump) {

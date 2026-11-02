@@ -42,23 +42,30 @@ public static class RunModifiers {
     // ---- enemies ----
 
     public static float EnemySpeedMultiplier =>
-        (WeeklyMutators.Active(Mutator.FastEnemies) ? 1.3f : 1f) * (1f + SlainSpeed * Mathf.Min(CyclopsSlain, SlainSpeedCap));
+        (WeeklyMutators.Active(Mutator.FastEnemies) ? 1.3f : 1f) * (1f + SlainSpeed * CyclopsSlain);
 
-    // José, 2026-11-02: every Ciclope killed in the run leaves the others tougher, on the curve of
-    // Call of Duty Zombies' rounds: +25% each for the first 4 (2x), then +10% compounding, up to 3x so
-    // a combo still fits its 10 s. A little more speed too. Kill values, the combo and the spawns
-    // stay, so the ranking API's checks hold
-    public const float MaxHealthMultiplier = 3f;
+    // José, 2026-11-02: every Ciclope killed in the run leaves the others harder, with no end: +25%
+    // life, +3% speed and +4% attack rate each, one more enemy on the floor (up to the arena's limit),
+    // and every 8 Ciclopes their hits take 1 more heart. It grows in a line, not compounding, so it
+    // tightens for as long as a good player lasts instead of walling the run at one point. Kill
+    // values, the combo and the spawn pace stay, so the ranking API's checks hold
+    private const float SlainHealth = 0.25f;
     private const float SlainSpeed = 0.03f;
-    private const int SlainSpeedCap = 5;         // +15%
-    private const int SmallFryMaxHealth = 2;     // what had 1 of life: a sword combo must not stall
+    private const float SlainAttackRate = 0.04f;
+    private const int SlainPerExtraHeart = 8;
+    private const int SlainPerSmallFryHeart = 10;   // what had 1 of life: 2 at once, then slowly more
     public static int CyclopsSlain { get; set; }
     private static readonly HashSet<Enemy> toughened = new HashSet<Enemy>();
 
     public static float HealthMultiplier(int slain) {
-        float multiplier = slain <= 4 ? 1f + 0.25f * slain : 2f * Mathf.Pow(1.1f, slain - 4);
-        return Mathf.Min(multiplier, MaxHealthMultiplier);
+        return 1f + SlainHealth * slain;
     }
+
+    // on the time between its attacks (Enemy.DifficultyCooldown)
+    public static float EnemyCooldownMultiplier => 1f / (1f + SlainAttackRate * CyclopsSlain);
+
+    // hearts on top of each hit (Enemy.TryHitFreny, HexballEffect)
+    public static int SlainDamage => CyclopsSlain / SlainPerExtraHeart;
 
     private static void Toughen(Enemy enemy) {
         if (CyclopsSlain <= 0 || enemy == null || enemy is Cyclops) {
@@ -67,7 +74,7 @@ public static class RunModifiers {
         toughened.RemoveWhere(e => e == null);
         if (toughened.Add(enemy)) {
             int health = Mathf.CeilToInt(enemy.Health * HealthMultiplier(CyclopsSlain));
-            enemy.Health = enemy.Health <= 1 ? Mathf.Min(health, SmallFryMaxHealth) : health;
+            enemy.Health = enemy.Health <= 1 ? Mathf.Min(health, 2 + CyclopsSlain / SlainPerSmallFryHeart) : health;
         }
     }
 

@@ -10,14 +10,20 @@ public static class Features {
     public static readonly bool SpiderMine = true;          // Mina-aranha
     public static readonly bool Cyclops = true;             // the boss at 50k; off, its missions and loot go too
     public static readonly bool BossEscalation = true;      // each Ciclope brings more helpers and company; off, every fight is like the first
-    public static readonly bool EnemyToughening = true;     // each Ciclope killed gives the others more life and speed, up to 3x life; off, they stay as they are
+    public static readonly bool EnemyToughening = true;     // each Ciclope killed makes the others harder, with no end (RunModifiers); off, they stay as they are
     public static readonly bool CyclopsFlatScore = true;    // other kills are worth 1 point while a Ciclope is alive; off, full points
+
+    public static readonly bool WeakCombo = true;           // a bug or a bat counts half for the combo; off, every kill adds 0.1x
+    public static readonly bool SwarmSpeedUp = true;        // bugs and bats get faster over a run, up to a limit; off, only the usual ramp
 
     // ---- Freny ----
     public static readonly bool Net = true;                 // Rede
     public static readonly bool MageStaff = true;           // Cajado do Mago
     public static readonly bool Fury = true;                // Fúria (the meter, the button and the Armeira's +5 s)
-    public static readonly bool GrenadeFuse = true;         // 5 s fuse, bouncing, cooking; off, it bursts on impact
+    public static readonly bool GrenadeFuse = true;         // 3 s fuse, bouncing, cooking; off, it bursts on impact
+    public static readonly bool ComboHype = true;           // the combo on screen grows, heats up and shakes; off, the plain line
+    public static readonly bool Narrator = true;            // the voice: "Bem-vindo à arena" (the multi-kills' lines when their audio arrives)
+    public static readonly bool MultiKill = true;           // Double/Triple/Quadra/Penta Kill banners; nothing but the banner
     public static readonly bool WeaponBuffs = true;         // the Armeira's weapon levels and Crítico; the old weapon sales do not come back
 
     // ---- the rare drops (ArenaPowerUps), one switch each ----
@@ -29,7 +35,7 @@ public static class Features {
     public static readonly bool Blessings = true;           // Bênçãos (the golden chest stops offering them)
     public static readonly bool WeeklyMutators = false;     // Mutador da semana (José, 2026-11-02: off until there is a better idea for it)
     public static readonly bool GoldenChest = true;         // the Ciclope's key, the golden chest and its exclusive looks
-    public static readonly bool AcidPit = true;             // Poço de Ácido
+    public static readonly bool AcidPit = false;            // Poço de Ácido (José, 2026-11-02: off for the release, only the main Arena runs)
 
     // ---- progress ----
     public static readonly bool DailyMissions = true;       // Missões do dia

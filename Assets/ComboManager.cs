@@ -14,6 +14,10 @@ public class ComboManager : MonoBehaviour
     private Color originalColor;
     private Coroutine mainCoroutine;
     private float shownCombo = -1f;
+    private bool halfStep;   // a weak enemy's kill waiting for its pair (HandleComboManager)
+
+    // when the multiplier last went up (CombatHud pops it)
+    public float LastRise { get; private set; } = -10f;
 
     // Start is called before the first frame update
     void Start()
@@ -57,14 +61,24 @@ public class ComboManager : MonoBehaviour
         mainCoroutine = StartCoroutine(BlinkText());
     }
 
-    public void HandleComboManager() {
-        SetCombo(combo += 0.1f);
+    // José, 2026-11-02: a weak enemy (Enemy.WeakKill) only counts half: two of them for each 0.1x, and
+    // the one that doesn't raise it still keeps the combo alive. The ranking API knows the same
+    // enemies (freny-online api/_lib/rules.js, "weak")
+    public void HandleComboManager(bool weak) {
+        if (weak && Features.WeakCombo) {
+            halfStep = !halfStep;
+        }
+        if (!weak || !Features.WeakCombo || !halfStep) {
+            SetCombo(combo += 0.1f);
+            LastRise = Time.unscaledTime;
+        }
         Sfx.Play("combo", 1f, Mathf.Min(1f + (combo - 1f) * 0.5f, 1.8f)); // higher with each kill in a row
         RestartBlinkingRoutine();
     }
     public void UpdateComboText() {
         if (timeRemaining <= 0) {
-            combo = 1.0f;   
+            combo = 1.0f;
+            halfStep = false;
         }
         // building the string every frame created garbage for the GC; only rebuild it when it changes
         if (combo != shownCombo) {
@@ -72,6 +86,8 @@ public class ComboManager : MonoBehaviour
             comboText.text = combo.ToString("0.0", CultureInfo.InvariantCulture) + "x";
         }
     }
+
+    public float TimeLeft => timeRemaining;
 
     public float GetCombo() {
         return combo;

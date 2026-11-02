@@ -162,7 +162,7 @@ public abstract class Enemy : MonoBehaviour, IDamageable
     private float pushScale = 1f;            // set for one sword hit by Damage(amount, push)
     private const float PushDrag = 40f;
     // arena difficulty on attack rhythm (1 outside the arena)
-    protected float DifficultyCooldown => ArenaBounds.Active ? ArenaDifficulty.CooldownFactor * ArenaDirector.CooldownRamp * ScoreCooldown : 1f;
+    protected float DifficultyCooldown => ArenaBounds.Active ? ArenaDifficulty.CooldownFactor * ArenaDirector.CooldownRamp * ScoreCooldown * RunModifiers.EnemyCooldownMultiplier : 1f;
 
     // José, 2026-10-29: the more points, the shorter every enemy's cooldown: 1x at 0 down to
     // ScoreCooldownHold at the first Ciclope (50 000), held there until a million (it got too hard
@@ -598,7 +598,23 @@ public abstract class Enemy : MonoBehaviour, IDamageable
 
     // a little faster or slower than its whole-number speed
     protected virtual float SpeedFactor => 1f;
-    protected float MoveSpeed => speed * SpeedFactor * NetSpeed * Tuning.EnemySpeed.Value * (ArenaBounds.Active ? ArenaDifficulty.SpeedFactor(Small) * ArenaDirector.SpeedRamp * (1f + BloodSpeed * BloodMoon) * RunModifiers.EnemySpeedMultiplier : 1f);
+    protected float MoveSpeed => speed * SpeedFactor * NetSpeed * Tuning.EnemySpeed.Value * (ArenaBounds.Active ? ArenaDifficulty.SpeedFactor(Small) * ArenaDirector.SpeedRamp * SwarmFactor * (1f + BloodSpeed * BloodMoon) * RunModifiers.EnemySpeedMultiplier : 1f);
+
+    // a kill of this one only counts half for the combo (ComboManager)
+    public virtual bool WeakKill => false;
+
+    // the speed the Arena's ramp takes it up to over a run (ArenaDirector.SwarmRamp), on the Médio
+    // level: the levels scale it. 0: it only follows the usual ramp. It never slows anyone down: a
+    // long run already past this limit keeps going as it did
+    protected virtual float SwarmTopSpeed => 0f;
+    private float SwarmFactor {
+        get {
+            if (!Features.SwarmSpeedUp || SwarmTopSpeed <= 0f || speed <= 0) {
+                return 1f;
+            }
+            return Mathf.Max(1f, Mathf.Lerp(1f, SwarmTopSpeed / (speed * ArenaDirector.SpeedRamp), ArenaDirector.SwarmRamp));
+        }
+    }
 
     // ---- Freny's Rede (NetTrap): a caught enemy starts no attack (NetTrap pins it in place); the
     // Ciclope is only slowed down ----
@@ -1100,7 +1116,7 @@ public abstract class Enemy : MonoBehaviour, IDamageable
 
     protected void HitPlayer() {
         Player.NextDamageSource = Online.RunLog.PrefabName(gameObject.name);
-        if (!player.TryDamage(HitDamage + BloodDamage)) {
+        if (!player.TryDamage(HitDamage + BloodDamage + RunModifiers.SlainDamage)) {
             return;
         }
         float dir = Mathf.Sign(player_t.position.x - transform.position.x);

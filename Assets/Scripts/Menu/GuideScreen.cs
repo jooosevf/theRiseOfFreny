@@ -93,9 +93,9 @@ public static class GuideScreen {
         Entry(parent, art ? art.grenade : null, "Granada",
             "Aperte para lançar em arco, sempre à mesma distância (uns 6 m); sem espera entre uma e outra. " +
             (Features.GrenadeFuse ?
-            "Ela quica, rola e só explode 5 s depois de puxar o pino, onde estiver (os segundos aparecem em cima dela). " +
+            "Ela quica, rola e só explode " + (int)Player.GrenadeFuse + " s depois de puxar o pino, onde estiver (os segundos aparecem em cima dela). " +
             "Segurar o botão já puxa o pino: o pavio queima na mão e, ao soltar, ela vai com o tempo que sobrou; " +
-            "segurou 5 s, explode na mão. " : "Ela explode onde bater. ") +
+            "segurou " + (int)Player.GrenadeFuse + " s, explode na mão. " : "Ela explode onde bater. ") +
             "3 de dano em todos num raio " +
             "grande (mata quase todos; o Golem Vermelho aguenta uma) e quebra baús e vasos. Cuidado: perto demais, o Freny " +
             "também leva 2 de dano e é arremessado. Até 6 (8 ou 10 com a Armeira).");
@@ -290,14 +290,20 @@ public static class GuideScreen {
             "Durante a partida o ponteiro some e fica preso no jogo, para um clique não sair da tela " +
             "(no navegador, ele prende no primeiro clique). Esc solta o mouse e pausa; ele volta nos menus.");
         Entry(parent, null, "Lua de Sangue",
-            "Dia de 1 minuto, noite de 4. A cada 3 noites a lua fica vermelha por 30 s no meio da noite (a primeira uns 10 minutos de corrida). Nesse tempo, " +
+            "Dia de 1 minuto, noite de 2. A cada 3 noites a lua fica vermelha por 30 s no meio da noite (a primeira uns 6 minutos de corrida), com música própria. Nesse tempo, " +
             "os inimigos ficam 25% mais rápidos, tiram 1 coração a mais, recuperam vida (1 a cada 3 s, o Ciclope também) " +
             "e ficam de olhos vermelhos, deixando um rastro vermelho.");
+        Entry(parent, null, "Combo",
+            "Cada abate soma 0,1x aos pontos dos próximos, e 10 s sem abate zeram o combo." +
+            (Features.WeakCombo ? " Inseto e morcego contam metade: dois deles para cada 0,1x, mas qualquer abate mantém o combo vivo." : ""));
+        if (Features.MultiKill) Entry(parent, null, "Multi-kill",
+            "Um ataque só que mata 2, 3, 4, 5 ou 6 ou mais inimigos mostra Double, Triple, Quadra, Penta ou Multi Kill. Conta uma explosão de granada, " +
+            "um golpe de espada ou um tiro de escopeta. Não dá pontos a mais: é só a glória.");
         Entry(parent, art ? art.rageHelmet : null, "Dificuldade",
             "Fácil, Médio ou Freny: quanto maior, mais inimigos, mais rápidos e mais cedo. " +
             "Com o tempo e os pontos a Arena aperta, mas para de apertar no primeiro Ciclope (50 mil) e só volta em 1 milhão." +
-            (Features.EnemyToughening ? " E cada Ciclope derrotado deixa os outros inimigos mais fortes até o fim da corrida: +25% de vida nos 4 primeiros, depois +10% por Ciclope, " +
-            "até o máximo de 3x (quem tinha 1 de vida vai no máximo a 2), e um pouco mais rápidos." : ""));
+            (Features.EnemyToughening ? " E cada Ciclope derrotado deixa os outros inimigos mais difíceis até o fim da corrida, sem limite: +25% de vida, +3% de velocidade, " +
+            "+4% de ritmo de ataque e um inimigo a mais na Arena (até o limite dela). A cada 8 Ciclopes, cada golpe deles tira 1 coração a mais." : ""));
         if (Features.Cyclops) Entry(parent, null, "Música do chefe",
             "Quando o Ciclope chega, a música da Arena dá lugar à dele, mais pesada e rápida, e as tochas piscam " +
             "rápido e ficam vermelhas. Quando ele cai, tudo volta ao normal.");

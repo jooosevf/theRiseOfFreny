@@ -35,6 +35,8 @@ public static class Sfx {
         { "freny_death", (0.8f, 0.5f) },
         { "freny_rage", (0.85f, 0.5f) },
         { "blood_moon", (0.9f, 5f) },
+        { "multi_kill", (0.6f, 0.05f) },
+        { "narrator_welcome", (1f, 1f) },
         { "freny_stun", (0.6f, 0.2f) },
         { "potion", (0.6f, 0.1f) },
         { "pickup_ammo", (0.45f, 0.1f) },

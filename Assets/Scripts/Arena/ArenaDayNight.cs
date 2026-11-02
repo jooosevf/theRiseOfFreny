@@ -17,10 +17,10 @@ using UnityEngine.Rendering.Universal;
 // arena itself, and on top of the Brilho setting (BrightnessLights), never instead of it.
 public class ArenaDayNight : MonoBehaviour {
 
-    // José, 2026-10-30: 1 minute of day, 4 of night; a run starts at night with the moon a third
+    // José, 2026-11-02: 1 minute of day, 2 of night (it was 4); a run starts at night with the moon a third
     // of the way across. Phase stays 0..0.5 for the day and 0.5..1 for the night
     private const float DaySeconds = 60f;
-    private const float NightSeconds = 240f;
+    private const float NightSeconds = 120f;
     private const float StartSeconds = DaySeconds + NightSeconds / 3f;
     private const float CloudSpeed = 0.25f;   // units per second, to the left
 
@@ -66,8 +66,8 @@ public class ArenaDayNight : MonoBehaviour {
     // the Lua de Sangue (José, 2026-10-30): every BloodEvery-th night the moon turns red, the arena
     // goes red and the enemies get faster, heal and hit harder (Enemy.BloodMoon reads Blood).
     // A run starts in night 1, so the first one is night 3. It lasts only BloodSeconds around
-    // midnight (José, 2026-10-30), about 10 min 25 s into a run, then the night goes back to
-    // normal. Blood is 0..1 and fades in and out over BloodFade. BloodOverride forces it for tests
+    // midnight (José, 2026-10-30), about 6 min 20 s into a run, then the night goes back to
+    // normal, and it has its own music while it lasts (ArenaBossLoot). Blood is 0..1 and fades in and out over BloodFade. BloodOverride forces it for tests
     public const int BloodEvery = 3;
     private const float BloodSeconds = 30f;
     private const float BloodFade = 3f;

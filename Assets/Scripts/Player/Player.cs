@@ -75,9 +75,9 @@ public class Player : MonoBehaviour, IDamageable {
     private const float GrenadeTapAngle = 30f;
     private const float GrenadeTapSpeed = 10f;
     private const float GrenadeTapHeight = 0.9f;   // over his feet: the arc tops out under a platform 2.2 up
-    // José, 2026-11-01: every grenade goes off 5 s after the pin is pulled, wherever it is. Holding the
+    // José, 2026-11-02: every grenade goes off 3 s after the pin is pulled (it was 5), wherever it is. Holding the
     // button burns the fuse in his hand (cooking it); held too long, it goes off there.
-    public const float GrenadeFuse = 5f;
+    public const float GrenadeFuse = 3f;
 
     // ---- state --------------------------------------------------------------------------------
     public int coins;
@@ -827,7 +827,7 @@ public class Player : MonoBehaviour, IDamageable {
     }
 
     // The grenade button (E): a tap throws it forward in an arc, always as far (GrenadeTapCharge);
-    // holding it pulls the pin and the 5 s fuse burns in his hand, and letting go throws it with
+    // holding it pulls the pin and the fuse burns in his hand, and letting go throws it with
     // what is left. The autopilot sends the power it wants, and may cook one the same way.
     private void ThrowGrenade() {
         PlayerInputFrame input = _input.Current;

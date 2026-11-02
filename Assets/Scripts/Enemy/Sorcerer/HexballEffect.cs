@@ -176,7 +176,7 @@ public class HexballEffect : MonoBehaviour
             if (player != null)
             {
                 Player.NextDamageSource = caster != null ? Online.RunLog.PrefabName(caster.gameObject.name) : "Sorcerer_Enemy";
-                if (player.TryDamage(damage + Enemy.BloodDamage) && knockback > 0f)
+                if (player.TryDamage(damage + Enemy.BloodDamage + RunModifiers.SlainDamage) && knockback > 0f)
                 {
                     float side = direction.x >= 0f ? 1f : -1f;
                     player.Knockback(new Vector2(side * knockback, knockback * 0.5f));

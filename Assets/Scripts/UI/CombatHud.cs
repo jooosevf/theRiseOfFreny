@@ -398,7 +398,7 @@ public class CombatHud : MonoBehaviour {
         HideScoreTexts();
         bool combo = comboValue != null && comboValue.gameObject.activeInHierarchy;
         // the value blinks while the combo runs out, like the old text
-        string comboLine = combo ? (comboTitle != null ? comboTitle.text + " " : "Combo: ") + (comboValue.enabled ? comboValue.text : "") : null;
+        string comboLine = combo ? (comboTitle != null ? comboTitle.text + " " : "Combo: ") + (comboValue.enabled || ComboSteady ? comboValue.text : "") : null;
 
         int scoreSize = Mathf.Max(10, Mathf.RoundToInt(40f * scale));
         int comboSize = Mathf.Max(8, Mathf.RoundToInt(26f * scale));
@@ -422,9 +422,48 @@ public class CombatHud : MonoBehaviour {
         float y = heartsMiddle > 0f ? heartsMiddle - scoreSize * 0.8f : 34f * scale;
         ShadowLabel(new Rect(x, y, width + 20f, scoreSize * 1.4f), score, scoreStyle);
         if (comboLine != null) {
-            scoreStyle.fontSize = comboSize;
-            ShadowLabel(new Rect(x, y + scoreSize * 1.5f, 600f * scale, comboSize * 1.4f), comboLine, scoreStyle);
+            DrawComboLine(x, y + scoreSize * 1.5f, comboLine, comboSize, scale);
         }
+    }
+
+    // José, 2026-11-02: the combo hypes up like the multi-kill banners: bigger as it climbs, a pop at
+    // each rise, the same colours from bone to blood (gold at 2x, ember at 3x, blood at 5x), and from
+    // 3x it throbs, from 5x it shakes
+    private ComboManager comboManager;
+    private const float ComboBlinkSeconds = 3f;
+
+    private ComboManager Combo => comboManager != null ? comboManager : (comboManager = FindAnyObjectByType<ComboManager>());
+
+    // the number stays up while the combo is safe, and only blinks in its last seconds
+    private bool ComboSteady => Features.ComboHype && Combo != null && Combo.TimeLeft > ComboBlinkSeconds;
+
+    private void DrawComboLine(float x, float y, string line, int size, float scale) {
+        ComboManager comboManager = Combo;
+        float combo = comboManager != null ? comboManager.GetCombo() : 1f;
+        if (!Features.ComboHype || comboManager == null) {
+            scoreStyle.fontSize = size;
+            ShadowLabel(new Rect(x, y, 600f * scale, size * 1.4f), line, scoreStyle);
+            return;
+        }
+        float grow = 1f + Mathf.Min(1f, (combo - 1f) * 0.2f);
+        float pop = 1f + 0.4f * Mathf.Clamp01(1f - (Time.unscaledTime - comboManager.LastRise) / 0.18f);
+        float throb = combo >= 3f ? 1f + 0.04f * Mathf.Sin(Time.unscaledTime * 16f) : 1f;
+        scoreStyle.fontSize = Mathf.RoundToInt(size * grow * pop * throb);
+        if (combo >= 5f) {
+            float shake = 2f * scale;
+            x += (Mathf.PerlinNoise(Time.unscaledTime * 25f, 0f) - 0.5f) * 2f * shake;
+            y += (Mathf.PerlinNoise(0f, Time.unscaledTime * 25f) - 0.5f) * 2f * shake;
+        }
+        Color color = combo >= 5f ? MultiKill.Colors[3] : combo >= 3f ? MultiKill.Colors[2] : combo >= 2f ? MultiKill.Colors[1] : MenuKit.TextColor;
+        Rect rect = new Rect(x, y, 900f * scale, scoreStyle.fontSize * 1.4f);
+        float o = Mathf.Max(1f, Screen.width / 960f);
+        scoreStyle.normal.textColor = Color.black;
+        foreach (Vector2 d in new[] { Vector2.left, Vector2.right, Vector2.up, Vector2.down }) {
+            GUI.Label(new Rect(rect.x + d.x * o, rect.y + d.y * o, rect.width, rect.height), line, scoreStyle);
+        }
+        scoreStyle.normal.textColor = color;
+        GUI.Label(rect, line, scoreStyle);
+        scoreStyle.normal.textColor = MenuKit.TextColor;
     }
 
     // Rage with the Berserker armor: the Berserker helmet in red, made by Tools/ArtGen/freny_heads.py
