@@ -1,1 +1,11 @@
-fileFormatVersion: 2\nguid: f282592b15da4ad58450ec92185c2cbb\nMonoImporter:\n  externalObjects: {}\n  serializedVersion: 2\n  defaultReferences: []\n  executionOrder: 0\n  icon: {instanceID: 0}\n  userData: \n  assetBundleName: \n  assetBundleVariant: \n
+fileFormatVersion: 2
+guid: f282592b15da4ad58450ec92185c2cbb
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
