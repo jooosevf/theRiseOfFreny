@@ -1,0 +1,176 @@
+From 615644edc2249e2dde777f561b46bef4fd111c44 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 1 Nov 2026 16:45:27 +0000
+Subject: [PATCH 3/3] =?UTF-8?q?Autopilot=20boards=20auto=5F<level>:=20the?=
+ =?UTF-8?q?=20API=20ranks=20them=20like=20the=20manual=20ones=20(no=20dail?=
+ =?UTF-8?q?y=20board,=20no=20Conquistas);=20site=20ranking=20gets=20an=20A?=
+ =?UTF-8?q?utom=C3=A1tico=20tab?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01LSYLcuLYZ7SBnFFrctyzeC
+---
+ api/_lib/rules.js         | 8 +++++++-
+ api/_lib/validate.js      | 6 ++++--
+ api/achievements/claim.js | 2 ++
+ api/admin/list.js         | 2 +-
+ api/run/finish.js         | 2 +-
+ index.html                | 8 +++++---
+ test/validate.test.js     | 9 +++++++++
+ 7 files changed, 29 insertions(+), 8 deletions(-)
+
+diff --git a/api/_lib/rules.js b/api/_lib/rules.js
+index a1ffd0a..c3e859b 100644
+--- a/api/_lib/rules.js
++++ b/api/_lib/rules.js
+@@ -5,7 +5,12 @@
+ //   LEVELS = ArenaDifficulty.cs (RampFactor, StartAt, UnlockShift)
+ //   COMBO_SECONDS = ComboManager.totalTime in "ZE Arena.unity"
+ 
+-export const BOARDS = ['leaderboard_hard', 'leaderboard_freny', 'leaderboard_medium', 'leaderboard_easy'];
++export const MANUAL_BOARDS = ['leaderboard_hard', 'leaderboard_freny', 'leaderboard_medium', 'leaderboard_easy'];
++// the autopilot's own boards (game PR #167, José 2026-11-01): runs started in Automático, same
++// rules as the manual board of that difficulty, but no daily board and no Conquistas
++export const AUTO_BOARDS = MANUAL_BOARDS.map((b) => b.replace('leaderboard_', 'auto_'));
++export const BOARDS = [...MANUAL_BOARDS, ...AUTO_BOARDS];
++export const isAutoBoard = (board) => AUTO_BOARDS.includes(board);
+ 
+ export const ENEMIES = {
+   Bug_Enemy: { score: 100, unlockAt: 0 },
+@@ -28,6 +33,7 @@ export const LEVELS = {
+   leaderboard_hard: { rampFactor: 0.7, startAt: 0.15, unlockShift: -0.1, spawnIntervalFactor: 0.8 },
+   leaderboard_freny: { rampFactor: 0.5, startAt: 0.3, unlockShift: -0.2, spawnIntervalFactor: 0.6 },
+ };
++for (const board of AUTO_BOARDS) LEVELS[board] = LEVELS[board.replace('auto_', 'leaderboard_')];
+ 
+ // the shortest ramp the Tuning slider allows (Tuning.RampSeconds, 60..600 s, 300 by default)
+ export const MIN_RAMP_SECONDS = 60;
+diff --git a/api/_lib/validate.js b/api/_lib/validate.js
+index 709cd69..371d24e 100644
+--- a/api/_lib/validate.js
++++ b/api/_lib/validate.js
+@@ -1,5 +1,5 @@
+ import {
+-  BOARDS, ENEMIES, LEVELS, MIN_RAMP_SECONDS, COMBO_SECONDS, MAX_GAME_SPEED,
++  BOARDS, isAutoBoard, ENEMIES, LEVELS, MIN_RAMP_SECONDS, COMBO_SECONDS, MAX_GAME_SPEED,
+   KILL_WINDOW_SECONDS, KILL_POOL, PEAK_SPAWN_SECONDS, SPARSE_SPAWN_FACTOR, MAX_RUN_SECONDS, MAX_SCORE,
+ } from './rules.js';
+ 
+@@ -39,8 +39,10 @@ export function maxKillsInWindow(board, t) {
+ }
+ 
+ // Today's board for an all-time one: leaderboard_hard -> daily_hard_20261029, by Brasília time
+-// (UTC-3, no daylight saving), the same day the site's Diário tab reads.
++// (UTC-3, no daylight saving), the same day the site's Diário tab reads. The autopilot's boards
++// have none (null).
+ export function dailyBoardOf(board, now) {
++  if (isAutoBoard(board)) return null;
+   const day = new Date(now - 3 * 3600 * 1000).toISOString().slice(0, 10).replace(/-/g, '');
+   return 'daily_' + board.replace('leaderboard_', '') + '_' + day;
+ }
+diff --git a/api/achievements/claim.js b/api/achievements/claim.js
+index 87a2de9..ff39834 100644
+--- a/api/achievements/claim.js
++++ b/api/achievements/claim.js
+@@ -2,6 +2,7 @@ import { json, readRequest, scoreKey } from '../_lib/http.js';
+ import { readRunToken } from '../_lib/run-token.js';
+ import { sha256Hex } from '../_lib/crypto.js';
+ import { validateRun } from '../_lib/validate.js';
++import { isAutoBoard } from '../_lib/rules.js';
+ import { earnedAchievements } from '../_lib/achievements.js';
+ 
+ export const config = { runtime: 'edge' };
+@@ -20,6 +21,7 @@ export default async function handler(request) {
+   const ticket = await readRunToken(key, run.token);
+   if (!ticket || ticket.uid !== req.uid) return json(403, { error: 'partida sem ticket válido' });
+   if (ticket.board !== run.board) return json(403, { error: 'ticket de outro ranking' });
++  if (isAutoBoard(run.board)) return json(403, { error: 'o automático não ganha conquistas' });
+ 
+   const reason = validateRun(run, (Date.now() - ticket.startedAt) / 1000);
+   if (reason) {
+diff --git a/api/admin/list.js b/api/admin/list.js
+index db91b1f..a8dde98 100644
+--- a/api/admin/list.js
++++ b/api/admin/list.js
+@@ -15,7 +15,7 @@ export default async function handler(request) {
+   for (const board of BOARDS) {
+     boards[board] = await listDocs(board, 'score', 15);
+     const daily = dailyBoardOf(board, Date.now());
+-    boards[daily] = await listDocs(daily, 'score', 15);
++    if (daily) boards[daily] = await listDocs(daily, 'score', 15);
+   }
+   return json(200, {
+     pending: await listDocs('pending', 'score', 100),
+diff --git a/api/run/finish.js b/api/run/finish.js
+index 7a6882d..b2c53da 100644
+--- a/api/run/finish.js
++++ b/api/run/finish.js
+@@ -53,5 +53,5 @@ export default async function handler(request) {
+     await keepLog(req.uid, run, realSeconds, 'accepted');
+   }
+   console.log(`accepted ${req.uid} ${run.board} ${run.score} (${run.kills.length} kills, ${realSeconds.toFixed(0)} s)`);
+-  return json(200, { sig: await sign(run.board), dailyBoard, dailySig: await sign(dailyBoard) });
++  return json(200, { sig: await sign(run.board), dailyBoard, dailySig: dailyBoard ? await sign(dailyBoard) : null });
+ }
+diff --git a/index.html b/index.html
+index 94bd14c..7b41358 100644
+--- a/index.html
++++ b/index.html
+@@ -304,7 +304,7 @@
+ 
+     <aside class="side ranking">
+       <h1>Ranking</h1>
+-      <p class="rule">Só valem corridas manuais na Arena. O ranking oficial é o do Difícil.</p>
++      <p class="rule">Diário e Geral: só corridas manuais na Arena. O ranking oficial é o Geral do Difícil. Automático: corridas no piloto automático.</p>
+       <div class="level">
+         <button type="button" id="level-prev" aria-label="Dificuldade anterior">&lt;</button>
+         <span id="level-name">Difícil</span>
+@@ -313,6 +313,7 @@
+       <div class="tabs">
+         <button type="button" data-period="daily">Diário</button>
+         <button type="button" data-period="all" class="active">Geral</button>
++        <button type="button" data-period="auto">Automático</button>
+       </div>
+       <ol id="ranking-list"><li class="empty">Carregando...</li></ol>
+     </aside>
+@@ -478,7 +479,8 @@
+     // Top 10 from the board the game writes for each ranked difficulty (public read in firestore.rules).
+     var FIREBASE = { apiKey: "AIzaSyDf7YvP-lQiMeVfN1bG8dWoahZQtmB0daM", projectId: "the-rise-of-freny" };
+     // < Difícil > picks the difficulty; Diário reads that day's board (Brasília time),
+-    // daily_<level>_<yyyymmdd>, Geral the all-time leaderboard_<level>
++    // daily_<level>_<yyyymmdd>, Geral the all-time leaderboard_<level>, Automático the autopilot's
++    // own board auto_<level> (game PR #167)
+     var LEVELS = [
+       { id: "hard", label: "Difícil" },
+       { id: "freny", label: "Freny" },
+@@ -495,7 +497,7 @@
+     }
+     function currentBoard() {
+       var level = LEVELS[levelIndex].id;
+-      return period === "daily" ? "daily_" + level + "_" + today() : "leaderboard_" + level;
++      return period === "daily" ? "daily_" + level + "_" + today() : (period === "auto" ? "auto_" : "leaderboard_") + level;
+     }
+     function switchBoard() {
+       document.getElementById("level-name").textContent = LEVELS[levelIndex].label;
+diff --git a/test/validate.test.js b/test/validate.test.js
+index a0b3628..e6ba2c1 100644
+--- a/test/validate.test.js
++++ b/test/validate.test.js
+@@ -98,3 +98,12 @@ test('the Feiticeiro Supremo only counts after 100 000 points', () => {
+   run.score = killPoints(600, 0);
+   assert.match(validateRun(run, run.gameTime), /antes de 100000/);
+ });
++
++test('the autopilot boards follow the manual rules, with no daily board', async () => {
++  const { dailyBoardOf } = await import('../api/_lib/validate.js');
++  const run = steadyRun('auto_hard', 100, 2);
++  assert.equal(validateRun(run, run.gameTime), null);
++  assert.equal(dailyBoardOf('auto_hard', Date.now()), null);
++  assert.match(dailyBoardOf('leaderboard_hard', Date.now()), /^daily_hard_20\d{6}$/);
++  assert.match(validateRun({ ...run, board: 'auto_nightmare' }, run.gameTime), /desconhecido/);
++});
+-- 
+2.43.0
+
