@@ -293,6 +293,9 @@ public static class GuideScreen {
             "Dia de 1 minuto, noite de 2. A cada 3 noites a lua fica vermelha por 30 s no meio da noite (a primeira uns 6 minutos de corrida), com música própria. Nesse tempo, " +
             "os inimigos ficam 25% mais rápidos, tiram 1 coração a mais, recuperam vida (1 a cada 3 s, o Ciclope também) " +
             "e ficam de olhos vermelhos, deixando um rastro vermelho.");
+        Entry(parent, null, "Combo",
+            "Cada abate soma 0,1x aos pontos dos próximos, e 10 s sem abate zeram o combo." +
+            (Features.WeakCombo ? " Inseto e morcego contam metade: dois deles para cada 0,1x, mas qualquer abate mantém o combo vivo." : ""));
         if (Features.MultiKill) Entry(parent, null, "Multi-kill",
             "Um ataque só que mata 2, 3, 4 ou 5 inimigos mostra Double, Triple, Quadra ou Penta Kill. Conta uma explosão de granada, " +
             "um golpe de espada ou um tiro de escopeta. Não dá pontos a mais: é só a glória.");

@@ -600,6 +600,9 @@ public abstract class Enemy : MonoBehaviour, IDamageable
     protected virtual float SpeedFactor => 1f;
     protected float MoveSpeed => speed * SpeedFactor * NetSpeed * Tuning.EnemySpeed.Value * (ArenaBounds.Active ? ArenaDifficulty.SpeedFactor(Small) * ArenaDirector.SpeedRamp * SwarmFactor * (1f + BloodSpeed * BloodMoon) * RunModifiers.EnemySpeedMultiplier : 1f);
 
+    // a kill of this one only counts half for the combo (ComboManager)
+    public virtual bool WeakKill => false;
+
     // the speed the Arena's ramp takes it up to over a run (ArenaDirector.SwarmRamp), on the Médio
     // level: the levels scale it. 0: it only follows the usual ramp. It never slows anyone down: a
     // long run already past this limit keeps going as it did

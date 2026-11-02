@@ -28,6 +28,7 @@ public class Bat : Enemy {
     protected override string SoundName => "bat";
     protected override bool WalksOnGround => false; // flies: no floor, no falling
     protected override bool Small => true;
+    public override bool WeakKill => true;
     protected override float SwarmTopSpeed => 4.5f;   // still under Freny's run (4.8)
 
     public override void Init() {

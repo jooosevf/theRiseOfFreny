@@ -13,6 +13,7 @@ public static class Features {
     public static readonly bool EnemyToughening = true;     // each Ciclope killed gives the others more life and speed, up to 3x life; off, they stay as they are
     public static readonly bool CyclopsFlatScore = true;    // other kills are worth 1 point while a Ciclope is alive; off, full points
 
+    public static readonly bool WeakCombo = true;           // a bug or a bat counts half for the combo; off, every kill adds 0.1x
     public static readonly bool SwarmSpeedUp = true;        // bugs and bats get faster over a run, up to a limit; off, only the usual ramp
 
     // ---- Freny ----
@@ -20,6 +21,7 @@ public static class Features {
     public static readonly bool MageStaff = true;           // Cajado do Mago
     public static readonly bool Fury = true;                // Fúria (the meter, the button and the Armeira's +5 s)
     public static readonly bool GrenadeFuse = true;         // 3 s fuse, bouncing, cooking; off, it bursts on impact
+    public static readonly bool ComboHype = true;           // the combo on screen grows, heats up and shakes; off, the plain line
     public static readonly bool MultiKill = true;           // Double/Triple/Quadra/Penta Kill banners; nothing but the banner
     public static readonly bool WeaponBuffs = true;         // the Armeira's weapon levels and Crítico; the old weapon sales do not come back
 

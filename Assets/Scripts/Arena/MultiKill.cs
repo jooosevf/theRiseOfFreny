@@ -17,7 +17,7 @@ public class MultiKill : MonoBehaviour {
     private static readonly string[] Names = { "DOUBLE KILL", "TRIPLE KILL", "QUADRA KILL", "PENTA KILL" };
     private static readonly int[] Sizes = { 54, 62, 72, 86 };
     private static readonly float[] Pitches = { 1f, 1.12f, 1.26f, 1.5f };
-    private static readonly Color[] Colors = {
+    public static readonly Color[] Colors = {
         new Color(0.91f, 0.85f, 0.72f),
         new Color(0.95f, 0.72f, 0.25f),
         new Color(1f, 0.45f, 0.15f),
