@@ -113,7 +113,7 @@ public static class PerfilScreens {
         };
         foreach (ArenaLevel level in ArenaDifficulty.Ranked) {
             rows.Add(new[] { "Recorde no " + ArenaDifficulty.Label(level), Points(PlayerStats.Get(PlayerStats.BestKey(level))) +
-                " · " + Points(PlayerStats.Get(PlayerStats.RunsKey(level))) + " corridas" });
+                " · " + Points(PlayerStats.Get(PlayerStats.RunsKey(level))) + (PlayerStats.Get(PlayerStats.RunsKey(level)) == 1 ? " corrida" : " corridas") });
         }
         return rows;
     }
