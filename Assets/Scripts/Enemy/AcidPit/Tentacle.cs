@@ -78,6 +78,12 @@ public class Tentacle : Enemy {
         Surface();
     }
 
+    // the Insta-kill isn't a hit: it must not send it diving
+    public override void DropToOneHeart() {
+        base.DropToOneHeart();
+        lastHealth = Health;
+    }
+
     // up out of the acid (also when it comes back after a dive, AcidPitArena.Resurface)
     public void Surface() {
         SetState(State.Rising);

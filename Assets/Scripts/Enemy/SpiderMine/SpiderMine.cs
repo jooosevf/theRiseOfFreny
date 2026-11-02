@@ -174,6 +174,12 @@ public class SpiderMine : Enemy {
         lamp.transform.localScale = Vector3.one * (Arming ? 1.4f : 1f);
     }
 
+    // the Nuke takes it whole: no blast of its own to catch Freny with
+    public override void Nuked() {
+        blown = true;
+        base.Nuked();
+    }
+
     // its own fuse ran out: the full blast, and nobody gets the kill
     private void Detonate() {
         blown = true;

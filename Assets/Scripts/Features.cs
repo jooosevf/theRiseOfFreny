@@ -20,6 +20,11 @@ public static class Features {
     public static readonly bool GrenadeFuse = true;         // 5 s fuse, bouncing, cooking; off, it bursts on impact
     public static readonly bool WeaponBuffs = true;         // the Armeiro's weapon levels and Crítico; the old weapon sales do not come back
 
+    // ---- the rare drops (ArenaPowerUps), one switch each ----
+    public static readonly bool InstaKill = true;           // Insta-kill
+    public static readonly bool Nuke = true;                // Nuke
+    public static readonly bool Magnet = true;              // Ímã (the drop; the Ímã de moedas blessing is Blessings)
+
     // ---- a run's variety ----
     public static readonly bool Blessings = true;           // Bênçãos (the golden chest stops offering them)
     public static readonly bool WeeklyMutators = true;      // Mutador da semana

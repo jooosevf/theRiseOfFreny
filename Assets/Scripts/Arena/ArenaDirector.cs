@@ -258,6 +258,15 @@ public class ArenaDirector : MonoBehaviour {
         AddRuntimeEnemies();
     }
 
+    // the Nuke (ArenaPowerUps): nobody comes for a moment, and the portals already open close empty
+    private float spawnPauseUntil;
+    private bool SpawnsPaused => Time.time < spawnPauseUntil;
+
+    public void PauseSpawns(float seconds) {
+        spawnPauseUntil = Time.time + seconds;
+        nextSpawnTime = Mathf.Max(nextSpawnTime, spawnPauseUntil);
+    }
+
     private void Update() {
         CurrentDifficulty = Difficulty;
         CurrentOvertime = Overtime;
@@ -268,9 +277,11 @@ public class ArenaDirector : MonoBehaviour {
         if (Score < RampPausedFrom || Score >= RampResumesAt) {
             rampElapsed += Time.deltaTime;
         }
-        UpdateBoss();
-        UpdateBossHelpers();
-        UpdateBossFodder();
+        if (!SpawnsPaused) {
+            UpdateBoss();
+            UpdateBossHelpers();
+            UpdateBossFodder();
+        }
         int present = AliveEnemies() + pendingSpawns;
         if (bossWasAround && !BossAround) {
             calmUntil = Time.time + AfterBossCalm;
@@ -684,6 +695,9 @@ public class ArenaDirector : MonoBehaviour {
         if (tower >= 0) {
             pendingTower[tower]--;
         }
+        if (SpawnsPaused) {
+            yield break;
+        }
 #if UNITY_EDITOR
         Debug.Log($"[Arena] {entry.prefab.name} em {platform} x {floorPoint.x:0.0}, a {HeroDistance(floorPoint):0.0} do Freny");
 #endif
@@ -727,7 +741,7 @@ public class ArenaDirector : MonoBehaviour {
             pendingSorcerers--;
         }
 
-        if (spawner == null) {
+        if (spawner == null || SpawnsPaused) {
             yield break;
         }
         if (entry.flying) {

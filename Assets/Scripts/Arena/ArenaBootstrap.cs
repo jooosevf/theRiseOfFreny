@@ -53,6 +53,13 @@ public static class ArenaBootstrap {
             loot.AddComponent<ArenaBossLoot>();
         }
 
+        // the rare drops: Insta-kill, Nuke and Ímã
+        if (!System.Array.Exists(FindCompat.All<ArenaPowerUps>(), p => p.gameObject.scene == scene)) {
+            GameObject powerUps = new GameObject("Power Ups");
+            SceneManager.MoveGameObjectToScene(powerUps, scene);
+            powerUps.AddComponent<ArenaPowerUps>();
+        }
+
         // the Poço de Ácido is this same scene, turned toxic at runtime (ArenaVariant, AcidPitArena)
         if (ArenaVariant.Current == ArenaKind.AcidPit && AcidPitArena.Instance == null) {
             GameObject pit = new GameObject("Acid Pit");

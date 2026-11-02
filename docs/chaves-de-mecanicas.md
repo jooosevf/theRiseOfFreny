@@ -18,6 +18,7 @@ Para desligar uma mecânica, troque `true` por `false` na linha dela e salve. A 
 | `Fury` | Fúria | Some a barra, o botão, o "+5 s" do Armeiro e a Fúria do baú dourado. |
 | `GrenadeFuse` | Pavio de 5 s da granada | A granada explode onde bater (no máximo 1 s no ar), sem segurar para queimar o pavio. |
 | `WeaponBuffs` | Armeiro por níveis | As melhorias de arma e o Crítico saem da loja e param de valer, mesmo para quem já comprou. Ficam vida, velocidade, pulo duplo, espada mais rápida e Rede. **As armas não voltam à venda**: esse código foi removido em 2026-11-01. |
+| `InstaKill`, `Nuke`, `Magnet` | Drops raros | Aquele drop para de cair; os outros mantêm as chances. Cada um sai do Guia. |
 | `Blessings` | Bênçãos | O baú dourado para de oferecer bênçãos. |
 | `WeeklyMutators` | Mutador da semana | Nenhuma regra extra. Some do menu da Arena. |
 | `GoldenChest` | Chave e baú dourado | O Ciclope só deixa o baú prateado. Os visuais exclusivos somem da tela Visual e, como as bênçãos só vêm desse baú, também não há bênçãos. |
