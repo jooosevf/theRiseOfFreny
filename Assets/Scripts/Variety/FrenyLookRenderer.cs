@@ -62,9 +62,11 @@ public class FrenyLookRenderer : MonoBehaviour {
     }
 
     private void Refresh() {
-        FrenyLook.Item helmetItem = FrenyLook.Worn(LookSlot.Helmet);
+        // the Traje brings its own helmet (FrenyMotion's layer) and has no shirt to tint
+        bool suit = FrenyLook.WearsTraje;
+        FrenyLook.Item helmetItem = suit ? null : FrenyLook.Worn(LookSlot.Helmet);
         helmetSheet = FrenyLook.HelmetSheet(helmetItem);
-        colorItem = FrenyLook.Worn(LookSlot.Color);
+        colorItem = suit ? null : FrenyLook.Worn(LookSlot.Color);
         capeItem = FrenyLook.Worn(LookSlot.Cape);
         Sprite[] segments = CapeArt.Segments(capeItem);
         for (int i = 0; i < cape.Length; i++) {
@@ -80,6 +82,7 @@ public class FrenyLookRenderer : MonoBehaviour {
         if (body == null) {
             return;
         }
+        FrenyLook.Dress(body);   // FrenyMotion stops once he is dead, the Animator doesn't
         bool shown = body.enabled && body.gameObject.activeInHierarchy && (player == null || !player.IsDead);
         Sprite frame = body.sprite;
         string frameName = frame != null ? frame.name : "";

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum LookSlot { Helmet, Cape, Color }
+public enum LookSlot { Helmet, Cape, Color, Suit }
 
 // Freny's looks (José, 2026-11-01): helmets, capes and the colour of his shirt, picked on the menu's
 // Visual screen (VarietyScreens) and worn everywhere (FrenyLookRenderer). Bought with coins,
@@ -12,12 +12,15 @@ public enum LookSlot { Helmet, Cape, Color }
 //
 // The helmets are sheets cut per body frame (Tools/ArtGen/freny_cosmetics.py ->
 // Resources/FrenyLook/helmet_<art>), the shirt is one white mask tinted with the colour, and the
-// capes are drawn at runtime (CapeArt).
+// capes are drawn at runtime (CapeArt). The Traje Berserker (José, 2026-11-02) is a whole skin, every
+// body frame redrawn (Tools/ArtGen/freny_traje.py -> Resources/FrenyLook/traje): it brings its own
+// helmet, so the helmet and the colour stay saved but hidden while it is on; the capes still hang on it.
 public static class FrenyLook {
 
     // GoldenChest: only the Ciclope's golden chest drops it (ChestDrop); once dropped it is kept
     // with the bought ones (BoughtIds), so the save slot and the cloud carry it the same way
-    public enum Unlock { Free, Coins, Achievement, Rebirths, GoldenChest }
+    // CoinsAfterAchievement: on sale for coins once the achievement is his
+    public enum Unlock { Free, Coins, Achievement, Rebirths, GoldenChest, CoinsAfterAchievement }
 
     // the chance a golden chest also holds a look, one he doesn't have yet (José, 2026-11-01)
     public const float ChestLookChance = 0.25f;
@@ -29,6 +32,7 @@ public static class FrenyLook {
         public Unlock unlock;
         public int price;                // coins, or rebirths needed
         public Achievement achievement;
+        public string locked;            // what to do first (CoinsAfterAchievement)
         public string art;               // helmet sheet (helmet_<art>)
         public string sheet;             // or a sheet from elsewhere in Resources
         public Color color = Color.white;   // shirt tint, or the cape's cloth
@@ -71,6 +75,10 @@ public static class FrenyLook {
         new Item { id = "color.black", slot = LookSlot.Color, name = "Preto", unlock = Unlock.Coins, price = 600, color = C(74, 72, 86) },
         new Item { id = "color.white", slot = LookSlot.Color, name = "Branco", unlock = Unlock.Achievement, achievement = Achievement.Combo5, color = C(250, 248, 240) },
         new Item { id = "color.gold", slot = LookSlot.Color, name = "Dourado", unlock = Unlock.Rebirths, price = 2, color = C(240, 196, 70) },
+
+        new Item { id = "suit.none", slot = LookSlot.Suit, name = "Sem traje", unlock = Unlock.Free },
+        new Item { id = TrajeId, slot = LookSlot.Suit, name = "Traje Berserker", unlock = Unlock.CoinsAfterAchievement, price = 10000,
+            achievement = Achievement.Cyclops, locked = "Derrote um Ciclope" },
     };
 
     public const string OwnedKey = "freny.look.owned";          // ids bought with coins, comma separated
@@ -84,7 +92,8 @@ public static class FrenyLook {
 
     // a look only a mechanic switched off (Features) gives is not shown
     public static bool Reachable(Item item) {
-        return (item.unlock != Unlock.Rebirths || Features.Rebirth) && (item.unlock != Unlock.GoldenChest || Features.GoldenChest);
+        return (item.unlock != Unlock.Rebirths || Features.Rebirth) && (item.unlock != Unlock.GoldenChest || Features.GoldenChest)
+            && (item.id != TrajeId || Features.BerserkerSuit);
     }
 
     // ---- owned ----
@@ -108,10 +117,16 @@ public static class FrenyLook {
         switch (item.unlock) {
             case Unlock.Free: return true;
             case Unlock.Coins:
+            case Unlock.CoinsAfterAchievement:
             case Unlock.GoldenChest: return BoughtIds.Contains(item.id);
             case Unlock.Achievement: return Achievements.Has(item.achievement);
             default: return Rebirth.Count >= item.price;
         }
+    }
+
+    // can be bought right now, coins apart
+    public static bool ForSale(Item item) {
+        return item != null && (item.unlock == Unlock.Coins || (item.unlock == Unlock.CoinsAfterAchievement && Achievements.Has(item.achievement)));
     }
 
     // "2500 moedas", "Conquista: Duro de Matar", "1 renascimento"
@@ -121,6 +136,7 @@ public static class FrenyLook {
             case Unlock.Coins: return item.price + " moedas";
             case Unlock.Achievement: return "Conquista: " + Achievements.Of(item.achievement).name;
             case Unlock.GoldenChest: return "Só no baú dourado do Ciclope";
+            case Unlock.CoinsAfterAchievement: return ForSale(item) ? item.price + " moedas" : item.locked + ", depois " + item.price + " moedas";
             default: return item.price == 1 ? "1 renascimento" : item.price + " renascimentos";
         }
     }
@@ -148,7 +164,7 @@ public static class FrenyLook {
     }
 
     public static bool TryBuy(Item item) {
-        if (item == null || item.unlock != Unlock.Coins || Owns(item) || FrenyProgress.Coins < item.price) {
+        if (!ForSale(item) || Owns(item) || FrenyProgress.Coins < item.price) {
             return false;
         }
         FrenyProgress.Coins -= item.price;
@@ -179,6 +195,22 @@ public static class FrenyLook {
 
     public const string BerserkerId = "helmet.berserker";
     public static bool WearsBerserker => Features.Looks && WornId(LookSlot.Helmet) == BerserkerId;
+
+    public const string TrajeId = "suit.berserker";
+    public static bool WearsTraje => Features.Looks && Features.BerserkerSuit && WornId(LookSlot.Suit) == TrajeId;
+
+    // the Traje's frame for a normal body frame: same name, same pivot (the head layers, the capes
+    // and the sword look frames up by name, so they all go on working)
+    public static Sprite TrajeFrame(Sprite frame) {
+        return frame != null && Sheet("FrenyLook/traje").TryGetValue(frame.name, out Sprite dressed) ? dressed : frame;
+    }
+
+    // after the Animator or a pose picked the frame
+    public static void Dress(SpriteRenderer body) {
+        if (WearsTraje && body.sprite != null) {
+            body.sprite = TrajeFrame(body.sprite);
+        }
+    }
 
     // whoever bought the cosmetic helmet when it was gear of the Armeiro (Loadout.CosmeticHelmet)
     // keeps it, and keeps it on unless it was taken off or another helmet is on

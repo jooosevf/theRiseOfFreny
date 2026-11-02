@@ -35,6 +35,7 @@ public static class Features {
     public static readonly bool DailyMissions = true;       // Missões do dia
     public static readonly bool Rebirth = true;             // Renascer (the button, the bonus and its looks)
     public static readonly bool Looks = true;               // Visual: helmets, capes and colours
+    public static readonly bool BerserkerSuit = true;       // Traje Berserker, the whole skin (needs Looks)
 
     // the Armeiro's shelves, the Inventário and Renascer's list ask here
     public static bool Sold(FrenyUpgrade upgrade) {

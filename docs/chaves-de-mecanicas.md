@@ -26,6 +26,7 @@ Para desligar uma mecânica, troque `true` por `false` na linha dela e salve. A 
 | `DailyMissions` | Missões do dia | Some o botão do menu e nada mais conta nem paga. |
 | `Rebirth` | Renascer | Some o botão, o bônus de 5% para de valer e os visuais de renascer somem. A estrela de quem já renasceu continua no ranking. |
 | `Looks` | Visual | Some a tela e o Freny aparece com o visual original. O que foi comprado continua salvo. |
+| `BerserkerSuit` | Traje Berserker | Some da tela Visual e o Freny volta à roupa normal. Quem comprou continua com ele salvo. |
 
 ## Ranking
 
