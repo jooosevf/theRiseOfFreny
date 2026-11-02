@@ -695,7 +695,7 @@ public class FrenyMotion : MonoBehaviour {
                 float along = Mathf.Lerp(tail, head, k);
                 float a = Mathf.Lerp(from, to, along) * Mathf.Deg2Rad;
                 // pointed at both ends, widest past the middle (the blade's tip does the work)
-                float shape = Mathf.Pow(Mathf.Sin(Mathf.Clamp01(along) * Mathf.PI), 0.6f);
+                float shape = Mathf.Pow(Mathf.Max(0f, Mathf.Sin(Mathf.Clamp01(along) * Mathf.PI)), 0.6f);   // Sin(PI) is a hair negative: Pow gave NaN
                 float width = Mathf.Max(0.01f, bandMax * shape * thin);
                 Vector3 dir = new Vector3(Mathf.Cos(a), Mathf.Sin(a) * squashY, 0f);
                 int v = i * Rings;
