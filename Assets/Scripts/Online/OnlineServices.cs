@@ -244,6 +244,12 @@ namespace Online {
             if (State == Status.Online) StartCoroutine(PushName());
         }
 
+        // Renascer: the boards with a score of his get the new rebirth count (the star) right away,
+        // the same write as a rename (LeaderboardService.Rename sends it)
+        public void PushRebirths() {
+            if (State == Status.Online) StartCoroutine(PushName());
+        }
+
         // Email account actions, used by the HUD. done(errorOrNull).
         public void LinkEmail(string email, string password, Action<string> done) {
             StartCoroutine(Auth.LinkEmail(email, password, (ok, error) => done?.Invoke(ok ? null : error)));

@@ -110,7 +110,7 @@ public class Coin : MonoBehaviour {
         }
         Player player = other.GetComponent<Player>();
         if (player != null) {
-            player.AddCoins(coins);
+            player.AddCoins(RunModifiers.ScaleCoins(coins));   // rebirths, "Chuva de moedas"
             Sfx.Play("coin", transform.position);
             Destroy(gameObject);
         }

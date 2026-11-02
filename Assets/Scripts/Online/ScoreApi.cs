@@ -81,7 +81,11 @@ namespace Online {
             }
             AppendMoments(json.Append("],\"events\":["), _moments);
             AppendMoments(json.Append("],\"vitals\":["), _vitals);
-            json.Append("],\"flags\":[");
+            // the run's blessing and the week's mutator (Blessings, WeeklyMutators): neither changes
+            // the score, the server only records them
+            json.Append("],\"blessing\":\"").Append(Blessings.RunKey)
+                .Append("\",\"mutator\":\"").Append(WeeklyMutators.RunKey).Append('"');
+            json.Append(",\"flags\":[");
             for (int i = 0; i < _flags.Count; i++) {
                 if (i > 0) json.Append(',');
                 json.Append('"').Append(_flags[i]).Append('"');

@@ -13,6 +13,9 @@ public class Grenade : MonoBehaviour {
     public const float SelfKnockback = 7f;
 
     public float fuse = Player.GrenadeFuse;
+    // the Armeiro's grenade levels (WeaponLevels) widen the blast and raise the damage
+    public float radius = BlastRadius;
+    public int damage = EnemyDamage;
 
     // the grenades on the floor, for the autopilot to keep away from
     public static readonly List<Grenade> Live = new List<Grenade>();
@@ -100,12 +103,12 @@ public class Grenade : MonoBehaviour {
         Vector3 at = transform.position;
         // a big fireball: a white flash, the fire filling the blast radius, then smoke
         Fx.Burst(at, new Color(1f, 0.95f, 0.8f), 24, 3f, 0.4f, 0.15f);
-        Fx.Burst(at, BlastColor, 90, BlastRadius * 3.5f, 0.22f, 0.45f);
-        Fx.Burst(at, new Color(1f, 0.3f, 0.1f), 50, BlastRadius * 2.2f, 0.18f, 0.6f);
+        Fx.Burst(at, BlastColor, 90, radius * 3.5f, 0.22f, 0.45f);
+        Fx.Burst(at, new Color(1f, 0.3f, 0.1f), 50, radius * 2.2f, 0.18f, 0.6f);
         Sfx.Play("grenade_explode", at);
-        Fx.Burst(at, new Color(0.3f, 0.3f, 0.3f, 0.8f), 36, BlastRadius * 1.2f, 0.32f, 1.2f);
+        Fx.Burst(at, new Color(0.3f, 0.3f, 0.3f, 0.8f), 36, radius * 1.2f, 0.32f, 1.2f);
 
-        Collider2D[] caught = Physics2D.OverlapCircleAll(at, BlastRadius);
+        Collider2D[] caught = Physics2D.OverlapCircleAll(at, radius);
         HashSet<Enemy> hit = new HashSet<Enemy>();
         Player freny = null;
         foreach (Collider2D col in caught) {
@@ -116,7 +119,7 @@ public class Grenade : MonoBehaviour {
             if (enemy == null || enemy.IsDead || !hit.Add(enemy)) {
                 continue;
             }
-            enemy.BlastDamage(EnemyDamage);   // round the Escudeiro's shield too
+            enemy.BlastDamage(damage);   // round the Escudeiro's shield too
         }
         int kills = 0;
         foreach (Enemy enemy in hit) {

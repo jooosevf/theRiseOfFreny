@@ -8,24 +8,25 @@ using UnityEngine;
 public static class Loadout {
 
     public const string Helmet = "Helmet";
-    // José, 2026-11-01: the first cosmetic (Armeiro > Cosméticos): the Berserker helmet just for the
-    // look. Worn without armor it has a snapped horn; with armor (bought helmet or a drop) it is whole.
+    // the Berserker helmet just for the look is one of the FrenyLook helmets now; this key only marks
+    // who bought it before that (FrenyLook.MigrateBerserker)
     public const string CosmeticHelmet = "CosmeticHelmet";
     public const string GearKeyPrefix = "freny.gear.";
     public const int HelmetCost = 6000;
-    public const int CosmeticHelmetCost = 1000;
 
-    public static readonly string[] GearIds = { Helmet, CosmeticHelmet };
+    // 2026-11-01: the Armeiro no longer sells the helmet (it only drops); a bought one was refunded
+    // (FrenyProgress.MigrateShop). The list is empty so saves and rebirths leave it alone.
+    public static readonly string[] GearIds = { };
 
     // the cosmetic is on: Freny always wears the Berserker helmet (FrenyMotion, CombatHud)
-    public static bool WearsCosmeticHelmet => IsEquipped(CosmeticHelmet);
+    public static bool WearsCosmeticHelmet => FrenyLook.WearsBerserker;
 
     public static bool Owns(string gear) {
         return PlayerPrefs.GetInt(GearKeyPrefix + gear, 0) > 0;
     }
 
     public static bool IsEquipped(string gear) {
-        return Owns(gear) && PlayerPrefs.GetInt(FrenyProgress.UnequippedKeyPrefix + gear, 0) == 0;
+        return System.Array.IndexOf(GearIds, gear) >= 0 && Owns(gear) && PlayerPrefs.GetInt(FrenyProgress.UnequippedKeyPrefix + gear, 0) == 0;
     }
 
     public static void SetEquipped(string gear, bool equipped) {
@@ -38,15 +39,15 @@ public static class Loadout {
     }
 
     public static int Cost(string gear) {
-        return gear == CosmeticHelmet ? CosmeticHelmetCost : HelmetCost;
+        return HelmetCost;
     }
 
     public static string DisplayName(string gear) {
-        return gear == CosmeticHelmet ? "Capacete Berserker (visual)" : "Capacete Berserker";
+        return "Capacete Berserker";
     }
 
     public static bool CanBuy(string gear) {
-        return !Owns(gear) && FrenyProgress.Coins >= Cost(gear);
+        return System.Array.IndexOf(GearIds, gear) >= 0 && !Owns(gear) && FrenyProgress.Coins >= Cost(gear);
     }
 
     public static bool TryBuy(string gear) {

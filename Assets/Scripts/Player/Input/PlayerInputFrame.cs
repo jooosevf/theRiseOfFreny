@@ -19,10 +19,12 @@ public struct PlayerInputFrame {
     public bool grenadeHeld;     // held: the fuse burns in his hand; let go, it is thrown
     public float grenadeCharge;  // 0..1 power of the throw; the keyboard always sends Player.GrenadeTapCharge (-1), the fixed lob
     public bool furyPressed;     // a full Fúria meter starts the Fúria
+    public bool netPressed;      // the Rede (NetThrower): thrown at once
+    public float netCharge;      // 0..1 how far; the keyboard throws at NetThrower.TapCharge
 
     public bool IsEmpty =>
         Mathf.Approximately(move, 0f) && !jumpPressed && !jumpHeld && !meleePressed &&
-        !rangedPressed && !dashPressed && !potionPressed && !grenadePressed && !grenadeHeld && !furyPressed && !runHeld && !crouchHeld && !aimUpHeld && !selectPistol && !selectShotgun;
+        !rangedPressed && !dashPressed && !potionPressed && !grenadePressed && !grenadeHeld && !furyPressed && !runHeld && !crouchHeld && !aimUpHeld && !selectPistol && !selectShotgun && !netPressed;
 }
 
 public interface IPlayerInputSource {

@@ -231,6 +231,7 @@ public abstract class Enemy : MonoBehaviour, IDamageable
             }
         }
         Health = Small ? 1 : health; // the inspector value
+        RunModifiers.OnEnemyInit(this); // the week's "Gigantes": bigger, more life
         fullHealth = Health;
         EnemyHealthBar.Attach(this);
         hasAttackTrigger = anim && HasParameter(anim, "Attack");
@@ -597,7 +598,12 @@ public abstract class Enemy : MonoBehaviour, IDamageable
 
     // a little faster or slower than its whole-number speed
     protected virtual float SpeedFactor => 1f;
-    protected float MoveSpeed => speed * SpeedFactor * Tuning.EnemySpeed.Value * (ArenaBounds.Active ? ArenaDifficulty.SpeedFactor(Small) * ArenaDirector.SpeedRamp * (1f + BloodSpeed * BloodMoon) : 1f);
+    protected float MoveSpeed => speed * SpeedFactor * NetSpeed * Tuning.EnemySpeed.Value * (ArenaBounds.Active ? ArenaDifficulty.SpeedFactor(Small) * ArenaDirector.SpeedRamp * (1f + BloodSpeed * BloodMoon) * RunModifiers.EnemySpeedMultiplier : 1f);
+
+    // ---- Freny's Rede (NetTrap): a caught enemy starts no attack (NetTrap pins it in place); the
+    // Ciclope is only slowed down ----
+    public bool Netted { get; set; }
+    public float NetSpeed { get; set; } = 1f;
 
     // ---- the Lua de Sangue (ArenaDayNight.Blood): faster, +1 heart a hit, heals, red eyes ----
     public static float BloodMoon => ArenaBounds.Active ? ArenaDayNight.Blood : 0f;
@@ -704,7 +710,7 @@ public abstract class Enemy : MonoBehaviour, IDamageable
 
         if (InAttackReach(LungeDistance)) {
             // close enough: wind up, then hit; the cooldown starts after the hit, so the rhythm is steady
-            if (Time.time >= nextAttackTime && CanStartAttack) {
+            if (Time.time >= nextAttackTime && !Netted && CanStartAttack) {
                 attackRoutine = StartCoroutine(AttackRoutine());
             }
             return;
@@ -1210,6 +1216,16 @@ public abstract class Enemy : MonoBehaviour, IDamageable
     public const string BackHit = "back";
     public const string EyeHit = "eye";
     public string LastHitMark { get; protected set; }
+    // a hit from Freny that landed on a mark (the eye, the back), when it lands: the daily
+    // missions count eye hits, not only the killing one
+    public static event System.Action<Enemy, string> MarkedHit;
+
+    // what Freny's last hit was: SwordHit, ShotHit or BlastHit (the daily missions ask for kills
+    // with a given weapon); null before he hits it
+    public const string SwordHit = "sword";
+    public const string ShotHit = "shot";
+    public const string BlastHit = "blast";
+    public string LastHitWeapon { get; private set; }
 
     // hits scaled below a point add up here until they make one
     private float wear;
@@ -1229,10 +1245,20 @@ public abstract class Enemy : MonoBehaviour, IDamageable
         HitPoint = null;
     }
 
+    // the next hit from Freny's sword or gun lands this much harder: the Armeiro's damage buffs and
+    // a critical (WeaponLevels.Roll). Set by MeleeAttack / RangedAttack right before the hit.
+    public static float NextHitPower = 1f;
+
     private void ScaledHit(int amount, bool shot) {
+        float power = NextHitPower;
+        NextHitPower = 1f;
         LastHitMark = null;
+        LastHitWeapon = shot ? ShotHit : SwordHit;
         float scale = player_t != null ? HitScale(player != null ? player.Feet : player_t.position, shot) : 1f;
-        wear += Mathf.Max(1, amount) * scale;
+        if (LastHitMark != null) {
+            MarkedHit?.Invoke(this, LastHitMark);
+        }
+        wear += Mathf.Max(1, amount) * scale * RunModifiers.DamageMultiplier * power;   // blessing Força, rebirths
         int whole = Mathf.FloorToInt(wear + 0.001f);
         if (whole < 1) {
             TakeHit(true);   // it flinches, but holds
@@ -1248,7 +1274,8 @@ public abstract class Enemy : MonoBehaviour, IDamageable
             return;
         }
         LastHitMark = null;
-        TakeDamage(Mathf.Max(1, amount));
+        LastHitWeapon = BlastHit;
+        TakeDamage(Mathf.Max(1, Mathf.RoundToInt(amount * RunModifiers.DamageMultiplier)));
     }
 
     // a harder hit from Freny (the sword during Rage, the combo)

@@ -270,12 +270,20 @@ public class ArenaDayNight : MonoBehaviour {
     }
 
     private void LateUpdate() {
+        // the week's "Noite eterna" (WeeklyMutators): the day is skipped, the next night falls at once
+        if (WeeklyMutators.Active(Mutator.EternalNight) && PhaseOverride < 0f) {
+            float cycleSecond = Mathf.Repeat(StartSeconds + Time.time - startTime, DaySeconds + NightSeconds);
+            if (cycleSecond < DaySeconds) {
+                startTime -= DaySeconds - cycleSecond;
+            }
+        }
         float phase = Phase;
         float sunHeight = Mathf.Sin(phase * 2f * Mathf.PI);
         float day = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(-0.12f, 0.2f, sunHeight));
         Daylight = day;
         int night = PhaseOverride >= 0f ? 0 : NightNumber;
-        bool bloodNight = night > 0 && night % BloodEvery == 0;
+        // (the week's "Lua vermelha": every night)
+        bool bloodNight = night > 0 && (night % BloodEvery == 0 || WeeklyMutators.Active(Mutator.RedMoon));
         Blood = BloodOverride >= 0f ? BloodOverride : bloodNight ? BloodAt(NightSecond) : 0f;
         if (bloodNight && night != announcedNight && Blood > 0.5f) {
             announcedNight = night;

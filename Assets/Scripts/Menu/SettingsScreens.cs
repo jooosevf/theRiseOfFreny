@@ -38,7 +38,9 @@ public static class SettingsScreens {
     }
 
     public static MenuPage Controls(MenuStack stack) {
-        MenuPage page = new MenuPage(stack.transform, "Controles", 720f, new Vector2(0.5f, 0.5f), 5f);
+        // 17 actions since the walk keys, the Fúria and the Rede (2026-11-01): lower rows, closer together, so the
+        // page still fits a 720p screen
+        MenuPage page = new MenuPage(stack.transform, "Controles", 720f, new Vector2(0.5f, 0.5f), 2f);
         page.Label("As setas também andam. No controle, anda com o analógico. Esc cancela.", MenuKit.SmallTextSize);
 
         MenuKeyCapture capture = stack.GetComponent<MenuKeyCapture>();
@@ -71,7 +73,7 @@ public static class SettingsScreens {
                         stack.StartCoroutine(Release(stack));
                         Refresh(page);
                     });
-                }, 34f);
+                }, 28f);
             buttons[0].name = "kb:" + action;
             buttons[1].name = "pad:" + action;
         }

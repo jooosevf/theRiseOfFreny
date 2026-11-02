@@ -87,7 +87,7 @@ public class Player : MonoBehaviour, IDamageable {
     public int Health { get => _health; set => _health = value; }
     public int ShotgunShells { get => _shells; private set => _shells = value; }
     public int RevolverBullets { get => _bullets; private set => _bullets = value; }
-    public int RevolverCapacity => revolverCapacity;
+    public int RevolverCapacity => DrumSize;
     public int RevolverReserve { get => _reserve; private set => _reserve = value; }  // spare bullets; reloading takes them from here
     public int Grenades { get => _grenades; private set => _grenades = value; }
     private GuardedInt _health, _shells, _bullets, _reserve, _grenades, _armor;
@@ -181,21 +181,30 @@ public class Player : MonoBehaviour, IDamageable {
     public bool RevolverDry => RevolverBullets <= 0 && RevolverReserve <= 0 && !Reloading;
     // the gun can fire: not on its own cooldown and, for the revolver, loaded and not reloading
     public bool GunReady => GunReadyFor(UsingShotgun);
-    public bool GunReadyFor(bool shotgun) => Time.time >= gunReadyAt && (shotgun
+    // (the week's "Só espada" holsters both guns, RunModifiers.NoGuns, but not the staff's spells)
+    // with the Cajado do Mago (MageStaff) the shots are spells: no ammo needed
+    public bool GunReadyFor(bool shotgun) => Time.time >= gunReadyAt && (MageStaff.Held(this) || (!RunModifiers.NoGuns && (shotgun
         ? ShotgunOwned && ShotgunShells > 0
-        : !Reloading && RevolverBullets > 0);
+        : !Reloading && RevolverBullets > 0)));
     // a dropped potion only heals: at full health it stays on the floor until needed or it expires
     public bool WantsPotion => !isDead && Health < MaxHealth;
-    public bool WantsBullets => RevolverReserve < revolverReserveMax;
-    public bool WantsShells => ShotgunOwned && ShotgunShells < shellsMax;
-    public bool WantsGrenades => Grenades < grenadesMax;
+    // the Armeiro's buffs raise the caps (WeaponLevels)
+    private int ReserveMax => revolverReserveMax + WeaponLevels.ReserveBonus;
+    private int ShellsMax => shellsMax + WeaponLevels.ShellsBonus;
+    private int GrenadesMax => grenadesMax + WeaponLevels.GrenadeCarryBonus;
+    private int DrumSize => revolverCapacity + WeaponLevels.DrumBonus;
+    private int DroppedGreatSwordSwings => GreatSwordDropSwings + WeaponLevels.GreatSwordExtraSwings;
+    private float RageTotal => RageSeconds + WeaponLevels.RageBonusSeconds;
+    public bool WantsBullets => !RunModifiers.NoGuns && RevolverReserve < ReserveMax;
+    public bool WantsShells => !RunModifiers.NoGuns && ShotgunOwned && ShotgunShells < ShellsMax;
+    public bool WantsGrenades => Grenades < GrenadesMax;
     public bool WantsArmor => !isDead && Armor < ArmorMax;
     // a dropped great sword is no use with the bought one, or with a fresh one still in hand
-    public bool WantsGreatSword => !isDead && !FrenyProgress.HasGreatSword && GreatSwordSwings < GreatSwordDropSwings;
+    public bool WantsGreatSword => !isDead && !FrenyProgress.HasGreatSword && GreatSwordSwings < DroppedGreatSwordSwings;
     // how full each supply is (0 empty .. 1 full): the drops lean on what he's short of (ItemPickup.Need)
-    public float BulletsFill => revolverReserveMax > 0 ? RevolverReserve / (float)revolverReserveMax : 1f;
-    public float ShellsFill => shellsMax > 0 ? ShotgunShells / (float)shellsMax : 1f;
-    public float GrenadesFill => grenadesMax > 0 ? Grenades / (float)grenadesMax : 1f;
+    public float BulletsFill => ReserveMax > 0 ? RevolverReserve / (float)ReserveMax : 1f;
+    public float ShellsFill => ShellsMax > 0 ? ShotgunShells / (float)ShellsMax : 1f;
+    public float GrenadesFill => GrenadesMax > 0 ? Grenades / (float)GrenadesMax : 1f;
 
     // ---- drops and buffs: the dropped great sword, armor and Rage
     // the great sword (bought at the shop, or dropped for a few swings): FrenyMotion makes the slash
@@ -217,12 +226,17 @@ public class Player : MonoBehaviour, IDamageable {
     public float Rage { get; private set; }
     public bool RageReady => !Raging && Rage >= 1f;
     public bool Raging => Time.time < rageUntil;
-    public float RageLeft => Raging ? (rageUntil - Time.time) / RageSeconds : 0f;
-    public int MeleeDamage => Raging ? RageMeleeDamage : 1;
-    public float ReloadProgress => Reloading ? Mathf.Clamp01(1f - (reloadReadyAt - Time.time) / revolverReloadTime) : 1f;
+    public float RageLeft => Raging ? (rageUntil - Time.time) / RageTotal : 0f;
+    public int MeleeDamage => (Raging ? RageMeleeDamage : 1) + WeaponLevels.GreatSwordBonus;
+    public float ReloadProgress => Reloading ? Mathf.Clamp01(1f - (reloadReadyAt - Time.time) / (revolverReloadTime * WeaponLevels.ReloadTime)) : 1f;
     // body and jump, for the autopilot's platform map (the same numbers the physics uses)
     public float JumpHeight => jumpHeight;
     public float MaxSpeed => _speed * runMultiplier;
+    // what he moves at right now (sprint and the acid's slow included) and the jump's two
+    // gravities (heavier on the way down), for the autopilot's jumps off the flood (FloodEscape)
+    public float GroundSpeed => _speed * (IsRunning ? runMultiplier : 1f) * SlowFactor;
+    public float RiseGravity => Mathf.Abs(Physics2D.gravity.y) * gravityScale;
+    public float FallGravity => RiseGravity * fallMultiplier;
 
     // slowed down for a moment (wading through the Ciclope's vomit)
     private float slowUntil;
@@ -304,6 +318,7 @@ public class Player : MonoBehaviour, IDamageable {
         ApplyUpgrades();
         FrenyProgress.Changed += ApplyUpgrades;
         Enemy.Killed += OnEnemyKilled;
+        NetThrower.Attach(this);   // the Rede, when bought (its own component, so the prefab stays as it is)
 
         Health = MaxHealth;
         if (UIManager.Instance) {
@@ -311,7 +326,7 @@ public class Player : MonoBehaviour, IDamageable {
         }
         // the run's loadout: a loaded revolver with spare bullets; the shop's shotgun and grenades
         // add theirs (and again when bought mid-run, see GrantUpgradeLoadout)
-        RevolverBullets = revolverCapacity;
+        RevolverBullets = DrumSize;
         RevolverReserve = revolverReserveStart;
         loadoutReady = true;
         GrantUpgradeLoadout();
@@ -409,11 +424,11 @@ public class Player : MonoBehaviour, IDamageable {
         if (FrenyProgress.HasShotgun && !shotgunGranted) {
             shotgunGranted = true;
             ShotgunOwned = true;
-            ShotgunShells = Mathf.Max(ShotgunShells, shellsPerRun);
+            ShotgunShells = Mathf.Max(ShotgunShells, shellsPerRun + WeaponLevels.ExtraShells);
         }
         if (FrenyProgress.HasGrenade && !grenadesGranted) {
             grenadesGranted = true;
-            Grenades = Mathf.Min(grenadesMax, Grenades + grenadesFromUpgrade);
+            Grenades = Mathf.Min(GrenadesMax, Grenades + grenadesFromUpgrade + WeaponLevels.ExtraGrenades);
         }
     }
 
@@ -421,9 +436,10 @@ public class Player : MonoBehaviour, IDamageable {
     public void ApplyUpgrades() {
         GrantUpgradeLoadout();
         int oldMax = MaxHealth;
-        MaxHealth = _baseMaxHealth + FrenyProgress.BonusMaxHealth;
-        _speed = _baseSpeed * FrenyProgress.SpeedMultiplier;
-        attackCooldown = _baseAttackCooldown * FrenyProgress.AttackCooldownMultiplier;
+        // and the run's blessing and mutator on top (RunModifiers; 1 / 0 outside an arena run)
+        MaxHealth = _baseMaxHealth + FrenyProgress.BonusMaxHealth + RunModifiers.BonusMaxHealth;
+        _speed = _baseSpeed * FrenyProgress.SpeedMultiplier * RunModifiers.SpeedMultiplier;
+        attackCooldown = _baseAttackCooldown * FrenyProgress.AttackCooldownMultiplier * RunModifiers.AttackCooldownMultiplier;
 
         // the bought hearts stay in the row for good, empty when lost
         if (UIManager.Instance) {
@@ -710,14 +726,14 @@ public class Player : MonoBehaviour, IDamageable {
         if (Reloading) {
             if (Time.time >= reloadReadyAt) {
                 reloadReadyAt = -1f;
-                int take = Mathf.Min(revolverCapacity, RevolverReserve);
+                int take = Mathf.Min(DrumSize, RevolverReserve);
                 RevolverBullets = take;
                 RevolverReserve -= take;
                 Fx.Spray(transform.position + Vector3.up * 0.6f, Vector3.up, new Color(1f, 0.9f, 0.5f), 4, 1.5f, 0.3f);
                 Sfx.Play("pistol_reload", transform.position);
             }
         } else if (RevolverBullets <= 0 && RevolverReserve > 0) {
-            reloadReadyAt = Time.time + revolverReloadTime;
+            reloadReadyAt = Time.time + revolverReloadTime * WeaponLevels.ReloadTime;
             Sfx.Play("pistol_empty", transform.position);
         }
     }
@@ -741,6 +757,12 @@ public class Player : MonoBehaviour, IDamageable {
         } else if (IsCrouching) {
             muzzle += Vector3.down * CrouchMuzzleDrop;
         }
+        if (MageStaff.Held(this)) {
+            // the Cajado do Mago: a spell ball instead of a bullet, no ammo used
+            MageStaff.Current.Cast(muzzle, forward);
+            gunReadyAt = Time.time + MageStaff.Cooldown;
+            return;
+        }
         Fx.Spray(muzzle, forward, new Color(1f, 0.9f, 0.5f), 6, 5f, 0.3f);
 
         // the shotgun fires three bullets in a fan, one shell per shot; only its pellets shove enemies back
@@ -748,34 +770,36 @@ public class Player : MonoBehaviour, IDamageable {
         Sfx.Play(shotgun ? "shotgun_shot" : "pistol_shot", muzzle);
         if (shotgun) {
             ShotgunShells--;
-            int shot = Achievements.NextShot();   // the three pellets' kills add up for "Doze é Demais"
-            FireBullet(muzzle, Quaternion.Euler(0f, 0f, 10f) * forward, 1f, shot);
-            FireBullet(muzzle, forward, 1f, shot);
-            FireBullet(muzzle, Quaternion.Euler(0f, 0f, -10f) * forward, 1f, shot);
+            int shot = Achievements.NextShot();   // the pellets' kills add up for "Doze é Demais"
+            foreach (float angle in WeaponLevels.ShotgunAngles) {   // 3, or 5 from the Armeiro's level 2
+                FireBullet(muzzle, Quaternion.Euler(0f, 0f, angle) * forward, 1f, shot, true);
+            }
         } else {
             RevolverBullets--;
             FireBullet(muzzle, forward, RevolverPush);
         }
-        gunReadyAt = Time.time + (shotgun ? shotgunCooldown : pistolCooldown) * FrenyProgress.AttackCooldownMultiplier;
+        // the Armeiro's "Espada mais rápida" is the sword's only (2026-11-01); the guns' buffs are their own
+        gunReadyAt = Time.time + (shotgun ? shotgunCooldown * WeaponLevels.ShotgunCooldown : pistolCooldown * WeaponLevels.PistolCooldown);
     }
 
     private const float CrouchMuzzleDrop = 0.32f; // the crouched gun sits 8 art pixels lower
 
     private const float RevolverPush = 0f; // the revolver only hurts: no shove
 
-    private void FireBullet(Vector3 from, Vector3 direction, float push = 1f, int shotgunShot = 0) {
+    private void FireBullet(Vector3 from, Vector3 direction, float push = 1f, int shotgunShot = 0, bool fromShotgun = false) {
         GameObject bullet = Instantiate(revolverBulletPrefab, from, Quaternion.identity);
         RangedAttack shot = bullet.GetComponent<RangedAttack>();
         if (shot) {
             shot.SetDirection(direction);
             shot.SetPush(push);
             shot.ShotgunShot = shotgunShot;
+            shot.FromShotgun = fromShotgun;
         }
     }
 
     public void AddShells(int amount) {
         if (ShotgunOwned) {
-            ShotgunShells = Mathf.Min(shellsMax, ShotgunShells + amount);
+            ShotgunShells = Mathf.Min(ShellsMax, ShotgunShells + amount);
         }
     }
 
@@ -785,7 +809,7 @@ public class Player : MonoBehaviour, IDamageable {
         if (!WantsBullets) {
             return false;
         }
-        RevolverReserve = Mathf.Min(revolverReserveMax, RevolverReserve + amount);
+        RevolverReserve = Mathf.Min(ReserveMax, RevolverReserve + amount);
         return true;
     }
 
@@ -793,7 +817,7 @@ public class Player : MonoBehaviour, IDamageable {
         if (!WantsGrenades) {
             return false;
         }
-        Grenades = Mathf.Min(grenadesMax, Grenades + amount);
+        Grenades = Mathf.Min(GrenadesMax, Grenades + amount);
         return true;
     }
 
@@ -808,7 +832,7 @@ public class Player : MonoBehaviour, IDamageable {
         }
         ShotgunOwned = true;
         ShotgunEquipped = true;
-        ShotgunShells = Mathf.Min(shellsMax, shells);
+        ShotgunShells = Mathf.Min(ShellsMax, shells);
         return true;
     }
 
@@ -896,7 +920,10 @@ public class Player : MonoBehaviour, IDamageable {
         foreach (Collider2D mine in GetComponentsInChildren<Collider2D>()) {
             Physics2D.IgnoreCollision(ball, mine);
         }
-        grenade.AddComponent<Grenade>().fuse = fuse;
+        Grenade blast = grenade.AddComponent<Grenade>();
+        blast.fuse = fuse;
+        blast.radius = WeaponLevels.GrenadeRadius;
+        blast.damage = WeaponLevels.GrenadeDamage;
     }
 
     // about how long a throw at this charge flies to cover dx (the autopilot times its cooking with it)
@@ -1027,7 +1054,7 @@ public class Player : MonoBehaviour, IDamageable {
         if (!WantsGreatSword) {
             return false;
         }
-        GreatSwordSwings = GreatSwordDropSwings;
+        GreatSwordSwings = DroppedGreatSwordSwings;
         return true;
     }
 
@@ -1067,11 +1094,20 @@ public class Player : MonoBehaviour, IDamageable {
             return false;
         }
         Rage = 0f;
-        rageUntil = Time.time + RageSeconds;
+        rageUntil = Time.time + RageTotal;
         Fx.Burst(transform.position + Vector3.up * 0.4f, new Color(1f, 0.25f, 0.2f), 30, 3.5f, 0.12f, 0.7f);
         Sfx.Play("freny_rage", transform.position);   // José, 2026-11-01: a war cry
         ScreenKick.Kick(0.12f, 0.3f);
         return true;
+    }
+
+    // the golden chest (GoldenChest): the Fúria right away, whatever the meter says
+    public void GiftRage() {
+        if (isDead || Raging) {
+            return;
+        }
+        Rage = 1f;
+        StartRage();
     }
 
     public void AddCoins(int amount) {

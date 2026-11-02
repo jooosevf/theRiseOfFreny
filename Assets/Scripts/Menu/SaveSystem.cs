@@ -14,11 +14,17 @@ public class SaveData {
     public int xp;
     public int spentPoints;
     public float bestRunSeconds;
+    public int bestArenaScore;     // the best arena run's score (it opens the Poço de Ácido); 0 in older saves
     public int campaignUnlocked;
     public List<Entry> upgrades = new List<Entry>();
     public List<Entry> bestTimes = new List<Entry>();
     public List<string> unequipped = new List<string>();   // bought, but left at home
     public List<string> gear = new List<string>();         // Armeiro items that aren't upgrades (Loadout)
+    public string stats;      // AccountStats' JSON (the Estatísticas); empty in older saves
+    public string missions;   // DailyMissions' JSON (today's progress); empty in older saves
+    public int rebirths;                                   // Renascer (Rebirth)
+    public List<string> looks = new List<string>();        // looks bought with coins (FrenyLook)
+    public List<string> lookWorn = new List<string>();     // the helmet, cape and colour worn
 
     [Serializable]
     public class Entry {
@@ -28,6 +34,7 @@ public class SaveData {
 
     public bool HasProgress =>
         coins > 0 || xp > 0 || campaignUnlocked > 0 || upgrades.Count > 0 || bestTimes.Count > 0 || (gear != null && gear.Count > 0) ||
+        rebirths > 0 || (looks != null && looks.Count > 0) ||
         !string.IsNullOrEmpty(lastScene);
 
     public DateTime SavedAt => new DateTime(savedAtTicks, DateTimeKind.Utc);
@@ -209,7 +216,13 @@ public static class SaveSystem {
             xp = PlayerPrefs.GetInt(FrenyProgress.XpKey, 0),
             spentPoints = PlayerPrefs.GetInt(FrenyProgress.SpentPointsKey, 0),
             bestRunSeconds = PlayerPrefs.GetFloat(FrenyProgress.BestWaveKey, 0f),
+            bestArenaScore = PlayerPrefs.GetInt(ArenaVariant.BestScoreKey, 0),
             campaignUnlocked = PlayerPrefs.GetInt(CampaignProgress.UnlockedKey, 0),
+            stats = PlayerPrefs.GetString(AccountStats.Key, ""),
+            missions = PlayerPrefs.GetString(DailyMissions.Key, ""),
+            rebirths = Rebirth.Count,
+            looks = FrenyLook.BoughtIds,
+            lookWorn = FrenyLook.WornIds(),
         };
         foreach (FrenyUpgrade upgrade in Enum.GetValues(typeof(FrenyUpgrade))) {
             int level = PlayerPrefs.GetInt(FrenyProgress.LevelKeyPrefix + upgrade, 0);
@@ -244,7 +257,12 @@ public static class SaveSystem {
         SetOrDelete(FrenyProgress.XpKey, data.xp);
         SetOrDelete(FrenyProgress.SpentPointsKey, data.spentPoints);
         SetOrDelete(FrenyProgress.BestWaveKey, data.bestRunSeconds);
+        SetOrDelete(ArenaVariant.BestScoreKey, data.bestArenaScore);
         SetOrDelete(CampaignProgress.UnlockedKey, data.campaignUnlocked);
+        SetOrDelete(AccountStats.Key, data.stats);
+        SetOrDelete(DailyMissions.Key, data.missions);
+        Rebirth.Count = data.rebirths;
+        FrenyLook.Load(data.looks, data.lookWorn);   // old saves: none
 
         foreach (FrenyUpgrade upgrade in Enum.GetValues(typeof(FrenyUpgrade))) {
             SaveData.Entry entry = data.upgrades.Find(e => e.id == upgrade.ToString());
@@ -259,6 +277,18 @@ public static class SaveSystem {
             SaveData.Entry entry = data.bestTimes.Find(e => e.id == stage.id);
             SetOrDelete(CampaignProgress.BestTimeKeyPrefix + stage.id, entry != null ? entry.value : 0f);
         }
+        // a slot saved before the Armeiro sold buffs: its helmet and weapons go back as coins
+        if (Has(data.gear, Loadout.Helmet)) {
+            PlayerPrefs.SetInt(Loadout.GearKeyPrefix + Loadout.Helmet, 1);
+        }
+        // and one saved when the cosmetic helmet was Armeiro gear: it stays his, as a look
+        if (Has(data.gear, Loadout.CosmeticHelmet)) {
+            PlayerPrefs.SetInt(Loadout.GearKeyPrefix + Loadout.CosmeticHelmet, 1);
+            if (Has(data.unequipped, Loadout.CosmeticHelmet)) {
+                PlayerPrefs.SetInt(FrenyProgress.UnequippedKeyPrefix + Loadout.CosmeticHelmet, 1);
+            }
+        }
+        FrenyProgress.MigrateShop();
     }
 
     // old saves (and the cloud copies) have no list at all

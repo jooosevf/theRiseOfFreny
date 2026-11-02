@@ -11,7 +11,7 @@ using UnityEngine;
 // his reach, so they leave after a few casts), one per tower so both sides get one; with both towers
 // taken they appear on the platforms like everyone else. How many sorcerers (either kind) can be
 // around at once goes with the score: one up to 50 000 points, two past that, three past 100 000.
-// The scene's EnemySpawners are only a fallback. The Escudeiro joins the list at runtime, and every
+// The scene's EnemySpawners are only a fallback. The Escudeiro and the Mina-aranha join the list at runtime, and every
 // FirstBossAt points (then AfterBossKill points after each one falls) the Ciclope is called onto the floor; while it lives nobody else comes.
 public class ArenaDirector : MonoBehaviour {
 
@@ -97,8 +97,9 @@ public class ArenaDirector : MonoBehaviour {
     }
 
     private void OnEnemyDied(Enemy enemy) {
-        if (enemy is Sorcerer) {
+        if (enemy is Sorcerer sorcerer) {
             sorcererDeaths.Add(Time.time);
+            MageStaff.RollDrop(sorcerer);   // now and then it leaves the Cajado do Mago
         }
         if (enemy is Cyclops && chestPrefab != null) {
             // the boss leaves a chest where it fell
@@ -122,6 +123,11 @@ public class ArenaDirector : MonoBehaviour {
     private void AddRuntimeEnemies() {
         GameObject golem = null;
         foreach (Entry entry in enemies) {
+            if (entry.prefab != null && entry.prefab.GetComponent<Sorcerer>() is Sorcerer caster) {
+                MageStaff.Remember(caster.hexballEffectPrefab);   // a staff picked up before any sorcerer came still casts
+            }
+        }
+        foreach (Entry entry in enemies) {
             if (entry.prefab != null && entry.prefab.GetComponent<Golem>() != null && entry.unlockScore == 0) {
                 golem = entry.prefab;
                 break;
@@ -136,8 +142,20 @@ public class ArenaDirector : MonoBehaviour {
             list.Add(new Entry { prefab = shielded, unlockAt = 0.4f, weight = 1f });
             enemies = list.ToArray();
         }
+        // the Mina-aranha (2026-11-01): from the middle of the curve, as often as the others; its
+        // name, score and unlockAt are in the API's rules.js (SpiderMine_Enemy)
+        GameObject spider = SpiderMine.MakeTemplate(golem);
+        if (spider != null) {
+            List<Entry> list = new List<Entry>(enemies);
+            list.Add(new Entry { prefab = spider, unlockAt = SpiderMineUnlockAt, weight = 1f });
+            enemies = list.ToArray();
+        }
         cyclopsTemplate = EnemyTemplates.Make<Cyclops>(golem, "Cyclops_Boss", new Vector2(1.9f * Cyclops.Size, 2.45f * Cyclops.Size), new Vector2(0f, Cyclops.Size * 1.225f - 1.585f));
+        // the Poço de Ácido has a list of its own (no-op in the classic arena)
+        enemies = AcidPitArena.EnemyTable(enemies, golem);
     }
+
+    public const float SpiderMineUnlockAt = 0.45f;
 
     private bool BossAround => bossPending || Cyclops.Current != null;
     // after a Ciclope falls the arena fills up again at the usual pace, not all at once
@@ -644,6 +662,7 @@ public class ArenaDirector : MonoBehaviour {
         if (entry.flying) {
             position += Vector3.up * Random.Range(1.5f, 2.5f);
         }
+        AcidPitArena.SpawnSpot(entry.prefab, ref floorPoint, ref position);   // a Tentáculo comes out of an acid pool
 
         pendingSpawns++;
         pendingPoints.Add(floorPoint);

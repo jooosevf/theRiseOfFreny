@@ -70,6 +70,9 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
     private int attempts;
     private float walkBestDx;               // closest he has been to the stand spot (the walk is stuck when it stops shrinking)
     private Transform routeLoot;            // the coin/chest this route is for (null: it is for the enemy)
+    private float walkWaitStart = -1f;      // waiting for a sliding platform (MovingBlock) to come within reach
+    private bool wasCracking;               // stood on a crumbling platform giving way at the last frame
+    private readonly FloodEscape floodEscape = new FloodEscape();   // off the floor when the Ciclope floods it
     private readonly Dictionary<Transform, float> lootUnreachableUntil = new Dictionary<Transform, float>();
 
     public string CurrentAction { get; private set; } = "";  // enemies, target and what he is doing (logged to the console)
@@ -200,6 +203,12 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
             return default;
         }
         TrackPlatform();
+        // a crumbling platform under him gives way in 0.7 s: think now, not at the next decision
+        bool cracking = player.IsGrounded && AcidPitPilot.Cracking(standingOn);
+        if (cracking && !wasCracking) {
+            nextDecisionTime = Time.time;
+        }
+        wasCracking = cracking;
 
         if (Time.time >= nextScanTime) {
             Scan();
@@ -234,8 +243,15 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
             }
         }
 
-        // reflexes, every frame and not only at decisions: the Ciclope's wave crosses his jump
-        // window (about 0.35 s) faster than he re-thinks
+        // reflexes, every frame and not only at decisions. The Ciclope's flood: a jump up onto a
+        // platform from the moment it starts to throw up (FloodEscape)
+        if (floodEscape.Frame(player, map, FeetY, ref nextJumpTime, jumpCooldown, out PlayerInputFrame escape)) {
+            phase = Phase.None;   // any hop it was on is dropped: this one is quicker
+            action = floodEscape.Action;
+            Announce();
+            return escape;
+        }
+        // the Ciclope's wave crosses his jump window (about 0.35 s) faster than he re-thinks
         if (WaveReflex(out PlayerInputFrame jump)) {
             return jump;
         }
@@ -259,11 +275,13 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
             frame.dashPressed = false;
             frame.potionPressed = false;
             frame.grenadePressed = false;
+            frame.netPressed = false;
             if (planTurnsOnly) {
                 // turning around takes one frame; keeping the stick held walked him past the enemy
                 frame.move = 0f;
             }
         }
+        AcidPitPilot.Hop(player, ref frame, currentTarget, ref nextJumpTime, jumpCooldown);   // the Poço's pools are jumped
         planIsFresh = false;
         return frame;
     }
@@ -313,7 +331,11 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         }
 
         projectiles.Clear();
-        projectiles.AddRange(HexballEffect.Active);
+        foreach (HexballEffect ball in HexballEffect.Active) {
+            if (ball && !ball.fromFreny) {   // his own, from the Cajado do Mago
+                projectiles.Add(ball);
+            }
+        }
     }
 
     private const float MaxMeleeReach = 1.8f;  // centre to centre, the normal sword
@@ -361,8 +383,31 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
             return frame;
         }
 
+        // 1a'. the Poço's crumbling platform giving way under him: off it before it drops him
+        if (LeaveCrumbling(ref frame, me, myPlatform)) {
+            return frame;
+        }
+
         // 1b. the red Golem's mines, the Ciclope's shockwave and acid: get away or jump over
         if (AvoidHazards(ref frame, me, myFeet)) {
+            return frame;
+        }
+        // 1b'. the Poço de Ácido: a spit, a spike or a Rastejante coming down on him
+        if (AcidPitPilot.Dodge(player, ref frame, out string dodging)) {
+            action = dodging;
+            return frame;
+        }
+
+        // 1b'. the potion when it is needed: at the last heart, or one hit from it with a heavy
+        // hitter around (before, it waited for a quiet moment, often after the killing blow)
+        if (PotionNow(me)) {
+            frame.potionPressed = true;
+            action = "Bebendo poção na hora certa";
+            return frame;
+        }
+
+        // 1b''. the Mina-aranha: shoot it from afar, never let it walk up to him
+        if (SpiderMines(ref frame, me, myFeet)) {
             return frame;
         }
 
@@ -388,7 +433,14 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
 
         // 1c. the Ciclope: keep out of its reach and shoot, go in with the sword only while it
         // rests after a blow and there is time for a few hits and the way out
-        if (target is Cyclops boss && boss.RestLeft < CyclopsEngageTime && sameFloor) {
+        // 1c''. "Caçar chefe" (brain, 2026-11-01): grenades and the Rede on the Ciclope too (before,
+        // the boss branch below returned before he ever got to them), and in for the eye on a
+        // shorter rest
+        if (FrenyProgress.HasBossHunter && target is Cyclops hunted && player.IsGrounded && BossHunt(ref frame, me, hunted)) {
+            return frame;
+        }
+        float engageTime = FrenyProgress.HasBossHunter ? CyclopsHunterEngageTime : CyclopsEngageTime;
+        if (target is Cyclops boss && boss.RestLeft < engageTime && sameFloor) {
             if (Mathf.Abs(dx) < CyclopsSafeDistance) {
                 frame.move = -towardTarget;
                 frame.runHeld = player.RunReady;
@@ -502,8 +554,8 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         }
         retreating = false;
 
-        // 2b. a flyer right over his head: shoot straight up
-        if (target is Bat && Mathf.Abs(target.Center.x - me.x) <= 0.7f && target.Center.y - me.y > 0.9f
+        // 2b. a flyer (or a Rastejante on the ceiling) right over his head: shoot straight up
+        if ((target is Bat || target is Crawler) && Mathf.Abs(target.Center.x - me.x) <= 0.7f && target.Center.y - me.y > 0.9f
             && target.Center.y - me.y <= Tuning.AutoShootRange.Value && player.GunReadyFor(false)) {
             frame.aimUpHeld = true;
             frame.selectPistol = true;
@@ -530,6 +582,11 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
             }
         }
 
+        // 3b. the Rede: a group, a red Golem or an Escudeiro coming, held still for the sword
+        if (ThrowNet(ref frame, me, target)) {
+            return frame;
+        }
+
         // 4. gun (only from the ground): the shotgun up close while it has shells, the revolver
         // farther away; with no ammo at all it is the sword only
         if (sameFloor && player.IsGrounded && Mathf.Abs(dx) <= Tuning.AutoShootRange.Value
@@ -538,9 +595,16 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         }
 
         // 5. potion
-        if (FrenyProgress.HasAutoPotion && player.Health <= lowHealth && player.HasPotion) {
+        if (player.Health <= lowHealth && player.HasPotion) {   // no upgrade needed since 2026-11-01
             frame.potionPressed = true;
             action = "Bebendo poção";
+            return frame;
+        }
+
+        // 5b. "Pegar o item certo" (brain, 2026-11-01): what he is short of is fetched even mid-fight
+        // and with a Ciclope out: armor, a potion at 2 hearts or less, bullets when the gun runs dry,
+        // shells for the shotgun, a great sword
+        if (FrenyProgress.HasItemSense && GoToPickup(ref frame, me, myFeet, myPlatform, pickupRange + 3f, true)) {
             return frame;
         }
 
@@ -596,6 +660,24 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
 
     private const float CyclopsSafeDistance = 3.2f;   // its punch and the start of the smash
     private const float CyclopsEngageTime = 0.9f;     // its rest must last this long to go in
+    private const float CyclopsHunterEngageTime = 0.6f;   // with "Caçar chefe"
+
+    // a grenade when it is in a lob's reach, else the Rede to slow it
+    private bool BossHunt(ref PlayerInputFrame frame, Vector2 me, Cyclops boss) {
+        if (player.CanThrowGrenade && InLobRange(me, boss)) {
+            float lobDx = boss.transform.position.x - me.x;
+            float charge = player.GrenadeChargeFor(lobDx, boss.Center.y - (me.y + 0.6f));
+            if ((lobDx > 0) != player.FacingRight) {
+                Turn(ref frame, Mathf.Sign(lobDx));
+            } else {
+                frame.grenadePressed = true;
+                frame.grenadeCharge = Mathf.Clamp01(charge * Random.Range(1f - grenadeAimError, 1f + grenadeAimError));
+                action = "Granada no Ciclope";
+            }
+            return true;
+        }
+        return ThrowNet(ref frame, me, boss);
+    }
     private const float EyeJumpReach = 1.2f;          // how far out he jumps for the eye
     private const float EyeTolerance = 0.45f;         // the eye's radius: the blade must be about there
     // while a Ciclope is out it comes first (José, 2026-10-29: he went after everything else); the
@@ -609,8 +691,22 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
     private const float WaveJumpAt = 3.2f;            // a shockwave this close: jump now
 
     private const float WaveReactTime = 0.3f;   // jump when the wave will reach him this soon
+    private const float MovingWaitMax = 7f;     // a sliding platform comes back within one slide (6 s)
 
     private const float HexReactTime = 0.25f;   // a hexball this close in time: jump it now
+
+    private const float DuckTime = 0.45f;       // crouch this long before a level hexball arrives
+
+    // where a straight hexball crosses his x: over his crouched head but into his standing body
+    private bool DucksUnder(HexballEffect ball, Vector2 pos, Vector2 dir, float myFeet) {
+        if (ball.homingTarget != null || Mathf.Abs(dir.x) < 0.85f) {
+            return false;
+        }
+        float y = pos.y + dir.y / dir.x * (transform.position.x - pos.x);
+        float standTop = player.HeadPoint.y + 0.12f;
+        float crouchTop = myFeet + (standTop - myFeet) * 0.7f;
+        return y > crouchTop + 0.2f && y < standTop + 0.3f;
+    }
 
     private bool EyeReflex(out PlayerInputFrame frame) {
         frame = default;
@@ -655,7 +751,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         // last moment, since the decisions come too far apart to catch them
         Vector2 body = me + Vector2.up * 0.5f;
         foreach (HexballEffect ball in HexballEffect.Active) {
-            if (!ball) {
+            if (!ball || ball.fromFreny) {
                 continue;
             }
             Vector2 pos = ball.transform.position;
@@ -663,6 +759,13 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
             Vector2 toMe = body - pos;
             float along = Vector2.Dot(toMe, dir);
             float miss = Mathf.Abs(toMe.x * dir.y - toMe.y * dir.x);
+            // a level shot at head height that passes over a crouched Freny: duck it and stay on the
+            // floor (a jump often landed him in the next one); not the Supremo's homing balls
+            if (along > 0f && along / Mathf.Max(0.1f, ball.Speed) <= DuckTime && DucksUnder(ball, pos, dir, myFeet)) {
+                frame.crouchHeld = true;
+                action = "Abaixando do feitiço";
+                return true;
+            }
             if (along > 0f && miss <= 0.8f && along / Mathf.Max(0.1f, ball.Speed) <= HexReactTime && Time.time >= nextJumpTime) {
                 if (Mathf.Abs(dir.y) < 0.5f) {
                     // a level shot: jump straight over it
@@ -705,8 +808,8 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         float me = transform.position.x;
         float myFeet = FeetY;
         foreach (AcidPuddle puddle in AcidPuddle.Active) {
-            if (puddle == null || puddle.IsFlood) {
-                continue;
+            if (puddle == null || puddle.IsFlood || AcidPitArena.IsPool(puddle)) {
+                continue;   // (the Poço de Ácido's pools never dry up: AcidPitPilot jumps them)
             }
             Vector2 at = puddle.transform.position;
             float half = puddle.Width / 2f;
@@ -733,11 +836,15 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
             action = "Esperando a enchente baixar";
             return true;
         }
+        if (floodEscape.Target != null) {
+            action = floodEscape.Action;   // a jump up through a one-way platform: it drives the frames
+            return true;
+        }
         ArenaMap.Platform best = null;
         float bestScore = float.PositiveInfinity;
         foreach (ArenaMap.Platform platform in map.Platforms) {
             int count = HopsTo(platform);
-            if (platform == map.Floor || platform.tower || count == int.MaxValue) {
+            if (platform == map.Floor || platform.tower || count == int.MaxValue || !map.Landable(platform)) {
                 continue;
             }
             float score = count * 10f + Mathf.Abs((platform.xMin + platform.xMax) / 2f - me.x);
@@ -751,6 +858,47 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
             return true;
         }
         return false;
+    }
+
+    // a crumbling platform of the Poço cracks the moment he stands on it (CrumbleBlock): the
+    // quickest hop off it, by the walk to where it starts, else off the nearer edge. The hop
+    // already leaving it goes on
+    private bool LeaveCrumbling(ref PlayerInputFrame frame, Vector2 me, ArenaMap.Platform myPlatform) {
+        if (!player.IsGrounded || !AcidPitPilot.Cracking(myPlatform)) {
+            return false;
+        }
+        if (phase != Phase.None && route.from == myPlatform && map.Landable(route.to)) {
+            wantsRoute = true;
+            action = "Saindo da plataforma que racha";
+            return true;
+        }
+        bool found = false;
+        ArenaMap.Step best = default;
+        float bestCost = float.MaxValue;
+        foreach (ArenaMap.Step step in map.StepsFrom(myPlatform)) {
+            if (!map.Landable(step.to)) {
+                continue;
+            }
+            float cost = Mathf.Abs(step.x - me.x);
+            if (step.kind == ArenaMap.StepKind.Drop && step.from.y - step.to.y > Player.SafeFallHeight) {
+                cost += 10f;   // a heart lost in the fall
+            }
+            if (cost < bestCost) {
+                bestCost = cost;
+                best = step;
+                found = true;
+            }
+        }
+        if (found) {
+            routeLoot = null;
+            StartHop(best);
+            action = "Saindo da plataforma que racha";
+            return true;
+        }
+        frame.move = me.x - myPlatform.xMin < myPlatform.xMax - me.x ? -1f : 1f;
+        frame.runHeld = player.RunReady;
+        action = "Saindo da plataforma que racha pela beirada";
+        return true;
     }
 
     private bool AvoidHazards(ref PlayerInputFrame frame, Vector2 me, float myFeet) {
@@ -806,6 +954,148 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         return false;
     }
 
+    // ---- phase 4: potion timing, the Mina-aranha and the Rede (2026-11-01) ----
+
+    private const float SpiderTargetCost = 20f;   // a spider mine is a target only when nothing else is
+    private const float SpiderShootRange = 11f;
+    private const float SpiderKeepOut = 3.4f;     // its blast (1.9) plus the step it takes while arming
+    private const float HeavyNear = 3.5f;         // a 2-heart hitter this close makes 2 hearts "low"
+    private const float NetGroup = 2.2f;
+    private const float NetMinDistance = 2f;      // not at his own feet: it would hold them on top of him
+    private const float NetMaxDistance = 7f;
+
+    private bool PotionNow(Vector2 me) {
+        if (!player.HasPotion || player.Health >= player.MaxHealth) {
+            return false;
+        }
+        if (player.Health <= lowHealth) {
+            return true;
+        }
+        if (player.Health > 2 || player.MaxHealth < 4) {
+            return false;   // not too early: a potion is one heart, keep it for the last ones
+        }
+        // two hearts left and something that takes two (or a lot of company) right there
+        int close = 0;
+        foreach (Enemy enemy in enemies) {
+            if (!enemy || enemy.IsDead) {
+                continue;
+            }
+            float distance = Vector2.Distance(enemy.Center, me);
+            if (distance > HeavyNear) {
+                continue;
+            }
+            close++;
+            if (enemy is Golem || enemy is Cyclops || enemy is SpiderMine || Enemy.BloodDamage > 0) {
+                return true;
+            }
+        }
+        return close >= 3;
+    }
+
+    // the nearest spider mine on his floor: shot from as far as the revolver goes; one that gets
+    // close (or starts arming) is run from, out of its blast, then shot
+    private bool SpiderMines(ref PlayerInputFrame frame, Vector2 me, float myFeet) {
+        SpiderMine nearest = null;
+        float best = float.MaxValue;
+        foreach (SpiderMine mine in SpiderMine.Alive) {
+            if (!mine || mine.IsDead) {
+                continue;
+            }
+            float gap = Mathf.Abs(mine.Center.x - me.x);
+            if (Mathf.Abs(mine.Feet.y - myFeet) > verticalTolerance) {
+                // another floor: only one arming within reach of its blast matters
+                if (mine.Arming && Vector2.Distance(mine.Center, me) < SpiderMine.Blast + 0.8f) {
+                    frame.move = Mathf.Sign(me.x - mine.Center.x);
+                    frame.runHeld = player.RunReady;
+                    action = "Fugindo da mina-aranha";
+                    return true;
+                }
+                continue;
+            }
+            if (gap < best) {
+                best = gap;
+                nearest = mine;
+            }
+        }
+        if (nearest == null || best > SpiderShootRange) {
+            return false;
+        }
+        if (best > SpiderKeepOut + 2f) {
+            // a far one waits while something else is on him: no turning his back to a Golem
+            foreach (Enemy enemy in enemies) {
+                if (enemy && !enemy.IsDead && !(enemy is SpiderMine) && Vector2.Distance(enemy.Center, me) < 2.2f) {
+                    return false;
+                }
+            }
+        }
+        float dx = nearest.Center.x - me.x;
+        float toward = Mathf.Sign(dx);
+        bool facing = (dx > 0f) == player.FacingRight;
+        bool gun = player.IsGrounded && (player.GunReadyFor(false) || player.GunReadyFor(true));
+        if (best < SpiderKeepOut || nearest.Arming) {
+            if (nearest.Arming || best < SpiderMine.Blast + 0.4f || !gun) {
+                // out of the blast first: a dash or a jump away, else run
+                if (best < SpiderMine.Blast + 0.6f && Dodge(ref frame, -toward, "a mina-aranha")) {
+                    return true;
+                }
+                frame.move = -toward;
+                frame.runHeld = player.RunReady;
+                action = "Fugindo da mina-aranha";
+                return true;
+            }
+        }
+        if (!gun) {
+            // reloading: keep the distance meanwhile
+            if (best < SpiderKeepOut + 2f) {
+                frame.move = -toward;
+                action = "Recuando da mina-aranha";
+                return true;
+            }
+            return false;
+        }
+        if (!facing) {
+            Turn(ref frame, toward);
+            return true;
+        }
+        bool pistol = player.GunReadyFor(false);
+        frame.selectPistol = pistol;   // the pellets' fan misses a small target far away
+        frame.selectShotgun = !pistol;
+        frame.rangedPressed = true;
+        action = "Tiro na mina-aranha de longe";
+        return true;
+    }
+
+    // the Rede at whoever deserves it: a group, or a red Golem / Escudeiro / Ciclope coming at him
+    private bool ThrowNet(ref PlayerInputFrame frame, Vector2 me, Enemy target) {
+        NetThrower nets = player.GetComponent<NetThrower>();
+        if (nets == null || !nets.CanThrow || !player.IsGrounded || target == null || target.Netted || target.NetSpeed < 1f) {
+            return false;
+        }
+        float dx = target.transform.position.x - me.x;
+        if (Mathf.Abs(dx) < NetMinDistance || Mathf.Abs(dx) > NetMaxDistance) {
+            return false;
+        }
+        bool worth = CountEnemiesNear(target.transform.position, NetGroup) >= 3
+                     || (target is Golem golem && golem.Armored)
+                     || (target is Shielded shield && shield.Guards(player.Feet))
+                     || target is Cyclops;
+        if (!worth) {
+            return false;
+        }
+        float charge = NetThrower.ChargeFor(dx, target.Center.y - (me.y + 0.6f));
+        if (charge < 0f) {
+            return false;
+        }
+        if ((dx > 0f) != player.FacingRight) {
+            Turn(ref frame, Mathf.Sign(dx));
+        } else {
+            frame.netPressed = true;
+            frame.netCharge = charge;
+            action = "Rede em " + target.GetType().Name;
+        }
+        return true;
+    }
+
     // ---- actions ----
 
     private void Turn(ref PlayerInputFrame frame, float direction) {
@@ -837,6 +1127,12 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         if (!map.FirstStep(from, destination, fromX, out ArenaMap.Step step)) {
             return false;
         }
+        StartHop(step);
+        return true;
+    }
+
+    // keeps (or starts) a hop
+    private void StartHop(ArenaMap.Step step) {
         wantsRoute = true;
         if (phase == Phase.None || !route.Same(step)) {
             route = step;
@@ -847,7 +1143,6 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         action = route.kind == ArenaMap.StepKind.Climb
             ? $"Indo até a beirada para subir em {route.to}"
             : $"Indo até a beirada para descer para {route.to}";
-        return true;
     }
 
     private void SetPhase(Phase next) {
@@ -856,6 +1151,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         lastProgressTime = Time.time;
         if (next == Phase.Walk) {
             walkBestDx = float.MaxValue;
+            walkWaitStart = -1f;
         }
     }
 
@@ -895,7 +1191,31 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
 
         switch (phase) {
             case Phase.Walk: {
-                float dx = route.x - x;
+                if (!map.Landable(route.to)) {
+                    // it crumbled (or started to) on his way there: plan again
+                    phase = Phase.None;
+                    nextDecisionTime = Time.time;
+                    break;
+                }
+                // a sliding platform of the Poço (MovingBlock): the spot beside it moves with it
+                float standX = route.x + (route.kind == ArenaMap.StepKind.Climb ? AcidPitPilot.Shift(route.to) : 0f);
+                float dx = standX - x;
+                if (route.kind == ArenaMap.StepKind.Climb && !route.from.Contains(standX, 0.05f)) {
+                    // that spot is off his platform now (or his platform slid away from it): wait for
+                    // it at the nearest end, without jumping, for at most about one slide
+                    if (walkWaitStart < 0f) {
+                        walkWaitStart = Time.time;
+                    }
+                    float closest = Mathf.Clamp(standX, route.from.xMin + player.BodyHalfWidth, route.from.xMax - player.BodyHalfWidth);
+                    frame.move = Mathf.Abs(closest - x) > 0.1f ? Mathf.Sign(closest - x) : 0f;
+                    action = $"Esperando {route.to} chegar perto";
+                    phaseStart = Time.time;
+                    if (Time.time - walkWaitStart > MovingWaitMax) {
+                        FailRoute("a plataforma não chegou perto");
+                    }
+                    break;
+                }
+                walkWaitStart = -1f;
                 if (route.kind == ArenaMap.StepKind.Climb) {
                     if (Mathf.Abs(dx) > 0.08f) {
                         frame.move = Mathf.Sign(dx); // no sprint here: it is saved for the move onto the platform
@@ -917,7 +1237,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
                     }
                 }
                 // stuck only when he stops getting closer to the spot (a far edge takes longer than any fixed time)
-                float remaining = Mathf.Abs(route.x - x);
+                float remaining = Mathf.Abs(standX - x);
                 if (remaining < walkBestDx - 0.25f) {
                     walkBestDx = remaining;
                     phaseStart = Time.time;
@@ -1002,12 +1322,36 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         return map.PlatformUnder(new Vector2(feet.x, feet.y + 0.1f), 1.5f);
     }
 
-    private bool GoToPickup(ref PlayerInputFrame frame, Vector2 me, float myFeet, ArenaMap.Platform myPlatform, float range) {
+    // what "Pegar o item certo" goes for: something he really lacks right now
+    private bool Urgent(ItemPickup item) {
+        switch (item.kind) {
+            case ItemPickup.Kind.Armor: return player.WantsArmor;
+            case ItemPickup.Kind.Potion: return player.Health <= 2 && player.WantsPotion;
+            case ItemPickup.Kind.Bullets: return player.BulletsFill < 0.35f;
+            case ItemPickup.Kind.Shells: return player.ShotgunOwned && player.ShellsFill < 0.35f;
+            case ItemPickup.Kind.Shotgun: return !player.ShotgunOwned;
+            case ItemPickup.Kind.GreatSword: return player.WantsGreatSword;
+            default: return false;
+        }
+    }
+
+    private bool GoToPickup(ref PlayerInputFrame frame, Vector2 me, float myFeet, ArenaMap.Platform myPlatform, float range, bool urgentOnly = false) {
         Vector2 best = Vector2.zero;
         Transform bestItem = null;
         ArenaMap.Platform bestPlatform = null;
         float bestDist = float.MaxValue;
         string what = "";
+        if (urgentOnly) {
+            foreach (ItemPickup item in ItemPickup.Active) {
+                if (item && item.Landed && item.UsefulTo(player) && Urgent(item)) {
+                    Consider(item.transform, me, myPlatform, range, ref best, ref bestItem, ref bestPlatform, ref bestDist, ref what, item.Describe());
+                }
+            }
+            if (bestDist == float.MaxValue) {
+                return false;
+            }
+            return GoToLoot(ref frame, me, myPlatform, best, bestItem, bestPlatform, what);
+        }
         foreach (Coin coin in Coin.Active) {
             Consider(coin ? coin.transform : null, me, myPlatform, range, ref best, ref bestItem, ref bestPlatform, ref bestDist, ref what, "a moeda");
         }
@@ -1028,9 +1372,32 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
                 Consider(item.transform, me, myPlatform, range + 2f, ref best, ref bestItem, ref bestPlatform, ref bestDist, ref what, item.Describe());
             }
         }
+        // the Ciclope's key and, with it, the golden chest (both wait forever, so only when no
+        // Ciclope is out; then they are worth a longer detour than anything else: the best loot)
+        if (Cyclops.Current == null) {
+            foreach (BossKey key in BossKey.Active) {
+                if (key && key.Landed) {
+                    Consider(key.transform, me, myPlatform, range + 6f, ref best, ref bestItem, ref bestPlatform, ref bestDist, ref what, "a chave do Ciclope");
+                }
+            }
+            if (BossKey.Carried > 0) {
+                foreach (GoldenChest chest in GoldenChest.Active) {
+                    if (chest && !chest.Opened) {
+                        // opens by touch: walking into it is enough
+                        Consider(chest.transform, me, myPlatform, range + 6f, ref best, ref bestItem, ref bestPlatform, ref bestDist, ref what, "o baú dourado");
+                    }
+                }
+            }
+        }
         if (bestDist == float.MaxValue) {
             return false;
         }
+        return GoToLoot(ref frame, me, myPlatform, best, bestItem, bestPlatform, what);
+    }
+
+    // walk (or route over the map) to the chosen loot; chests and vases get a swing
+    private bool GoToLoot(ref PlayerInputFrame frame, Vector2 me, ArenaMap.Platform myPlatform, Vector2 best,
+                          Transform bestItem, ArenaMap.Platform bestPlatform, string what) {
         bool isChest = what == "o baú" || what == "o vaso" || what == "a caixa" || what == "o barril";   // they open only when hit
         float dx = best.x - me.x;
 
@@ -1239,7 +1606,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
     private bool InLobRange(Vector2 me, Enemy enemy) {
         float dx = enemy.transform.position.x - me.x;
         // never so close that Freny would be caught in his own blast
-        if (Mathf.Abs(dx) < Grenade.BlastRadius + 1f || Mathf.Abs(dx) > 8f) {
+        if (Mathf.Abs(dx) < WeaponLevels.GrenadeRadius + 1f || Mathf.Abs(dx) > 8f) {
             return false;
         }
         return player.GrenadeChargeFor(dx, enemy.Center.y - (me.y + 0.6f)) >= 0f;
@@ -1274,6 +1641,9 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
                 score += hopCount == int.MaxValue ? 50f : routeHopCost * hopCount;
             }
 
+            if (enemy is SpiderMine) {
+                score += SpiderTargetCost;   // SpiderMines() shoots them; walking up to one is the worst idea
+            }
             if (FrenyProgress.HasSmartTarget && !(enemy is Cyclops)) {
                 score += 1.5f * enemy.Health; // prefers the ones that die fastest
             }

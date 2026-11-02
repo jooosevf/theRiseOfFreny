@@ -20,7 +20,7 @@ public class ArenaHud : MonoBehaviour {
     private ArenaDirector director;
     private GUIStyle boxStyle;
 
-    private static readonly FrenyUpgrade[] Upgrades = (FrenyUpgrade[])Enum.GetValues(typeof(FrenyUpgrade));
+    private static readonly FrenyUpgrade[] Upgrades = Array.FindAll((FrenyUpgrade[])Enum.GetValues(typeof(FrenyUpgrade)), u => !FrenyProgress.IsRetired(u));
 
     private void Start() {
         player = GetComponent<Player>();

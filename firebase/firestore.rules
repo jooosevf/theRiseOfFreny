@@ -12,14 +12,16 @@ service cloud.firestore {
     // A new score needs the signature of the ranking API (validSig): freny-online's api/run/finish
     // only gives it to a run whose kill log adds up to the score and fits the game's rules and
     // the real time the run took. updatedAt is the server's clock, and an entry takes at most one
-    // write every 20 s. Renaming (only "name" changes) needs no signature.
+    // write every 20 s. Renaming (only "name" changes) needs no signature, and neither does
+    // "rebirths" (Renascer's count, the star after the name: cosmetic, the game sends it with a
+    // rename or a new score once the player has rebirthed).
     // "leaderboard" is the old board that mixed every difficulty: still readable, no longer writable.
     match /{board}/{userId} {
       allow read: if isBoard(board) || board == 'leaderboard';
       allow create: if isBoard(board) && isOwner(userId) && validEntry() && validSig(board, userId);
       allow update: if isBoard(board) && isOwner(userId) && validEntry()
                     && request.time > resource.data.get('updatedAt', timestamp.value(0)) + duration.value(20, 's')
-                    && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'updatedAt'])
+                    && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'rebirths', 'updatedAt'])
                         || (request.resource.data.score >= resource.data.score && validSig(board, userId)));
       allow delete: if false;
     }
@@ -46,6 +48,9 @@ service cloud.firestore {
     // (api/achievements/claim checks the run's log backs it up), plus "played" for players who
     // finished a manual run the API accepted. Anyone can read and count them (the site shows the
     // share of players with each one); fields only get added, each with its signature.
+    // "title" is the Título the player picked to show next to the name in the ranking
+    // (PlayerTitles): "" (none), "rei" (the game and the site only show it next to whoever is 1st on
+    // the Difícil board) or the key of a Conquista whose signed field is in this same document.
     match /achievements/{userId} {
       allow read: if true;
       allow create, update: if isOwner(userId) && validAchievements(userId);
@@ -67,8 +72,9 @@ service cloud.firestore {
 
     function validEntry() {
       let d = request.resource.data;
-      return d.keys().hasOnly(['name', 'score', 'sig', 'updatedAt'])
+      return d.keys().hasOnly(['name', 'score', 'sig', 'rebirths', 'updatedAt'])
           && d.name is string && d.name.size() > 0 && d.name.size() <= 16
+          && (!('rebirths' in d) || (d.rebirths is int && d.rebirths >= 0 && d.rebirths <= 999))
           && d.score is int && d.score >= 0 && d.score <= 1000000000
           && d.updatedAt == request.time;
     }
@@ -84,13 +90,20 @@ service cloud.firestore {
     function validAchievements(userId) {
       let d = request.resource.data;
       return d.keys().hasOnly(['played', 'million', 'cyclops', 'supreme', 'grenade5', 'oops', 'shotgun3',
-                               'backstab', 'eye', 'combo5', 'survivor', 'updatedAt'])
+                               'backstab', 'eye', 'combo5', 'survivor', 'title', 'updatedAt'])
           && d.updatedAt == request.time
+          && validTitle(d)
           && (resource == null || d.keys().hasAll(resource.data.keys()))
           && achSig(d, userId, 'played') && achSig(d, userId, 'million') && achSig(d, userId, 'cyclops')
           && achSig(d, userId, 'supreme') && achSig(d, userId, 'grenade5') && achSig(d, userId, 'oops')
           && achSig(d, userId, 'shotgun3') && achSig(d, userId, 'backstab') && achSig(d, userId, 'eye')
           && achSig(d, userId, 'combo5') && achSig(d, userId, 'survivor');
+    }
+
+    function validTitle(d) {
+      return !('title' in d) || d.title == '' || d.title == 'rei'
+          || (d.title in ['played', 'million', 'cyclops', 'supreme', 'grenade5', 'oops', 'shotgun3',
+                          'backstab', 'eye', 'combo5', 'survivor'] && d.title in d);
     }
 
     // missing, or sha256("<key>|<uid>|ach|<id>") from the ranking API

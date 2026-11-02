@@ -47,7 +47,7 @@ public class CombatHud : MonoBehaviour {
         }
 
         // a menu is up: nothing (the menus hide the uGUI HUD too)
-        if (GameMenus.Paused) {
+        if (GameMenus.Paused || ArenaRunVariety.PickerOpen) {
             return;
         }
 
@@ -78,6 +78,8 @@ public class CombatHud : MonoBehaviour {
             // (José, 2026-11-01: a little lower, clear of the Fúria bar, each on its own dark square)
             float barsBottom = head.yMax + 6f * scale + BarsHeight * scale;
             float rowEnd = DrawWeapons(head.xMin, barsBottom + 8f * scale, size, scale);
+            // the Ciclope's key while he carries one (Arena)
+            rowEnd = ArenaBossLoot.DrawKeyIcon(rowEnd, barsBottom + 8f * scale, size, scale, labelStyle);
             // the gun just switched: its name at the end of the row (above are the bars, under the counts)
             if (Time.time - switchedAt < 1.2f) {
                 ShadowLabel(new Rect(rowEnd + 12f * scale, gunLabelY, 160f * scale, 28f * scale), lastShotgun ? "Escopeta" : "Pistola");
@@ -203,8 +205,25 @@ public class CombatHud : MonoBehaviour {
                 DrawFuseBesideFreny(scale, left);
             }
         }
+        // the Rede (NetThrower) and the Cajado do Mago (MageStaff) with the time it has left
+        if (nets == null) {
+            nets = player.GetComponent<NetThrower>();
+        }
+        if (nets != null && nets.Nets > 0) {
+            float nx = x;
+            DrawIcon(NetThrower.Icon, ref x, y, size);
+            ShadowLabel(new Rect(nx + 2f * scale, y - 2f * scale, 30f * scale, 26f * scale), Key(GameAction.Net));
+            ShadowLabel(new Rect(nx + size - 14f * scale, y + size + 10f * scale, 60f * scale, 26f * scale), $"x{nets.Nets}");
+        }
+        if (MageStaff.Held(player)) {
+            float mx = x;
+            DrawIcon(MageStaff.Icon, ref x, y, size);
+            DrawMeter(new Rect(mx, y + size + 2f, size, 6f * scale), MageStaff.Current.TimeLeft / MageStaff.Duration, new Color(0.7f, 0.45f, 1f));
+        }
         return x;
     }
+
+    private NetThrower nets;
 
     // the gun in hand: a bright frame around its icon, and its name for a moment after a switch
     private bool lastShotgun;

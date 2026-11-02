@@ -25,6 +25,7 @@ public class RangedAttack : MonoBehaviour {
 
     // the shotgun shot this pellet belongs to (0 for the revolver)
     public int ShotgunShot { get; set; }
+    public bool FromShotgun { get; set; }   // a pellet (the shotgun's damage buff) or a revolver bullet
 
     public void SetPush(float amount) {
         push = amount;
@@ -63,6 +64,7 @@ public class RangedAttack : MonoBehaviour {
         if (hit != null) {
             if (hit is Enemy enemy) {
                 bool alive = !enemy.IsDead;
+                if (alive) Enemy.NextHitPower = WeaponLevels.Roll(FromShotgun ? WeaponLevels.ShotgunPower : WeaponLevels.PistolPower, transform.position);
                 enemy.ShotDamage(push, transform.position);
                 if (alive && enemy.IsDead && ShotgunShot > 0) {
                     Achievements.ShotKill(ShotgunShot);
