@@ -93,8 +93,8 @@ public class FrenyMotion : MonoBehaviour {
     private const float WindupPull = 15f;  // the sword keeps drawing back a little during the wind-up
     // the crescent of each hit (SlashArc), degrees like the blade's: kept in front of him, where
     // the hitbox is, instead of following the blade all the way from behind his head
-    private static readonly float[] ArcFrom = { 85f, -55f, 130f };
-    private static readonly float[] ArcTo = { -40f, 80f, -70f };
+    private static readonly float[] CutFrom = { 85f, -55f, 130f };
+    private static readonly float[] CutTo = { -40f, 80f, -70f };
     private const int SwingMin = -60, SwingMax = 90, BladeMin = -90, BladeMax = 180, AngleStep = 15;
     private static readonly Vector2[] SwingGrips = {
         new Vector2(0.32f, -0.52f), new Vector2(0.40f, -0.48f), new Vector2(0.44f, -0.40f), new Vector2(0.44f, -0.36f),
@@ -403,7 +403,7 @@ public class FrenyMotion : MonoBehaviour {
                 // the smear follows the tip of the blade, around his shoulder
                 arcPending = false;
                 float radius = (GreatSword ? ArmAndGreatBlade : ArmAndBlade) * (slashStep == 3 ? 1.5f : 1.25f);
-                SlashArc.Spawn(this, body.transform, body, Shoulder, radius, ArcFrom[slashStep - 1], ArcTo[slashStep - 1], GreatSword,
+                SlashArc.Spawn(this, body.transform, body, Shoulder, radius, CutFrom[slashStep - 1], CutTo[slashStep - 1], GreatSword,
                     slashStep == 3, slashStep == 3 ? 0.22f : SlashArc.DefaultLife, slashStep == 3 ? 1.2f : 1f);
             }
         }
