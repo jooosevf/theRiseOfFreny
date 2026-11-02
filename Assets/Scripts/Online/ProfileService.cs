@@ -11,7 +11,7 @@ namespace Online {
         public string uid;
         public string apelido;
         public string codigo;
-        public string helmet, cape, color;
+        public string helmet, cape, color, suit;
         public int rebirths;
         public DateTime? lastSeen;
         public readonly Dictionary<string, long> numbers = new Dictionary<string, long>();
@@ -28,6 +28,7 @@ namespace Online {
                 helmet = doc.Text("helmet"),
                 cape = doc.Text("cape"),
                 color = doc.Text("color"),
+                suit = doc.Text("suit"),
                 rebirths = (int)doc.Int("rebirths")
             };
             if (doc.Times.TryGetValue("lastSeen", out DateTime seen)) perfil.lastSeen = seen;
@@ -272,6 +273,7 @@ namespace Online {
                 .Set("helmet", FrenyLook.WornId(LookSlot.Helmet))
                 .Set("cape", FrenyLook.WornId(LookSlot.Cape))
                 .Set("color", FrenyLook.WornId(LookSlot.Color))
+                .Set("suit", FrenyLook.WornId(LookSlot.Suit))
                 .Set("rebirths", (long)Mathf.Clamp(Rebirth.Count, 0, 999))
                 .SetServerTime("lastSeen");
             foreach (ArenaLevel level in ArenaDifficulty.Ranked) {
@@ -302,6 +304,7 @@ namespace Online {
                 helmet = FrenyLook.WornId(LookSlot.Helmet),
                 cape = FrenyLook.WornId(LookSlot.Cape),
                 color = FrenyLook.WornId(LookSlot.Color),
+                suit = FrenyLook.WornId(LookSlot.Suit),
                 rebirths = Rebirth.Count,
                 lastSeen = DateTime.UtcNow
             };

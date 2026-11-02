@@ -38,7 +38,7 @@ def place(crop, pivot_x, pivot_y):
 def main(out_root):
     out = os.path.join(out_root, 'perfil')
     os.makedirs(out, exist_ok=True)
-    layers = {'freny': 'Player idle.png', 'shirt': 'Resources/FrenyLook/shirt.png'}
+    layers = {'freny': 'Player idle.png', 'shirt': 'Resources/FrenyLook/shirt.png', 'traje': 'Resources/FrenyLook/traje.png'}
     for art in ('gold', 'ice', 'viking', 'shadow', 'crown', 'cyclops'):
         layers['helmet_' + art] = 'Resources/FrenyLook/helmet_' + art + '.png'
     layers['helmet_berserker'] = 'Resources/FrenyHeads/berserker_broken.png'

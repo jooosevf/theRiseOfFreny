@@ -39,7 +39,7 @@ public static class PerfilScreens {
             ? (online.Profiles.HasNick ? "Código de amigo: " + online.Profiles.Code : "Escolha um apelido na Conta")
             : "Convidado: crie uma conta para salvar no ranking";
         string since = PlayerStats.CreatedAt != null ? "\nJogando desde " + PlayerStats.CreatedAt.Value.AddHours(-3).ToString("dd/MM/yyyy", CultureInfo.InvariantCulture) : "";
-        Head(page, name, line + since, FrenyLook.WornId(LookSlot.Helmet), FrenyLook.WornId(LookSlot.Cape), FrenyLook.WornId(LookSlot.Color));
+        Head(page, name, line + since, FrenyLook.WornId(LookSlot.Helmet), FrenyLook.WornId(LookSlot.Cape), FrenyLook.WornId(LookSlot.Color), FrenyLook.WornId(LookSlot.Suit));
 
         RectTransform holder = MenuKit.MakeRect("Stats", page.Content);
         MenuKit.Size(holder, -1f, 10 * RowHeight);
@@ -61,7 +61,7 @@ public static class PerfilScreens {
     }
 
     // Freny on the left, the name and a line of text on the right
-    private static void Head(MenuPage page, string name, string text, string helmet, string cape, string color) {
+    private static void Head(MenuPage page, string name, string text, string helmet, string cape, string color, string suit) {
         RectTransform head = MenuKit.MakeRect("Head", page.Content);
         MenuKit.Size(head, -1f, 110f);
         HorizontalLayoutGroup layout = head.gameObject.AddComponent<HorizontalLayoutGroup>();
@@ -71,18 +71,18 @@ public static class PerfilScreens {
         layout.childControlHeight = true;
         layout.childForceExpandWidth = false;
         layout.childForceExpandHeight = true;
-        LookBox(head, 110f, helmet, cape, color);
+        LookBox(head, 110f, helmet, cape, color, suit);
         Text label = MenuKit.MakeText(head, "", MenuKit.SmallTextSize, MenuKit.DimTextColor, TextAnchor.MiddleLeft);
         label.supportRichText = true;
         label.text = "<size=" + MenuKit.TextSize + "><color=#" + ColorUtility.ToHtmlStringRGB(MenuKit.TitleColor) + ">" + name + "</color></size>\n" + text;
         MenuKit.Size(label, -1f, -1f).flexibleWidth = 1f;
     }
 
-    private static void LookBox(Transform parent, float size, string helmet, string cape, string color) {
+    private static void LookBox(Transform parent, float size, string helmet, string cape, string color, string suit) {
         RectTransform box = MenuKit.MakeRect("Look", parent);
         MenuKit.Size(box, size, size);
         FrenyLookPreview preview = FrenyLookPreview.Create(box, size);
-        preview.Show(FrenyLook.Find(helmet), FrenyLook.Find(cape), FrenyLook.Find(color));
+        preview.Show(FrenyLook.Find(helmet), FrenyLook.Find(cape), FrenyLook.Find(color), FrenyLook.Find(suit));
     }
 
     private static void Fill(RectTransform holder, int tab) {
@@ -255,7 +255,7 @@ public static class PerfilScreens {
         MenuKit.Size(look, 44f, 44f);
         look.SetAsFirstSibling();
         FrenyLookPreview preview = FrenyLookPreview.Create(look, 44f);
-        preview.Show(FrenyLook.Find(friend.helmet), FrenyLook.Find(friend.cape), FrenyLook.Find(friend.color));
+        preview.Show(FrenyLook.Find(friend.helmet), FrenyLook.Find(friend.cape), FrenyLook.Find(friend.color), FrenyLook.Find(friend.suit));
         label.fontSize = MenuKit.SmallTextSize;
         label.supportRichText = true;
         label.text = friend.apelido + "\n<size=" + (MenuKit.SmallTextSize - 2) + "><color=#" + ColorUtility.ToHtmlStringRGB(MenuKit.DimTextColor) + ">Recorde " +
@@ -298,8 +298,8 @@ public static class PerfilScreens {
         layout.childControlWidth = true;
         layout.childControlHeight = true;
         layout.childForceExpandWidth = false;
-        LookBox(looks, 76f, me.helmet, me.cape, me.color);
-        LookBox(looks, 76f, friend.helmet, friend.cape, friend.color);
+        LookBox(looks, 76f, me.helmet, me.cape, me.color, me.suit);
+        LookBox(looks, 76f, friend.helmet, friend.cape, friend.color, friend.suit);
 
         Compare(page, "", me.apelido, friend.apelido);
         Compare(page, "Visto por último", "agora", friend.SeenText());

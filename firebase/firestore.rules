@@ -224,13 +224,13 @@ service cloud.firestore {
 
     function validPerfil(userId) {
       let d = request.resource.data;
-      return d.keys().hasOnly(['apelido', 'chave', 'codigo', 'helmet', 'cape', 'color', 'rebirths', 'lastSeen',
+      return d.keys().hasOnly(['apelido', 'chave', 'codigo', 'helmet', 'cape', 'color', 'suit', 'rebirths', 'lastSeen',
                                'bestEasy', 'bestMedium', 'bestHard', 'sigEasy', 'sigMedium', 'sigHard', 'runsManual', 'runsAuto', 'secManual', 'secAuto', 'longestRun', 'kills', 'deaths', 'bestCombo',
                                'k_cyclops', 'k_supreme', 'nights', 'bloodMoons', 'chests', 'coinsEarned'])
           && d.lastSeen == request.time
           && text(d, 'apelido', 16) && d.apelido.size() >= 3
           && text(d, 'chave', 16) && text(d, 'codigo', 10)
-          && text(d, 'helmet', 32) && text(d, 'cape', 32) && text(d, 'color', 32)
+          && text(d, 'helmet', 32) && text(d, 'cape', 32) && text(d, 'color', 32) && text(d, 'suit', 32)
           && d.rebirths is int && d.rebirths >= 0 && d.rebirths <= 999
           && num(d, 'runsManual')
           && num(d, 'runsAuto')
