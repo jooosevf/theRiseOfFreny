@@ -2,9 +2,10 @@ using System.Collections;
 using UnityEngine;
 
 // The multi-kill banners (José, 2026-11-02): one attack of Freny's that kills 2, 3, 4, 5 or 6 or more
-// enemies shows DOUBLE, TRIPLE, QUADRA, PENTA or MULTI KILL across the screen, and the narrator says it
-// (Tools/VoiceGen/narrador.ps1). He also welcomes Freny to the arena: every manual run, and the first
-// automatic one (the autopilot restarts on its own, and he would say it all the time). One attack is one grenade
+// enemies shows DOUBLE, TRIPLE, QUADRA, PENTA or MULTI KILL across the screen. The narrator's lines
+// (Voices) are silent until their audio files arrive in Resources/Sfx. He does welcome Freny to the arena:
+// every manual run, and the first automatic one (the autopilot restarts on its own, and he would say it
+// all the time; Tools/VoiceGen/narrador.ps1). One attack is one grenade
 // blast, one swing of the sword (of the Espadão and the Fúria too) or one shotgun shot; a swing or
 // a shot lands its kills a few frames apart, so the banner climbs as they come. The Nuke is a drop,
 // not an attack, so it doesn't count. It is only the banner: no points, nothing in the run's log, so

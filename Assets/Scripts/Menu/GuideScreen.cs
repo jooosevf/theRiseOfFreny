@@ -297,7 +297,7 @@ public static class GuideScreen {
             "Cada abate soma 0,1x aos pontos dos próximos, e 10 s sem abate zeram o combo." +
             (Features.WeakCombo ? " Inseto e morcego contam metade: dois deles para cada 0,1x, mas qualquer abate mantém o combo vivo." : ""));
         if (Features.MultiKill) Entry(parent, null, "Multi-kill",
-            "Um ataque só que mata 2, 3, 4, 5 ou 6 ou mais inimigos mostra Double, Triple, Quadra, Penta ou Multi Kill, e o narrador anuncia. Conta uma explosão de granada, " +
+            "Um ataque só que mata 2, 3, 4, 5 ou 6 ou mais inimigos mostra Double, Triple, Quadra, Penta ou Multi Kill. Conta uma explosão de granada, " +
             "um golpe de espada ou um tiro de escopeta. Não dá pontos a mais: é só a glória.");
         Entry(parent, art ? art.rageHelmet : null, "Dificuldade",
             "Fácil, Médio ou Freny: quanto maior, mais inimigos, mais rápidos e mais cedo. " +

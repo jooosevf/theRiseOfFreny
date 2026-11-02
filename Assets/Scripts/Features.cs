@@ -22,7 +22,7 @@ public static class Features {
     public static readonly bool Fury = true;                // Fúria (the meter, the button and the Armeira's +5 s)
     public static readonly bool GrenadeFuse = true;         // 3 s fuse, bouncing, cooking; off, it bursts on impact
     public static readonly bool ComboHype = true;           // the combo on screen grows, heats up and shakes; off, the plain line
-    public static readonly bool Narrator = true;            // the voice: "Bem-vindo à arena" and the multi-kills
+    public static readonly bool Narrator = true;            // the voice: "Bem-vindo à arena" (the multi-kills' lines when their audio arrives)
     public static readonly bool MultiKill = true;           // Double/Triple/Quadra/Penta Kill banners; nothing but the banner
     public static readonly bool WeaponBuffs = true;         // the Armeira's weapon levels and Crítico; the old weapon sales do not come back
 

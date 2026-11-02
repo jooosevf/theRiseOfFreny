@@ -21,7 +21,7 @@ Para desligar uma mecânica, troque `true` por `false` na linha dela e salve. A 
 | `GrenadeFuse` | Pavio de 3 s da granada | A granada explode onde bater (no máximo 1 s no ar), sem segurar para queimar o pavio. |
 | `ComboHype` | Combo que cresce, muda de cor e treme na tela | Volta a linha simples de sempre. |
 | `MultiKill` | Banners de Double, Triple, Quadra, Penta e Multi Kill | Os banners e o som somem. Nada mais muda, porque eles não dão pontos. |
-| `Narrator` | Voz do narrador: "Bem-vindo à arena" e os multi-kills | O jogo fica sem a voz; os banners continuam. |
+| `Narrator` | Voz do narrador: "Bem-vindo à arena" (as falas dos multi-kills entram quando os áudios chegarem) | O jogo fica sem a voz. |
 | `WeaponBuffs` | Armeira por níveis | As melhorias de arma e o Crítico saem da loja e param de valer, mesmo para quem já comprou. Ficam vida, velocidade, pulo duplo, espada mais rápida e Rede. **As armas não voltam à venda**: esse código foi removido em 2026-11-01. |
 | `InstaKill`, `Nuke`, `Magnet` | Drops raros | Aquele drop para de cair; os outros mantêm as chances. Cada um sai do Guia. |
 | `Blessings` | Bênçãos | O baú dourado para de oferecer bênçãos. |
