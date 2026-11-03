@@ -110,8 +110,8 @@ public class AchievementTracker : MonoBehaviour {
 
     private const float BannerSeconds = 3.5f;
     private const float BannerHeight = 40f;
-    private const float Gap = 6f;                                   // between the coins and the banner
-    private static readonly Vector2 Fallback = new Vector2(-28f, -86f);   // no coins on screen
+    private const float Gap = 18f;                                  // between the coins and the banner
+    private static readonly Vector2 Fallback = new Vector2(-28f, -98f);   // no coins on screen
     private readonly Queue<Achievement> waiting = new Queue<Achievement>();
     private Canvas canvas;
     private RectTransform panel;
