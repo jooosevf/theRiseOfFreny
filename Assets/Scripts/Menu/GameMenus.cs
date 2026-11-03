@@ -326,8 +326,10 @@ public class GameMenus : MonoBehaviour {
         page.Button("Inventário", () => pauseStack.Push(InventoryScreens.Inventory(pauseStack)));
         // two in a row each, or the arena's page wouldn't fit a 720p screen with the Perfil
         page.ButtonRow("", new[] { 266f, 266f }, new[] { "Ajuda", "Guia" }, i => pauseStack.Push(i == 0 ? HelpScreen.Help(pauseStack) : GuideScreen.Guide(pauseStack)));
-        page.ButtonRow("", new[] { 266f, 266f }, new[] { "Conquistas", PerfilScreens.ButtonLabel },
+        Button[] achievements = page.ButtonRow("", new[] { 266f, 266f }, new[] { Achievements.ButtonLabel, PerfilScreens.ButtonLabel },
             i => pauseStack.Push(i == 0 ? AchievementsScreen.Page(pauseStack) : PerfilScreens.Page(pauseStack)));
+        // "Conquistas (nova!)" in gold until the page is opened (José, 2026-11-03)
+        AchievementsScreen.Badge(achievements[0]);
         page.Button("Configurações", () => pauseStack.Push(SettingsScreens.Settings(pauseStack)));
 
         // the arena keeps its progress (coins, XP, upgrades) as it goes: nothing to save by hand

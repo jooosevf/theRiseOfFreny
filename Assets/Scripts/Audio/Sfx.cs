@@ -57,6 +57,7 @@ public static class Sfx {
         { "door_locked", (0.6f, 0.6f) },
         { "game_over", (0.7f, 1f) },
         { "level_up", (0.7f, 0.3f) },
+        { "achievement", (0.6f, 0.5f) },
         { "upgrade", (0.6f, 0.1f) },
     };
 

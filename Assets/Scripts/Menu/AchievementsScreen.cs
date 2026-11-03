@@ -2,10 +2,11 @@ using UnityEngine;
 using UnityEngine.UI;
 
 // The Conquistas page (main menu and pause menu): the achievements in two columns, scrolling, each with
-// its icon (dark until earned), name, what to do and whether the ranking server confirmed it.
+// its icon (dark until earned), name, what to do and whether the ranking server confirmed it. The ones
+// earned since the page was last opened say "NOVA!" (the run's banner only shows the icon and the name).
 public static class AchievementsScreen {
 
-    private static readonly Color Earned = new Color(1f, 0.85f, 0.29f, 1f);
+    public static readonly Color Earned = new Color(1f, 0.85f, 0.29f, 1f);
     private static readonly Color LockedIcon = new Color(0.16f, 0.13f, 0.2f, 1f);
 
     public static MenuPage Page(MenuStack stack) {
@@ -24,8 +25,10 @@ public static class AchievementsScreen {
         int rows = (Achievements.All.Length + 1) / 2;
         MenuKit.Size(grid, -1f, rows * 78f + (rows - 1) * 6f);
         foreach (Achievements.Info info in Achievements.All) {
-            Entry(grid, info);
+            Entry(grid, info, Achievements.IsNew(info.id));
         }
+        // seen now: the button goes back to "Conquistas"
+        Achievements.MarkSeen();
         page.Content = page.Panel;
 
         page.Space(4f);
@@ -36,9 +39,20 @@ public static class AchievementsScreen {
         return page;
     }
 
-    private static void Entry(Transform parent, Achievements.Info info) {
+    // the Conquistas button of the menus: "(nova!)" in gold while there is a new one to see
+    public static void Badge(Button button) {
+        LiveLabel.Attach(button, () => Achievements.ButtonLabel, () => Achievements.NewCount > 0);
+    }
+
+    private static void Entry(Transform parent, Achievements.Info info, bool fresh) {
         bool has = Achievements.Has(info.id);
-        Image row = MenuKit.MakeImage("Entry " + info.key, parent, new Color(1f, 1f, 1f, has ? 0.09f : 0.04f));
+        Image row = MenuKit.MakeImage("Entry " + info.key, parent,
+            fresh ? new Color(1f, 0.85f, 0.29f, 0.16f) : new Color(1f, 1f, 1f, has ? 0.09f : 0.04f));
+        if (fresh) {
+            Outline edge = row.gameObject.AddComponent<Outline>();
+            edge.effectColor = new Color(0.85f, 0.64f, 0.16f, 1f);
+            edge.effectDistance = new Vector2(2f, -2f);
+        }
         HorizontalLayoutGroup layout = row.gameObject.AddComponent<HorizontalLayoutGroup>();
         layout.padding = new RectOffset(8, 10, 6, 6);
         layout.spacing = 12f;
@@ -61,7 +75,8 @@ public static class AchievementsScreen {
         text.supportRichText = true;
         text.lineSpacing = 1.25f;
         text.text = "<size=" + MenuKit.SmallTextSize + "><color=#" +
-                    ColorUtility.ToHtmlStringRGB(has ? Earned : MenuKit.TitleColor) + ">" + info.name + "</color></size>\n" +
+                    ColorUtility.ToHtmlStringRGB(has ? Earned : MenuKit.TitleColor) + ">" + info.name + "</color></size>" +
+                    (fresh ? "  <color=#FFD84A>NOVA!</color>" : "") + "\n" +
                     info.how + status;
         MenuKit.Size(text, -1f, -1f).flexibleWidth = 1f;
     }

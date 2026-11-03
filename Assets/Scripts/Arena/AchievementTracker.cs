@@ -104,15 +104,21 @@ public class AchievementTracker : MonoBehaviour {
         }
     }
 
-    // ---- the banner: top of the screen, one achievement at a time ----
+    // ---- the banner: small, under the coins at the top right, one achievement at a time ----
+    // José, 2026-11-03: the big one in the middle got in the way of the game. Only the icon and the
+    // name here; what it was for is on the Conquistas page, whose button says "(nova!)" until opened.
 
-    private const float BannerSeconds = 4f;
-    private const float BannerY = -150f;   // under the score and combo at the top of the HUD
+    private const float BannerSeconds = 3.5f;
+    private const float BannerHeight = 40f;
+    private const float Gap = 6f;                                   // between the coins and the banner
+    private static readonly Vector2 Fallback = new Vector2(-28f, -86f);   // no coins on screen
     private readonly Queue<Achievement> waiting = new Queue<Achievement>();
     private Canvas canvas;
+    private RectTransform panel;
     private Image icon;
     private Text title;
     private float shownUntil;
+    private Vector2 spot;
 
     private void Show(Achievement a) {
         waiting.Enqueue(a);
@@ -128,9 +134,9 @@ public class AchievementTracker : MonoBehaviour {
         if (canvas != null && Time.unscaledTime < shownUntil) {
             canvas.gameObject.SetActive(true);
             float t = shownUntil - Time.unscaledTime;
-            // slides in from above and back up at the end
-            float slide = Mathf.Clamp01(Mathf.Min(BannerSeconds - t, t) * 4f);
-            ((RectTransform)canvas.transform.GetChild(0)).anchoredPosition = new Vector2(0f, Mathf.Lerp(120f, BannerY, slide));
+            // slides in from the right edge and back out at the end
+            float slide = Mathf.Clamp01(Mathf.Min(BannerSeconds - t, t) * 5f);
+            panel.anchoredPosition = new Vector2(Mathf.Lerp(panel.sizeDelta.x + 40f, spot.x, slide), spot.y);
             return;
         }
         if (waiting.Count == 0) {
@@ -141,10 +147,42 @@ public class AchievementTracker : MonoBehaviour {
         Build();
         canvas.gameObject.SetActive(true);
         icon.sprite = Achievements.Icon(next);
-        title.text = "<size=12><color=#FFD84A>CONQUISTA DESBLOQUEADA!</color></size>\n" + Achievements.Of(next).name +
-                     "\n<size=10><color=#B399D1>" + Achievements.Of(next).how + "</color></size>";
+        title.text = Achievements.Of(next).name;
+        panel.sizeDelta = new Vector2(Mathf.Ceil(title.preferredWidth) + BannerHeight + 22f, BannerHeight);
+        spot = UnderCoins();
         shownUntil = Time.unscaledTime + BannerSeconds;
-        Sfx.Play("level_up");
+        Sfx.Play("achievement");
+    }
+
+    // the top right corner of the banner: right under the HUD's coin and lined up with it, in this
+    // canvas' units from the screen's top right corner
+    private Vector2 UnderCoins() {
+        UIManager ui = UIManager.Instance;
+        Text coins = ui != null ? ui.coinCountHUD : null;
+        if (coins == null || !coins.isActiveAndEnabled || coins.transform.parent == null) {
+            return Fallback;
+        }
+        Canvas hud = coins.canvas != null ? coins.canvas.rootCanvas : null;
+        Camera cam = hud != null && hud.renderMode != RenderMode.ScreenSpaceOverlay ? hud.worldCamera : null;
+        // the coin icon beside the number has a rect that fits it, unlike the number's text
+        float right = float.MinValue, bottom = float.MaxValue;
+        Vector3[] corners = new Vector3[4];
+        foreach (Image image in coins.transform.parent.GetComponentsInChildren<Image>()) {
+            if (!image.isActiveAndEnabled) continue;
+            image.rectTransform.GetWorldCorners(corners);
+            for (int i = 0; i < 4; i++) {
+                Vector2 p = RectTransformUtility.WorldToScreenPoint(cam, corners[i]);
+                right = Mathf.Max(right, p.x);
+                bottom = Mathf.Min(bottom, p.y);
+            }
+        }
+        if (right == float.MinValue) {
+            return Fallback;
+        }
+        float scale = canvas.scaleFactor > 0f ? canvas.scaleFactor : 1f;
+        Vector2 at = new Vector2((right - Screen.width) / scale, (bottom - Screen.height) / scale - Gap);
+        // something odd (a HUD off the screen): the usual place
+        return at.x > 0f || at.x < -400f || at.y > 0f || at.y < -300f ? Fallback : at;
     }
 
     private void Build() {
@@ -152,30 +190,29 @@ public class AchievementTracker : MonoBehaviour {
             return;
         }
         canvas = MenuKit.CreateCanvas("Achievement Banner", 25000, transform);
-        Image panel = MenuKit.MakeImage("Panel", canvas.transform, MenuKit.PanelColor);
-        RectTransform rect = panel.rectTransform;
-        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 1f);
-        rect.sizeDelta = new Vector2(560f, 96f);
-        Outline edge = panel.gameObject.AddComponent<Outline>();
+        Image back = MenuKit.MakeImage("Panel", canvas.transform, new Color(0.08f, 0.05f, 0.11f, 0.88f));
+        panel = back.rectTransform;
+        panel.anchorMin = panel.anchorMax = panel.pivot = new Vector2(1f, 1f);
+        Outline edge = back.gameObject.AddComponent<Outline>();
         edge.effectColor = new Color(0.85f, 0.64f, 0.16f, 1f);
-        edge.effectDistance = new Vector2(3f, -3f);
-        panel.raycastTarget = false;
+        edge.effectDistance = new Vector2(2f, -2f);
+        back.raycastTarget = false;
 
-        icon = MenuKit.MakeImage("Icon", panel.transform, Color.white);
+        icon = MenuKit.MakeImage("Icon", panel, Color.white);
         icon.raycastTarget = false;
+        icon.preserveAspect = true;
         RectTransform iconRect = icon.rectTransform;
         iconRect.anchorMin = iconRect.anchorMax = iconRect.pivot = new Vector2(0f, 0.5f);
-        iconRect.anchoredPosition = new Vector2(12f, 0f);
-        iconRect.sizeDelta = new Vector2(80f, 80f);
+        iconRect.anchoredPosition = new Vector2(5f, 0f);
+        iconRect.sizeDelta = new Vector2(BannerHeight - 8f, BannerHeight - 8f);
 
-        title = MenuKit.MakeText(panel.transform, "", MenuKit.TextSize, MenuKit.TextColor, TextAnchor.MiddleLeft);
-        title.supportRichText = true;
+        title = MenuKit.MakeText(panel, "", MenuKit.SmallTextSize, AchievementsScreen.Earned, TextAnchor.MiddleLeft);
         title.raycastTarget = false;
-        title.lineSpacing = 1.3f;
+        title.horizontalOverflow = HorizontalWrapMode.Overflow;
         RectTransform textRect = title.rectTransform;
         textRect.anchorMin = new Vector2(0f, 0f);
         textRect.anchorMax = new Vector2(1f, 1f);
-        textRect.offsetMin = new Vector2(106f, 6f);
-        textRect.offsetMax = new Vector2(-12f, -6f);
+        textRect.offsetMin = new Vector2(BannerHeight + 4f, 0f);
+        textRect.offsetMax = new Vector2(-8f, 0f);
     }
 }

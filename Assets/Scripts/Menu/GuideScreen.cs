@@ -309,7 +309,8 @@ public static class GuideScreen {
             "Quando o Ciclope chega, a música da Arena dá lugar à dele, mais pesada e rápida, e as tochas piscam " +
             "rápido e ficam vermelhas. Quando ele cai, tudo volta ao normal.");
         Entry(parent, Achievements.Icon(Achievement.Cyclops), "Conquistas",
-            Achievements.All.Length + " desafios (pausa > Conquistas). Só valem corridas manuais: depois que o piloto joga, a corrida não " +
+            Achievements.All.Length + " desafios (pausa > Conquistas). Ao ganhar uma, o ícone e o nome aparecem embaixo das moedas, " +
+            "com um sino, e o botão Conquistas fica dourado (nova!) até você abrir a página. Só valem corridas manuais: depois que o piloto joga, a corrida não " +
             "dá mais conquistas. No fim da corrida, o servidor confere cada conquista nova e o site mostra quantos % " +
             "dos jogadores têm cada uma.");
         Entry(parent, art ? art.run : null, "XP e piloto automático",

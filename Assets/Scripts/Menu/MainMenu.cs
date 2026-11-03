@@ -96,7 +96,7 @@ public class MainMenu : MonoBehaviour {
         if (Features.DailyMissions) {
             page.Button(MissionsLabel(), () => stack.Push(MissionsScreen.Page(stack)), true, CompactRow);
         }
-        page.Button("Conquistas", () => stack.Push(AchievementsScreen.Page(stack)), true, CompactRow);
+        AchievementsScreen.Badge(page.Button(Achievements.ButtonLabel, () => stack.Push(AchievementsScreen.Page(stack)), true, CompactRow));
         if (Online.OnlineServices.Instance != null && Online.OnlineServices.Instance.State != Online.OnlineServices.Status.Disabled) {
             page.Button("Ranking", () => stack.Push(OnlineScreens.Ranking(stack, this, ArenaDifficulty.Ranked[0])), true, CompactRow);
             page.Button(PerfilScreens.ButtonLabel, () => stack.Push(PerfilScreens.Page(stack)), true, CompactRow);
