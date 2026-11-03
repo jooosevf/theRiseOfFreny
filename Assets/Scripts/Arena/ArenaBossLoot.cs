@@ -82,7 +82,7 @@ public class ArenaBossLoot : MonoBehaviour {
         if (Features.EnemyToughening) {
             RunModifiers.CyclopsSlain++;
             Camera cam = Camera.main;
-            Vector3 banner = (cam != null ? cam.transform.position : enemy.Center) + Vector3.up * 3f;
+            Vector3 banner = (cam != null ? cam.transform.position : enemy.Center) + Vector3.up * 1.2f;   // under the achievement banner, which comes at the same moment
             Color red = new Color(1f, 0.35f, 0.3f);
             Say("Os inimigos ficaram mais fortes", banner, red, 3.5f);
             Say("Inimigos: vida x" + RunModifiers.HealthMultiplier(RunModifiers.CyclopsSlain).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ','), banner + Vector3.down * 0.9f, red, 3.5f);
@@ -210,6 +210,10 @@ public class ArenaBossLoot : MonoBehaviour {
     public static void Say(string text, Vector3 world, Color color, float seconds) {
         lines.RemoveAll(l => l.text == text);
         lines.Add(new Line { text = text, at = world, color = color, born = Time.time, life = seconds });
+    }
+
+    public static void Unsay(string text) {
+        lines.RemoveAll(l => l.text == text);
     }
 
     private void OnGUI() {
