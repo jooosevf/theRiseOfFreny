@@ -38,9 +38,11 @@ public class UIManager : MonoBehaviour {
         }
         // José, 2026-11-03: by day the white number got lost against the clouds
         if (coinCountHUD && !coinCountHUD.GetComponent<Outline>()) {
-            Outline edge = coinCountHUD.gameObject.AddComponent<Outline>();
-            edge.effectColor = Color.black;
-            edge.effectDistance = new Vector2(2f, -2f);
+            foreach (float thickness in new[] { 2f, 4f }) {
+                Outline edge = coinCountHUD.gameObject.AddComponent<Outline>();
+                edge.effectColor = Color.black;
+                edge.effectDistance = new Vector2(thickness, -thickness);
+            }
         }
     }
 
