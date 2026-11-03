@@ -82,6 +82,36 @@ public static class Achievements {
 
     public static bool PlayedConfirmed => PlayerPrefs.GetInt(PlayedKey, 0) == 1;
 
+    // ---- the new ones (José, 2026-11-03): earned in a run and not yet seen on the Conquistas page ----
+    // The run's banner only shows the icon and the name; the "nova" on the Conquistas button says
+    // there is something to read there, until the page is opened.
+    private const string NewKey = KeyPrefix + "new";
+
+    public static bool IsNew(Achievement a) => Array.IndexOf(NewKeys(), Of(a).key) >= 0;
+
+    public static int NewCount => NewKeys().Length;
+
+    private static string[] NewKeys() {
+        string keys = PlayerPrefs.GetString(NewKey, "");
+        return keys.Length == 0 ? new string[0] : keys.Split(',');
+    }
+
+    // the Conquistas page was opened: all of them seen
+    public static void MarkSeen() {
+        if (PlayerPrefs.HasKey(NewKey)) {
+            PlayerPrefs.DeleteKey(NewKey);
+            PlayerPrefs.Save();
+        }
+    }
+
+    // "Conquistas", "Conquistas (nova!)", "Conquistas (2 novas)"
+    public static string ButtonLabel {
+        get {
+            int n = NewCount;
+            return n == 0 ? "Conquistas" : n == 1 ? "Conquistas (nova!)" : "Conquistas (" + n + " novas)";
+        }
+    }
+
     public static int Count {
         get {
             int n = 0;
@@ -119,6 +149,10 @@ public static class Achievements {
 
     private static void Grant(Achievement a) {
         PlayerPrefs.SetInt(KeyPrefix + Of(a).key, 1);
+        if (!IsNew(a)) {
+            string keys = PlayerPrefs.GetString(NewKey, "");
+            PlayerPrefs.SetString(NewKey, keys.Length == 0 ? Of(a).key : keys + "," + Of(a).key);
+        }
         PlayerPrefs.Save();
         if (!EarnedThisRun.Contains(a)) EarnedThisRun.Add(a);
         Unlocked?.Invoke(a);
@@ -183,6 +217,7 @@ public static class Achievements {
             PlayerPrefs.DeleteKey(KeyPrefix + info.key + ConfirmedSuffix);
         }
         PlayerPrefs.DeleteKey(PlayedKey);
+        PlayerPrefs.DeleteKey(NewKey);
     }
 #endif
 }

@@ -84,6 +84,7 @@ atribuição obrigatória), cortados, convertidos para mono 44,1 kHz e normaliza
 | `shop_open` | Soundopolis - Percussion 01 / Bell_Waiter_Fienup_001.wav (0–1.73 s) |
 | `shop_buy` | Robert Cordova - Base / Abacus 02.wav (0–0.28 s) |
 | `level_up` | Eiravaein Works - Start Select / StartSelect,UI,set17,schick,mechanical,percussive,ding,shudder,holdrelease.wav (0–0.88 s) |
+| `achievement` | Sintetizado (numpy, 2026-11-03): sino grave em lá (110 Hz, parciais de sino) + arpejo de lá menor por cima, com reverb; 2,2 s. Feito para a Conquista desbloqueada. |
 | `upgrade` | SoundMorph - Users of Tommorow / confirm_beepy_02.wav (0–0.94 s) |
 | `combo` | Membrans - Pops Sound Pack 01 / Pop 31.wav (0–0.12 s) |
 | `pit_fall` | Coll Anderson - Slapstick Comedy / EFX INT Airborne Rising and Falling 02.wav (0–1.92 s) |
