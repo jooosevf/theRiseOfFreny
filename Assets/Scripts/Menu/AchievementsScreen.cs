@@ -68,15 +68,15 @@ public static class AchievementsScreen {
         icon.preserveAspect = true;
         MenuKit.Size(icon, 64f, 64f);
 
-        string status = !has ? "" : Achievements.Confirmed(info.id)
-            ? "\n<color=#7CFC8A>Conquistada · confirmada online</color>"
-            : "\n<color=#FFD84A>Conquistada</color>";
+        // NOVA! on the status line: beside a long name it went to a line of its own
+        string status = !has ? "" : (fresh ? "\n<color=#FFD84A>NOVA!</color> · " : "\n") + (Achievements.Confirmed(info.id)
+            ? "<color=#7CFC8A>Conquistada · confirmada online</color>"
+            : "<color=#FFD84A>Conquistada</color>");
         Text text = MenuKit.MakeText(row.transform, "", MenuKit.SmallTextSize - 2, MenuKit.DimTextColor, TextAnchor.MiddleLeft);
         text.supportRichText = true;
         text.lineSpacing = 1.25f;
         text.text = "<size=" + MenuKit.SmallTextSize + "><color=#" +
-                    ColorUtility.ToHtmlStringRGB(has ? Earned : MenuKit.TitleColor) + ">" + info.name + "</color></size>" +
-                    (fresh ? "  <color=#FFD84A>NOVA!</color>" : "") + "\n" +
+                    ColorUtility.ToHtmlStringRGB(has ? Earned : MenuKit.TitleColor) + ">" + info.name + "</color></size>\n" +
                     info.how + status;
         MenuKit.Size(text, -1f, -1f).flexibleWidth = 1f;
     }
