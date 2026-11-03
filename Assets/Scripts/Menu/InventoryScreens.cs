@@ -88,11 +88,11 @@ public static class InventoryScreens {
         return page;
     }
 
-    // Freny standing beside the inventory, wearing the helmet when it is equipped, with the
+    // Freny standing beside the inventory, dressed as on the Visual screen, with the
     // equipment slots under him and his face saying a line
     private class FrenyView {
 
-        private readonly MenuPortrait body;
+        private readonly FrenyLookPreview body;
         private readonly MenuSpeech speech;
         private readonly List<Action> slots = new List<Action>();
         private readonly Text attributes;
@@ -105,14 +105,8 @@ public static class InventoryScreens {
             RectTransform window = MenuKit.MakeRect("Freny", side);
             MenuKit.Size(window, 260f, 200f);
             window.gameObject.AddComponent<RectMask2D>();
-            Image image = MenuKit.MakeImage("Body", window, Color.white);
-            image.raycastTarget = false;
-            RectTransform rect = image.rectTransform;
-            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0f);
-            rect.sizeDelta = new Vector2(300f, 300f);
-            body = image.gameObject.AddComponent<MenuPortrait>();
-            body.Init(art != null ? art.frenyIdle : null, null, 2.5f, 0f);
-            body.Loop = true;
+            // the same Freny as the Visual screen: what he has on (Traje, helmet, cape, torso)
+            body = FrenyLookPreview.Create(window, 300f);
 
             RectTransform row = Row(side, 64f);
             foreach (FrenyUpgrade upgrade in Equipment) {
@@ -127,8 +121,7 @@ public static class InventoryScreens {
         }
 
         public void Refresh() {
-            body.OverlaySprites = Loadout.WearsCosmeticHelmet ? Heads(ref brokenHeads, "FrenyHeads/berserker_broken") : null;
-            body.FrameSkin = FrenyLook.WearsTraje ? FrenyLook.TrajeFrame : (Func<Sprite, Sprite>)null;
+            body.ShowWorn();
             foreach (Action slot in slots) {
                 slot();
             }
@@ -138,19 +131,6 @@ public static class InventoryScreens {
         public void Say(string line) {
             speech.Say(line);
         }
-    }
-
-    private static Dictionary<string, Sprite> brokenHeads;
-
-    // the same helmet layer the game puts on Freny (FrenyMotion)
-    private static Dictionary<string, Sprite> Heads(ref Dictionary<string, Sprite> cache, string path) {
-        if (cache == null) {
-            cache = new Dictionary<string, Sprite>();
-            foreach (Sprite head in Resources.LoadAll<Sprite>(path)) {
-                cache[head.name] = head;
-            }
-        }
-        return cache;
     }
 
     // one equipment slot: lit when equipped, dim when stored, almost gone when not bought

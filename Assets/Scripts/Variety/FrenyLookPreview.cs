@@ -17,6 +17,7 @@ public class FrenyLookPreview : MonoBehaviour {
     private Sprite[] frames;
     private FrenyLook.Item helmetItem, capeItem, colorItem;
     private bool suit;
+    private bool followsWorn;
 
     // the idle frames are 200 px squares with Freny in the bottom two thirds; size is the square's
     // side on screen, anchored at the bottom centre of the window
@@ -70,6 +71,22 @@ public class FrenyLookPreview : MonoBehaviour {
             capeImages[i].enabled = segments != null;
         }
         Update();
+    }
+
+    // what he has on now (FrenyLook.Worn: nothing else while the Traje is on), kept up to date when
+    // he changes it on the Visual screen (the Inventário stays under it on the menu stack)
+    public void ShowWorn() {
+        if (!followsWorn) {
+            followsWorn = true;
+            FrenyLook.Changed += ShowWorn;
+        }
+        Show(FrenyLook.Worn(LookSlot.Helmet), FrenyLook.Worn(LookSlot.Cape), FrenyLook.Worn(LookSlot.Color), FrenyLook.Worn(LookSlot.Suit));
+    }
+
+    private void OnDestroy() {
+        if (followsWorn) {
+            FrenyLook.Changed -= ShowWorn;
+        }
     }
 
     private void Update() {
