@@ -84,6 +84,7 @@ public static class InventoryScreens {
         page.Button("Voltar", stack.Back);
 
         freny.Refresh();
+        page.OnShow = freny.Refresh;
         freny.Say("Vamos ver o que eu levo hoje.");
         return page;
     }
@@ -186,10 +187,9 @@ public static class InventoryScreens {
         MenuArt art = MenuArt.Get;
         MenuSpeech speech = MerchantSide(page);
 
-        Text coins = page.Label("", MenuKit.TextSize);
+        CoinLabel.Create(page.Content, MenuKit.TextSize, MenuKit.DimTextColor);
         List<Action> refresh = new List<Action>();
         Action refreshAll = () => {
-            coins.text = "Moedas: " + FrenyProgress.Coins;
             foreach (Action action in refresh) {
                 action();
             }
@@ -215,6 +215,7 @@ public static class InventoryScreens {
         refresh.Add(() => brainText.text = PointsText());
         page.Button("Voltar", stack.Back);
 
+        page.OnShow = refreshAll;
         refreshAll();
         speech.Say(Greetings[UnityEngine.Random.Range(0, Greetings.Length)]);
         return page;
@@ -267,11 +268,10 @@ public static class InventoryScreens {
     // one shelf of the Armeira, paid with the saved coins
     private static MenuPage ShelfPage(MenuStack stack, string title, string hint, FrenyUpgrade[] rows) {
         MenuPage page = new MenuPage(stack.transform, title, 640f, new Vector2(0.5f, 0.5f), 6f);
-        Text coins = page.Label("", MenuKit.TextSize);
+        CoinLabel.Create(page.Content, MenuKit.TextSize, MenuKit.DimTextColor);
         Text message = null;
         List<Action> refresh = new List<Action>();
         Action refreshAll = () => {
-            coins.text = "Moedas: " + FrenyProgress.Coins;
             foreach (Action action in refresh) {
                 action();
             }
@@ -282,6 +282,7 @@ public static class InventoryScreens {
         page.Space(4f);
         message = page.Label(hint + " Cada nível vale para sempre.");
         page.Button("Voltar", stack.Back);
+        page.OnShow = refreshAll;
         refreshAll();
         return page;
     }
@@ -348,8 +349,9 @@ public static class InventoryScreens {
             int level = FrenyProgress.GetLevel(upgrade);
             int max = FrenyProgress.MaxLevel(upgrade);
             name.text = FrenyProgress.DisplayName(upgrade) + (max > 1 ? " (" + level + "/" + max + ")" : "");
-            price.text = FrenyProgress.IsMaxed(upgrade) ? (max > 1 ? "máximo" : "comprado")
-                : FrenyProgress.CostText(upgrade);
+            bool maxed = FrenyProgress.IsMaxed(upgrade);
+            CoinLabel.SetPrice(price, maxed ? (max > 1 ? "máximo" : "comprado") : FrenyProgress.CostText(upgrade),
+                !maxed && !FrenyProgress.IsBrain(upgrade));
         });
     }
 

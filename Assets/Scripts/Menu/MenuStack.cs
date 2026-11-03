@@ -49,6 +49,10 @@ public class MenuPage {
 
     public Selectable SelectFirst;   // what is selected when the page opens (default: the first row)
 
+    // run each time the page shows again, after the page above it closes (MenuStack.Back doesn't
+    // rebuild it): e.g. the Armeira's shelves after buying on one of them
+    public Action OnShow;
+
     public Selectable First => SelectFirst != null ? SelectFirst : rows.Count > 0 ? rows[0][0] : null;
 
     public Button Button(string label, Action onClick, bool interactable = true, float height = MenuKit.RowHeight) {
@@ -201,6 +205,7 @@ public class MenuStack : MonoBehaviour {
 
     private void Show(MenuPage page, GameObject select) {
         page.Visible = true;
+        page.OnShow?.Invoke();
         shownFrame = Time.frameCount;
         MenuKit.EnsureEventSystem();
         if (EventSystem.current != null) {
