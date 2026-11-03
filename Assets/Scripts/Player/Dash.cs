@@ -22,7 +22,7 @@ public class Dash : MonoBehaviour {
 
     public bool IsDashing => direction != 0;
     public bool CanDash => direction == 0 && Time.time >= nextDashTime && !usedInAir && player;
-    // the autopilot only dashes in the air: its dodges on the ground are jumps
+    // the autopilot closes in on an enemy with a dash only in the air; its dodges use either
     public bool CanAirDash => CanDash && player.IsAirborne;
     // 1 = ready, 0 = just dashed (for the HUD)
 
