@@ -36,12 +36,35 @@ public class UIManager : MonoBehaviour {
         if (scoreCountHUD && int.TryParse(scoreCountHUD.text, out int initialScore)) {
             Score = initialScore;
         }
+        // José, 2026-11-03: by day the white number got lost against the clouds
+        if (coinCountHUD && !coinCountHUD.GetComponent<Outline>()) {
+            foreach (float thickness in new[] { 2f, 4f }) {
+                Outline edge = coinCountHUD.gameObject.AddComponent<Outline>();
+                edge.effectColor = Color.black;
+                edge.effectDistance = new Vector2(thickness, -thickness);
+            }
+        }
+    }
+
+    // the HUD's coins, short so they don't grow across the screen: 999, 1k, 1.2k, 9.9k, 10k, 1m, 1.2m,
+    // 10m (cut, never rounded up: 1,999 is 1.9k). The pause and the shops show the exact number
+    public static string ShortCoins(int coins) {
+        if (coins < 1000) {
+            return coins.ToString();
+        }
+        return coins < 1000000 ? Short(coins, 1000, "k") : Short(coins, 1000000, "m");
+    }
+
+    private static string Short(int coins, int unit, string letter) {
+        int whole = coins / unit;
+        int tenths = coins / (unit / 10) % 10;
+        return whole >= 10 || tenths == 0 ? whole + letter : whole + "." + tenths + letter;
     }
 
     //Optimize... 2 variables for the same thing?
     public void UpdateCoins(int coinCount) {
         if (coinCountHUD) {
-            coinCountHUD.text = coinCount.ToString();
+            coinCountHUD.text = ShortCoins(coinCount);
         }
         if (coinCountShop) {
             coinCountShop.text = coinCount.ToString();

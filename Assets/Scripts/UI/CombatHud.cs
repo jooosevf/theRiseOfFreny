@@ -420,10 +420,22 @@ public class CombatHud : MonoBehaviour {
         }
         // on the line of the hearts and coins (the uGUI row moves with the screen's shape)
         float y = heartsMiddle > 0f ? heartsMiddle - scoreSize * 0.8f : 34f * scale;
-        ShadowLabel(new Rect(x, y, width + 20f, scoreSize * 1.4f), score, scoreStyle);
+        OutlinedScore(new Rect(x, y, width + 20f, scoreSize * 1.4f), score);
         if (comboLine != null) {
             DrawComboLine(x, y + scoreSize * 1.5f, comboLine, comboSize, scale);
         }
+    }
+
+    // José, 2026-11-03: a full dark outline, or the white score got lost against the day's clouds
+    private void OutlinedScore(Rect rect, string text) {
+        Color color = scoreStyle.normal.textColor;
+        float o = Mathf.Max(1f, Screen.width / 960f);
+        scoreStyle.normal.textColor = Color.black;
+        foreach (Vector2 d in new[] { new Vector2(-1f, -1f), new Vector2(1f, -1f), new Vector2(-1f, 1f), new Vector2(1f, 1f), Vector2.left, Vector2.right, Vector2.up, Vector2.down }) {
+            GUI.Label(new Rect(rect.x + d.x * o, rect.y + d.y * o, rect.width, rect.height), text, scoreStyle);
+        }
+        scoreStyle.normal.textColor = color;
+        GUI.Label(rect, text, scoreStyle);
     }
 
     // José, 2026-11-02: the combo hypes up like the multi-kill banners: bigger as it climbs, a pop at
