@@ -181,7 +181,7 @@ public class ArenaRunManager : MonoBehaviour {
         MenuKit.EnsureEventSystem();
         RectTransform row = MenuKit.MakeRect("Choices", canvas);
         row.anchorMin = row.anchorMax = row.pivot = new Vector2(0.5f, 0.5f);
-        row.anchoredPosition = new Vector2(0f, bannerHasRecord ? -115f : -60f);   // under the auto panel
+        row.anchoredPosition = new Vector2(0f, bannerHasRecord ? -190f : -60f);   // under the auto panel and "Salvar recorde"
         row.sizeDelta = new Vector2(600f, 44f);
         HorizontalLayoutGroup layout = row.gameObject.AddComponent<HorizontalLayoutGroup>();
         layout.spacing = 20f;
