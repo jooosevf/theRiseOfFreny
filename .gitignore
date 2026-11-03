@@ -109,3 +109,16 @@ crashlytics-build.properties
 # Python caches from Tools/
 __pycache__/
 *.pyc
+
+# Claude Code Game Studios: per-person config and per-session files
+project.local.yaml
+CLAUDE.local.md
+.claude/settings.local.json
+.claude/agent-memory/
+.claude/worktrees/
+production/session-logs/
+production/session-state/
+.scratch/
+docs/consistency-failures.md
+/reports/
+/test-results/

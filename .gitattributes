@@ -68,3 +68,8 @@
 *.py    text eol=lf
 *.sh    text eol=lf
 *.ps1   text eol=crlf
+
+# ---------- Claude Code Game Studios ----------
+# Com core.autocrlf=true, CRLF quebra os helpers que os hooks do kit leem.
+*.awk text eol=lf
+.claude/**/*.md text eol=lf
