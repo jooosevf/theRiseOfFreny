@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-// The Conquistas page (main menu and pause menu): the ten achievements in two columns, each with
+// The Conquistas page (main menu and pause menu): the achievements in two columns, scrolling, each with
 // its icon (dark until earned), name, what to do and whether the ranking server confirmed it.
 public static class AchievementsScreen {
 
@@ -13,6 +13,8 @@ public static class AchievementsScreen {
         page.Label(Achievements.Count + " de " + Achievements.All.Length +
                    " · só valem corridas manuais da Arena (sem o piloto automático)");
 
+        MenuScroll.Create(page, out RectTransform list);
+        page.Content = list;
         RectTransform grid = MenuKit.MakeRect("Grid", page.Content);
         GridLayoutGroup cells = grid.gameObject.AddComponent<GridLayoutGroup>();
         cells.cellSize = new Vector2(438f, 78f);
@@ -24,6 +26,7 @@ public static class AchievementsScreen {
         foreach (Achievements.Info info in Achievements.All) {
             Entry(grid, info);
         }
+        page.Content = page.Panel;
 
         page.Space(4f);
         // the titles come from the achievements; the account's stats are on the Perfil

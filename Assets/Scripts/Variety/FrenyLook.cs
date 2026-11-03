@@ -14,7 +14,8 @@ public enum LookSlot { Helmet, Cape, Color, Suit }
 // Resources/FrenyLook/helmet_<art>), the shirt is one white mask tinted with the colour, and the
 // capes are drawn at runtime (CapeArt). The Traje Berserker (José, 2026-11-02) is a whole skin, every
 // body frame redrawn (Tools/ArtGen/freny_traje.py -> Resources/FrenyLook/traje): it brings its own
-// helmet, so the helmet and the colour stay saved but hidden while it is on; the capes still hang on it.
+// helmet and allows no customizing (José, 2026-11-03): the helmet, cape and colour stay saved but
+// are off and locked while it is on.
 public static class FrenyLook {
 
     // GoldenChest: only the Ciclope's golden chest drops it (ChestDrop); once dropped it is kept
@@ -73,7 +74,7 @@ public static class FrenyLook {
         new Item { id = "color.green", slot = LookSlot.Color, name = "Verde", unlock = Unlock.Coins, price = 400, color = C(86, 176, 92) },
         new Item { id = "color.purple", slot = LookSlot.Color, name = "Roxo", unlock = Unlock.Coins, price = 400, color = C(160, 92, 214) },
         new Item { id = "color.black", slot = LookSlot.Color, name = "Preto", unlock = Unlock.Coins, price = 600, color = C(74, 72, 86) },
-        new Item { id = "color.white", slot = LookSlot.Color, name = "Branco", unlock = Unlock.Achievement, achievement = Achievement.Combo5, color = C(250, 248, 240) },
+        new Item { id = "color.white", slot = LookSlot.Color, name = "Branco", unlock = Unlock.Achievement, achievement = Achievement.Combo50, color = C(250, 248, 240) },
         new Item { id = "color.gold", slot = LookSlot.Color, name = "Dourado", unlock = Unlock.Rebirths, price = 2, color = C(240, 196, 70) },
 
         new Item { id = "suit.none", slot = LookSlot.Suit, name = "Sem traje", unlock = Unlock.Free },
@@ -93,8 +94,15 @@ public static class FrenyLook {
     // a look only a mechanic switched off (Features) gives is not shown
     public static bool Reachable(Item item) {
         return (item.unlock != Unlock.Rebirths || Features.Rebirth) && (item.unlock != Unlock.GoldenChest || Features.GoldenChest)
-            && (item.id != TrajeId || Features.BerserkerSuit);
+            && (item.id != TrajeId || Features.BerserkerSuit)
+            && (Features.ExtraLooks || item.unlock == Unlock.Free || Array.IndexOf(BasicLooks, item.id) >= 0);
     }
+
+    // what is left with Features.ExtraLooks off
+    private static readonly string[] BasicLooks = { BerserkerId, TrajeId, "color.red", "color.blue", "color.green", "color.purple", "color.black" };
+
+    // the golden chest still has a look to give
+    public static bool ChestHasLooks => Array.Exists(All, i => i.unlock == Unlock.GoldenChest && Reachable(i));
 
     // ---- owned ----
 
@@ -150,7 +158,7 @@ public static class FrenyLook {
         if (!lucky) {
             return null;
         }
-        List<Item> missing = new List<Item>(Array.FindAll(All, i => i.unlock == Unlock.GoldenChest && !Owns(i)));
+        List<Item> missing = new List<Item>(Array.FindAll(All, i => i.unlock == Unlock.GoldenChest && Reachable(i) && !Owns(i)));
         if (missing.Count == 0) {
             return null;
         }
@@ -189,6 +197,9 @@ public static class FrenyLook {
 
     // what he wears in that slot; an item no longer owned (another slot loaded, a reset) is not worn
     public static Item Worn(LookSlot slot) {
+        if (slot != LookSlot.Suit && WearsTraje) {
+            return null;
+        }
         Item item = Find(WornId(slot));
         return item != null && item.slot == slot && item.unlock != Unlock.Free && Reachable(item) && Owns(item) ? item : null;
     }
