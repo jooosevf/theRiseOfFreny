@@ -172,9 +172,6 @@ public class GameMenus : MonoBehaviour {
         UpdateTouchButton();
         RedrawTextsOnResize();
         GameCursor.Apply(gameplayScene && !paused && Application.isFocused);
-        if (paused && pauseCoins != null) {
-            pauseCoins.text = "Moedas: " + FrenyProgress.Coins;   // the exact number; what the Armeira spends shows at once
-        }
 
         if (!gameplayScene) {
             return;
@@ -300,15 +297,14 @@ public class GameMenus : MonoBehaviour {
         }
     }
 
-    private Text pauseCoins;
-
     private MenuPage PausePage() {
         string scene = SceneManager.GetActiveScene().name;
         bool arena = scene == ArenaScene;
         // the arena's extra rows (mode, note, ranking) need a tighter column to fit a 720p screen
         MenuPage page = new MenuPage(pauseStack.transform, "Pausado", 600f, new Vector2(0.5f, 0.5f), arena ? 5f : 10f);
 
-        pauseCoins = page.Label("Moedas: " + FrenyProgress.Coins);
+        // the exact number, following what the Armeira spends
+        CoinLabel.Create(page.Content, MenuKit.SmallTextSize, MenuKit.DimTextColor);
         page.Button("Continuar", Resume);
         if (CampaignLevels.IsStage(scene)) {
             page.Button("Recomeçar fase", () => StartStage(scene));

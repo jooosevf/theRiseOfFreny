@@ -20,11 +20,10 @@ public static class VarietyScreens {
     public static MenuPage Visual(MenuStack stack) {
         MenuPage page = new MenuPage(stack.transform, "Visual", 620f, new Vector2(0.5f, 0.5f), 6f);
         FrenyLookPreview preview = Window(page, 180f, 270f);
-        Text coins = page.Label("", MenuKit.TextSize);
+        CoinLabel.Create(page.Content, MenuKit.TextSize, MenuKit.DimTextColor);
 
         List<Action> rows = new List<Action>();
         Action refresh = () => {
-            coins.text = "Moedas: " + FrenyProgress.Coins;
             preview.Show(WornOrFirst(LookSlot.Helmet), WornOrFirst(LookSlot.Cape), WornOrFirst(LookSlot.Color), WornOrFirst(LookSlot.Suit));
             foreach (Action row in rows) {
                 row();
@@ -55,9 +54,10 @@ public static class VarietyScreens {
     private static MenuPage SlotPage(MenuStack stack, LookSlot slot, Action onChange) {
         MenuPage page = new MenuPage(stack.transform, SlotName(slot), 620f, new Vector2(0.5f, 0.5f), 4f);
         FrenyLookPreview preview = Window(page, 150f, 225f);
+        CoinLabel.Create(page.Content, MenuKit.SmallTextSize, MenuKit.DimTextColor);
         Text status = page.Label("");
         status.supportRichText = true;
-        MenuKit.Size(status, -1f, 36f);
+        MenuKit.Size(status, -1f, 28f);
 
         List<Action> rows = new List<Action>();
         FrenyLook.Item focus = WornOrFirst(slot);
@@ -95,7 +95,7 @@ public static class VarietyScreens {
             }
             right.supportRichText = true;
             rows.Add(() => {
-                right.text = RowState(item);
+                CoinLabel.SetPrice(right, RowState(item), !FrenyLook.Owns(item) && FrenyLook.ForSale(item));
                 name.color = FrenyLook.Owns(item) || FrenyLook.ForSale(item) ? MenuKit.TextColor : MenuKit.DimTextColor;
             });
         }
@@ -141,8 +141,8 @@ public static class VarietyScreens {
     }
 
     private static string Describe(FrenyLook.Item item) {
-        // two short lines, the page has no room for a third: the row in focus already names the item
-        string coins = "Moedas: " + FrenyProgress.Coins + "\n";
+        // short: the row in focus already names the item, and the coins have their own line (CoinLabel)
+        const string coins = "";
         if (IsWorn(item)) {
             return coins + "<color=" + GreenText + ">É o que ele está usando.</color>";
         }
