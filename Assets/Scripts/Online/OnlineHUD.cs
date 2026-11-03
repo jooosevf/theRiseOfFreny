@@ -37,7 +37,7 @@ namespace Online {
             _hint.horizontalOverflow = HorizontalWrapMode.Overflow;
             RectTransform rect = _hint.rectTransform;
             rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(1f, 0f);
-            rect.anchoredPosition = new Vector2(-12f, 10f);
+            rect.anchoredPosition = new Vector2(-12f, 24f);   // over the version label
             rect.sizeDelta = new Vector2(240f, 20f);
         }
 
