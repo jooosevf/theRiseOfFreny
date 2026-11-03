@@ -47,7 +47,7 @@ public static class AchievementsScreen {
     private static void Entry(Transform parent, Achievements.Info info, bool fresh) {
         bool has = Achievements.Has(info.id);
         Image row = MenuKit.MakeImage("Entry " + info.key, parent,
-            fresh ? new Color(1f, 0.85f, 0.29f, 0.16f) : new Color(1f, 1f, 1f, has ? 0.09f : 0.04f));
+            fresh ? new Color(1f, 0.85f, 0.29f, 0.07f) : new Color(1f, 1f, 1f, has ? 0.09f : 0.04f));
         if (fresh) {
             Outline edge = row.gameObject.AddComponent<Outline>();
             edge.effectColor = new Color(0.85f, 0.64f, 0.16f, 1f);
