@@ -32,6 +32,7 @@ public class GoldenChest : MonoBehaviour, IDamageable {
 
     public static readonly List<GoldenChest> Active = new List<GoldenChest>();
 
+    private const string NeedsKey = "Precisa da chave do Ciclope";
     public int Health { get; set; } = 1;
     public bool Opened { get; private set; }
 
@@ -163,11 +164,12 @@ public class GoldenChest : MonoBehaviour, IDamageable {
             if (Time.time >= nextLocked) {
                 nextLocked = Time.time + LockedGap;
                 Sfx.Play("door_locked", transform.position);
-                ArenaBossLoot.Say("Precisa da chave do Ciclope", transform.position + Vector3.up * 0.8f, new Color(1f, 0.85f, 0.5f), 1.6f);
+                ArenaBossLoot.Say(NeedsKey, transform.position + Vector3.up * 0.8f, new Color(1f, 0.85f, 0.5f), 1.6f);
             }
             return;
         }
         BossKey.Carried--;
+        ArenaBossLoot.Unsay(NeedsKey);
         Open(player);
     }
 

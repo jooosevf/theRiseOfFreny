@@ -6,6 +6,7 @@ using UnityEngine;
 // every FrenyProgress.AutopilotReactionTime seconds, which the brain upgrades shorten.
 //
 // Priorities (GDD, "Arena idle"):
+// 0. whatever he is doing, anything within the sword's reach gets the sword (Swat)
 // 1. dodge an incoming projectile or a wind-up next to him
 // 2. enemy in sword range -> sword (or step back while it recharges)
 // 3. grenade at a group or at an enemy on a platform above
@@ -20,7 +21,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
 
     [SerializeField] private float verticalTolerance = 1.2f;   // "same floor" for sword and gun
     [SerializeField] private float jumpToReachHeight = 1.0f;   // target this much higher -> "above" (grenade, HUD)
-    [SerializeField] private float dodgeWindow = 0.55f;        // dodge only when the projectile lands within this many seconds
+    [SerializeField] private float dodgeWindow = 0.7f;         // dodge only when the projectile lands within this many seconds
     [SerializeField] private float dashCloseDistance = 5f;     // farther than this (same floor, sword ready) -> dash in
     [SerializeField] private float pickupRange = 7f;           // coins/chests this far away are worth a detour
     [SerializeField] private float grabRange = 4f;             // coins this close are grabbed even mid-fight
@@ -39,7 +40,6 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
     private Player player;
     private Dash dash;
     private readonly List<Enemy> enemies = new List<Enemy>();
-    private readonly List<HexballEffect> projectiles = new List<HexballEffect>();
     private readonly Dictionary<Enemy, float> unreachableUntil = new Dictionary<Enemy, float>();
     private float nextScanTime;
     private float nextDecisionTime;
@@ -110,9 +110,75 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
             return frame;
         }
         frame.furyPressed = WantsFury();
+        Swat(ref frame);
         Cook(ref frame);
         AvoidGrenades(ref frame);
         return frame;
+    }
+
+    // José, 2026-11-02: he died with a bug at his feet while he looked at the Ciclope, waited out a
+    // flood or walked to an edge. An enemy in the sword's reach gets it, from any decision and on any
+    // hop. Noticing it still takes half his reaction time, so the brain upgrades keep their worth; the
+    // Ciclope has its own dance, and a spider mine goes off in his face when cut
+    private const float SwatNoticeShare = 0.5f;
+    private const float SwatHold = 0.15f;      // stands still for the swing: walking back turned the blade away
+    private const float SwatHeight = 1.1f;     // centre to centre
+    private float swatSeenAt = -1f;
+    private float swatHoldUntil;
+
+    private void Swat(ref PlayerInputFrame frame) {
+        bool onFoot = player.IsGrounded && (phase == Phase.None || phase == Phase.Walk);
+        if (onFoot && Time.time < swatHoldUntil && !frame.jumpPressed && !frame.dashPressed) {
+            frame.move = 0f;
+            frame.runHeld = false;
+        }
+        Enemy near = SwatTarget();
+        if (near == null) {
+            swatSeenAt = -1f;
+            return;
+        }
+        if (swatSeenAt < 0f) {
+            swatSeenAt = Time.time;
+        }
+        float notice = FrenyProgress.AutopilotReactionTime * Tuning.AutoReaction.Value * SwatNoticeShare;
+        if (Time.time < swatSeenAt + notice || !player.AttackReady || frame.jumpPressed || frame.dashPressed || RunningFromBlast()) {
+            return;
+        }
+        float dx = near.Center.x - transform.position.x;
+        if ((dx > 0f) == player.FacingRight) {
+            frame.meleePressed = true;
+            swatHoldUntil = Time.time + SwatHold;
+            if (onFoot) {
+                frame.move = 0f;
+                frame.runHeld = false;
+            }
+        } else if (onFoot) {
+            frame.move = Mathf.Sign(dx);   // a one-frame tap: the swing comes on the next frame
+            frame.runHeld = false;
+        }
+    }
+
+    private Enemy SwatTarget() {
+        Vector2 me = player.BodyCenter;
+        float reach = Mathf.Min(Tuning.AutoMeleeRange.Value, MaxMeleeReach) * (player.GreatSwordActive ? 1.4f : 1f);
+        Enemy best = null;
+        float bestGap = float.MaxValue;
+        foreach (Enemy enemy in enemies) {
+            if (!enemy || enemy.IsDead || enemy is Cyclops || enemy is SpiderMine) {
+                continue;
+            }
+            Vector2 d = (Vector2)enemy.Center - me;
+            if (Mathf.Abs(d.x) <= reach && Mathf.Abs(d.y) <= SwatHeight && Mathf.Abs(d.x) < bestGap) {
+                bestGap = Mathf.Abs(d.x);
+                best = enemy;
+            }
+        }
+        return best;
+    }
+
+    private bool RunningFromBlast() {
+        return action.StartsWith("Fugindo") || action.StartsWith("Saindo de") || action.StartsWith("Saindo da")
+               || action.StartsWith("Saindo do ácido");
     }
 
     private bool WantsFury() {
@@ -177,7 +243,12 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         float charge = alive ? player.GrenadeChargeFor(dx, cookTarget.Center.y - (transform.position.y + 0.6f)) : -1f;
         frame.grenadeHeld = false;
         frame.grenadeCharge = charge >= 0f ? charge : (alive ? cookCharge : Player.GrenadeTapCharge);
+        // the target walked up to him while it cooked: never at his own feet, with so little fuse left
+        float safe = player.GrenadeChargeFor((player.FacingRight ? 1f : -1f) * (WeaponLevels.GrenadeRadius + SafeThrowMargin), -0.6f);
+        frame.grenadeCharge = Mathf.Max(frame.grenadeCharge, safe);
     }
+
+    private const float SafeThrowMargin = 1.5f;
 
     // a grenade about to go off nearby: walk away from it
     private void AvoidGrenades(ref PlayerInputFrame frame) {
@@ -187,8 +258,10 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
                 continue;
             }
             Vector2 d = me - (Vector2)grenade.transform.position;
-            if (Mathf.Abs(d.x) < Grenade.BlastRadius + 0.8f && Mathf.Abs(d.y) < Grenade.BlastRadius) {
+            float blast = WeaponLevels.GrenadeRadius;
+            if (Mathf.Abs(d.x) < blast + 0.8f && Mathf.Abs(d.y) < blast) {
                 frame.move = d.x == 0f ? (player.FacingRight ? -1f : 1f) : Mathf.Sign(d.x);
+                frame.runHeld = player.RunReady || player.IsRunning;
                 frame.meleePressed = false;
                 return;
             }
@@ -241,7 +314,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
                 }
             }
             planIsFresh = true;
-            nextDecisionTime = Time.time + FrenyProgress.AutopilotReactionTime * Tuning.AutoReaction.Value;
+            nextDecisionTime = Mathf.Max(evadeUntil, Time.time + FrenyProgress.AutopilotReactionTime * Tuning.AutoReaction.Value);
             if (comboPress || player.ComboContinues) {
                 // a combo is a rhythm, not a new decision: look again soon so the next hit isn't late
                 nextDecisionTime = Mathf.Min(nextDecisionTime, Time.time + ComboRethink);
@@ -265,6 +338,11 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         // floor, so the decision's "same floor" test never let it through)
         if (EyeReflex(out PlayerInputFrame swing)) {
             return swing;
+        }
+
+        // and a spell coming at him in the middle of a hop, when nothing else is decided
+        if (AirEvade(out PlayerInputFrame airDodge)) {
+            return airDodge;
         }
 
         if (phase != Phase.None) {
@@ -336,12 +414,6 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
             }
         }
 
-        projectiles.Clear();
-        foreach (HexballEffect ball in HexballEffect.Active) {
-            if (ball && !ball.fromFreny) {   // his own, from the Cajado do Mago
-                projectiles.Add(ball);
-            }
-        }
     }
 
     private const float MaxMeleeReach = 1.8f;  // centre to centre, the normal sword
@@ -377,11 +449,16 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         // 1. dodge, only when a projectile is about to land (before, any hexball nearby kept him
         // hopping forever instead of fighting)
         HexballEffect threat = IncomingProjectile(me);
-        if (threat) {
-            float awayFromThreat = Mathf.Sign(me.x - threat.transform.position.x);
-            if (Dodge(ref frame, awayFromThreat, "o projétil")) {
-                return frame;
-            }
+        if (threat && EvadeHexball(ref frame, threat)) {
+            return frame;
+        }
+
+        // 1a''. the potion when it is needed: at the last heart, or one hit from it with a heavy
+        // hitter around (before, it waited for a quiet moment, often after the killing blow)
+        if (PotionNow(me)) {
+            frame.potionPressed = true;
+            action = "Bebendo poção na hora certa";
+            return frame;
         }
 
         // 1a. the Ciclope's flood on the ground floor: up onto a platform until it drains
@@ -401,14 +478,6 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         // 1b'. the Poço de Ácido: a spit, a spike or a Rastejante coming down on him
         if (AcidPitPilot.Dodge(player, ref frame, out string dodging)) {
             action = dodging;
-            return frame;
-        }
-
-        // 1b'. the potion when it is needed: at the last heart, or one hit from it with a heavy
-        // hitter around (before, it waited for a quiet moment, often after the killing blow)
-        if (PotionNow(me)) {
-            frame.potionPressed = true;
-            action = "Bebendo poção na hora certa";
             return frame;
         }
 
@@ -436,6 +505,16 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         // never beyond what the sword really reaches (a saved 3.0 had him swinging at the air)
         float meleeRange = Mathf.Min(Tuning.AutoMeleeRange.Value, MaxMeleeReach) * (player.GreatSwordActive ? 1.4f : 1f);
         float nearestEnemy = NearestEnemyDistance(me);
+
+        // 1b. an enemy next to him is winding up a hit: get out of the way (a person would). One the
+        // next swing won't drop (a Golem takes two hearts) is left at once, sword ready or not
+        Enemy striker = player.IsGrounded ? WindingUpNearby(me, myFeet, meleeRange + 0.6f) : null;
+        if (striker && (!player.AttackReady || player.Health <= lowHealth || striker.Health > player.MeleeDamage)) {
+            float away = Mathf.Sign(me.x - striker.transform.position.x);
+            if (Dodge(ref frame, away, "o golpe", Mathf.Abs(striker.Center.x - me.x) < DashThroughReach)) {
+                return frame;
+            }
+        }
 
         // 1c. the Ciclope: keep out of its reach and shoot, go in with the sword only while it
         // rests after a blow and there is time for a few hits and the way out
@@ -509,15 +588,6 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
             frame.move = towardTarget;
             action = "Pulando o escudo do Escudeiro";
             return frame;
-        }
-
-        // 1b. an enemy next to him is winding up a hit: get out of the way (a person would)
-        Enemy striker = WindingUpNearby(me, myFeet, meleeRange + 0.6f);
-        if (striker && (!player.AttackReady || player.Health <= lowHealth)) {
-            float away = Mathf.Sign(me.x - striker.transform.position.x);
-            if (Dodge(ref frame, away, "o golpe")) {
-                return frame;
-            }
         }
 
         // 2. sword
@@ -691,6 +761,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
     private const float BossFirst = 25f;
     private const float OthersDuringBoss = 15f;
     private const float CloseEnough = 3f;
+    private const float SorcererFirst = 4f;
     private const float CyclopsWaitBand = 1f;         // waits between SafeDistance and this much farther
     private const float ShieldJumpDistance = 2.4f;    // close enough to jump over the Escudeiro
     private const float MineKeepOut = 0.8f;           // beyond the blast radius
@@ -757,7 +828,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         // last moment, since the decisions come too far apart to catch them
         Vector2 body = me + Vector2.up * 0.5f;
         foreach (HexballEffect ball in HexballEffect.Active) {
-            if (!ball || ball.fromFreny) {
+            if (!ball || ball.fromFreny || Time.time < evadeUntil) {
                 continue;
             }
             Vector2 pos = ball.transform.position;
@@ -837,9 +908,12 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         }
         if (myPlatform != map.Floor) {
             if (!player.IsGrounded) {
-                return false;
+                action = "Esperando a enchente baixar";   // no new way down from up here, not even in mid-air
+                return true;
             }
+            // up here the sword still bites (Swat), and whoever comes along this platform gets shot
             action = "Esperando a enchente baixar";
+            ShootAlongPlatform(ref frame, me);
             return true;
         }
         if (floodEscape.Target != null) {
@@ -864,6 +938,25 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
             return true;
         }
         return false;
+    }
+
+    private void ShootAlongPlatform(ref PlayerInputFrame frame, Vector2 me) {
+        Enemy nearest = null;
+        float best = Tuning.AutoShootRange.Value;
+        foreach (Enemy enemy in enemies) {
+            if (!enemy || enemy.IsDead || enemy is SpiderMine) {
+                continue;
+            }
+            float gap = Mathf.Abs(enemy.Center.x - me.x);
+            if (gap < best && Mathf.Abs(enemy.Feet.y - FeetY) <= verticalTolerance) {
+                best = gap;
+                nearest = enemy;
+            }
+        }
+        if (nearest != null) {
+            float dx = nearest.Center.x - me.x;
+            Shoot(ref frame, dx, (dx > 0f) == player.FacingRight, Mathf.Sign(dx));
+        }
     }
 
     // a crumbling platform of the Poço cracks the moment he stands on it (CrumbleBlock): the
@@ -1040,12 +1133,11 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         bool gun = player.IsGrounded && (player.GunReadyFor(false) || player.GunReadyFor(true));
         if (best < SpiderKeepOut || nearest.Arming) {
             if (nearest.Arming || best < SpiderMine.Blast + 0.4f || !gun) {
-                // out of the blast first: a dash or a jump away, else run
-                if (best < SpiderMine.Blast + 0.6f && Dodge(ref frame, -toward, "a mina-aranha")) {
-                    return true;
-                }
+                // out of the blast first: a jump stays inside its circle, so a dash when he faces
+                // away, else run
                 frame.move = -toward;
-                frame.runHeld = player.RunReady;
+                frame.runHeld = player.RunReady || player.IsRunning;
+                frame.dashPressed = FrenyProgress.HasDashDodge && !facing && dash && dash.CanDash;
                 action = "Fugindo da mina-aranha";
                 return true;
             }
@@ -1110,9 +1202,13 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         action = "Virando";
     }
 
-    private bool Dodge(ref PlayerInputFrame frame, float away, string what) {
+    // the dash goes where he faces and passes through bodies, so a hit from right next to him can be
+    // dashed through as well as away from
+    private const float DashThroughReach = 1.3f;
+
+    private bool Dodge(ref PlayerInputFrame frame, float away, string what, bool canPassThrough = false) {
         bool facingAway = (away > 0) == player.FacingRight;
-        if (FrenyProgress.HasDashDodge && facingAway && dash && dash.CanAirDash) {
+        if (FrenyProgress.HasDashDodge && (facingAway || canPassThrough) && dash && dash.CanDash) {
             frame.dashPressed = true;
             action = "Esquivando com dash de " + what;
         } else if ((player.IsGrounded && Time.time >= nextJumpTime) || player.CanAirJump) {
@@ -1226,6 +1322,9 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
                     if (Mathf.Abs(dx) > 0.08f) {
                         frame.move = Mathf.Sign(dx); // no sprint here: it is saved for the move onto the platform
                         action = $"Indo até a beirada para subir em {route.to}";
+                    } else if (GrenadeAwaits(route.to)) {
+                        action = $"Esperando a granada em {route.to}";   // no climbing into his own blast
+                        phaseStart = Time.time;
                     } else if (grounded && Time.time >= nextJumpTime) {
                         frame.jumpPressed = true;
                         nextJumpTime = Time.time + jumpCooldown;
@@ -1322,6 +1421,24 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         return frame;
     }
 
+    // a grenade of his lying on that platform, or one still cooking for an enemy there
+    private bool GrenadeAwaits(ArenaMap.Platform platform) {
+        if (cooking && cookTarget && PlatformOf(cookTarget) == platform) {
+            return true;
+        }
+        float blast = WeaponLevels.GrenadeRadius;
+        foreach (Grenade grenade in Grenade.Live) {
+            if (grenade == null) {
+                continue;
+            }
+            Vector2 at = grenade.transform.position;
+            if (Mathf.Abs(at.y - platform.y) < blast && at.x > platform.xMin - blast && at.x < platform.xMax + blast) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // the platform an enemy stands on (null for one in the air: a bat, or one still falling)
     private ArenaMap.Platform PlatformOf(Enemy enemy) {
         Vector3 feet = enemy.Feet;
@@ -1349,6 +1466,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         float bestDist = float.MaxValue;
         string what = "";
         if (urgentOnly) {
+            lootRouteOk = true;
             foreach (ItemPickup item in ItemPickup.Active) {
                 if (item && item.Landed && item.UsefulTo(player) && Urgent(item)) {
                     Consider(item.transform, me, myPlatform, range, ref best, ref bestItem, ref bestPlatform, ref bestDist, ref what, item.Describe());
@@ -1359,6 +1477,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
             }
             return GoToLoot(ref frame, me, myPlatform, best, bestItem, bestPlatform, what);
         }
+        lootRouteOk = NearestEnemyDistance(me) > LootRouteSafeDistance;
         foreach (Coin coin in Coin.Active) {
             Consider(coin ? coin.transform : null, me, myPlatform, range, ref best, ref bestItem, ref bestPlatform, ref bestDist, ref what, "a moeda");
         }
@@ -1402,6 +1521,9 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         return GoToLoot(ref frame, me, myPlatform, best, bestItem, bestPlatform, what);
     }
 
+    private const float LootRouteSafeDistance = 6f;
+    private bool lootRouteOk;
+
     // walk (or route over the map) to the chosen loot; chests and vases get a swing
     private bool GoToLoot(ref PlayerInputFrame frame, Vector2 me, ArenaMap.Platform myPlatform, Vector2 best,
                           Transform bestItem, ArenaMap.Platform bestPlatform, string what) {
@@ -1409,6 +1531,9 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         float dx = best.x - me.x;
 
         if (bestPlatform != myPlatform) {
+            if (!lootRouteOk) {
+                return false;   // no leaving the floor for a barrel with someone on his heels
+            }
             routeLoot = bestItem;
             if (RequestRoute(myPlatform, bestPlatform, me.x)) {
                 action = "Pegando " + what + ": " + action;
@@ -1512,13 +1637,128 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         return hops != null && platform != null && platform.index < hops.Length ? hops[platform.index] : int.MaxValue;
     }
 
+    // ---- the hexballs: the look ahead (José, 2026-11-02: they took 2 hearts each, most of his hits) ----
+
+    private const float HexMargin = 0.3f;        // the ball's size and a little air
+    private const float HexLookAhead = 1.2f;
+    private const float JumpPeak = 2.4f;
+    private const float JumpPeakTime = 0.4f;
+    private float evadeUntil;                    // keeps to the way out he chose, no walking back into it
+
+    // would this ball touch him if he moved like this? (a straight path; he runs at speedX, or dashes
+    // for its fixed time, or jumps)
+    private bool HexHits(HexballEffect ball, float speedX, bool jump, float dashSpeed = 0f, float dashTime = 0f) {
+        Vector2 at = ball.transform.position;
+        Vector2 velocity = ((Vector2)ball.Direction).normalized * ball.Speed;
+        float x = transform.position.x;
+        float feet = FeetY;
+        float height = player.HeadPoint.y - feet;
+        float halfWidth = player.BodyHalfWidth + HexMargin;
+        for (float t = 0f; t <= HexLookAhead; t += 0.04f) {
+            Vector2 ballAt = at + velocity * t;
+            float myX = x + (t < dashTime ? dashSpeed * t : dashSpeed * dashTime + speedX * t);
+            float rise = 0f;
+            if (jump && t < JumpPeakTime * 2f) {
+                float phaseOfJump = (t - JumpPeakTime) / JumpPeakTime;
+                rise = JumpPeak * (1f - phaseOfJump * phaseOfJump);
+            }
+            if (Mathf.Abs(ballAt.x - myX) <= halfWidth
+                && ballAt.y >= feet + rise - HexMargin && ballAt.y <= feet + rise + height + HexMargin) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // the first way out that the ball misses: a run keeps him on his floor, then a jump, then the dash
+    private bool EvadeHexball(ref PlayerInputFrame frame, HexballEffect ball) {
+        bool homing = ball.homingTarget != null;
+        if (!homing && !HexHits(ball, 0f, false)) {
+            return false;   // it passes by: keep fighting
+        }
+        Vector2 pos = ball.transform.position;
+        float dirAway = pos.x == transform.position.x ? (player.FacingRight ? 1f : -1f) : Mathf.Sign(transform.position.x - pos.x);
+        float run = player.MaxSpeed;
+        bool canJump = player.IsGrounded && Time.time >= nextJumpTime;
+        float landsIn = Vector2.Distance(pos, player.BodyCenter) / Mathf.Max(0.1f, ball.Speed);
+        evadeUntil = Time.time + Mathf.Min(landsIn + 0.1f, 0.5f);
+        foreach (float side in new[] { dirAway, -dirAway }) {
+            if (!homing && player.IsGrounded && StaysAboveFlood(side, run) && !HexHits(ball, side * run, false)) {
+                frame.move = side;
+                frame.runHeld = player.RunReady || player.IsRunning;
+                action = "Saindo da linha do feitiço";
+                return true;
+            }
+        }
+        if (canJump && (homing || !HexHits(ball, 0f, true))) {
+            frame.jumpPressed = true;
+            frame.jumpHeld = true;
+            nextJumpTime = Time.time + jumpCooldown;
+            action = "Pulando o feitiço";
+            return true;
+        }
+        float facing = player.FacingRight ? 1f : -1f;
+        if (FrenyProgress.HasDashDodge && dash && dash.CanDash && !HexHits(ball, 0f, false, facing * dash.dashVelocity, dash.startDashTime)) {
+            frame.dashPressed = true;
+            action = "Esquivando com dash do feitiço";
+            return true;
+        }
+        evadeUntil = 0f;
+        return Dodge(ref frame, dirAway, "o projétil");
+    }
+
+    // in the air: the dash when he has it (flat, and out of the ball's line), else the double jump
+    private bool AirEvade(out PlayerInputFrame frame) {
+        frame = default;
+        if (player.IsGrounded || (dash && dash.IsDashing)) {
+            return false;
+        }
+        Vector2 body = player.BodyCenter;
+        foreach (HexballEffect ball in HexballEffect.Active) {
+            if (!ball || ball.fromFreny) {
+                continue;
+            }
+            Vector2 dir = ((Vector2)ball.Direction).normalized;
+            Vector2 toMe = body - (Vector2)ball.transform.position;
+            float along = Vector2.Dot(toMe, dir);
+            float miss = Mathf.Abs(toMe.x * dir.y - toMe.y * dir.x);
+            if (along <= 0f || miss > AirEvadeMiss || along / Mathf.Max(0.1f, ball.Speed) > AirEvadeTime) {
+                continue;
+            }
+            float facing = player.FacingRight ? 1f : -1f;
+            if (FrenyProgress.HasDashDodge && dash && dash.CanAirDash && !HexHits(ball, 0f, false, facing * dash.dashVelocity, dash.startDashTime)) {
+                frame.dashPressed = true;
+                action = "Esquivando com dash do feitiço";
+                return true;
+            }
+            if (player.CanAirJump) {
+                frame.jumpPressed = true;
+                frame.jumpHeld = true;
+                action = "Pulo duplo para fugir do feitiço";
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private const float AirEvadeMiss = 0.7f;
+    private const float AirEvadeTime = 0.3f;
+
+    // with the floor flooded, a run out of a spell's way must not take him off his platform
+    private bool StaysAboveFlood(float side, float run) {
+        if (!(AcidPuddle.Flooding || Cyclops.FloodComing) || standingOn == null || standingOn == map.Floor) {
+            return true;
+        }
+        return standingOn.Contains(transform.position.x + side * run * 0.4f, 0f);
+    }
+
     // ---- perception ----
 
     // a hexball that will pass within a body's width of Freny in the next dodgeWindow seconds
     private HexballEffect IncomingProjectile(Vector2 me) {
         Vector2 body = me + Vector2.up * 0.5f;
-        foreach (HexballEffect projectile in projectiles) {
-            if (!projectile) {
+        foreach (HexballEffect projectile in HexballEffect.Active) {   // live: a scan could be 0.25 s old
+            if (!projectile || projectile.fromFreny) {
                 continue;
             }
             Vector2 pos = projectile.transform.position;
@@ -1654,11 +1894,16 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
             if (FrenyProgress.HasSmartTarget && !(enemy is Cyclops)) {
                 score += 1.5f * enemy.Health; // prefers the ones that die fastest
             }
+            if (enemy is Sorcerer) {
+                score -= SorcererFirst;       // its spells are what hurts most from afar
+            }
             if (Cyclops.Current != null) {
                 if (enemy is Cyclops) {
                     score -= BossFirst;
                 } else if (offset.magnitude > CloseEnough) {
                     score += OthersDuringBoss;
+                } else if (Cyclops.Current.RestLeft <= 0f) {
+                    score -= BossFirst + 2f;  // right on him and no opening on the eye: that one first
                 }
             }
 
