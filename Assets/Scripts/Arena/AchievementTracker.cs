@@ -15,6 +15,7 @@ public class AchievementTracker : MonoBehaviour {
     private ArenaRunManager run;
     private bool arena;
     private bool assisted;
+    private int runKills, runCyclopes, runBackstabs;
 
     // a manual Arena run is going on (Freny may have just fallen: the own grenade counts)
     public static bool Counts => instance != null && instance.arena && instance.player != null && !instance.assisted;
@@ -50,6 +51,7 @@ public class AchievementTracker : MonoBehaviour {
         input = player != null ? player.GetComponent<FrenyInput>() : null;
         run = player != null ? player.GetComponent<ArenaRunManager>() : null;
         assisted = false;
+        runKills = runCyclopes = runBackstabs = 0;
         Achievements.EarnedThisRun.Clear();
     }
 
@@ -60,6 +62,9 @@ public class AchievementTracker : MonoBehaviour {
             }
             if (run != null && run.RunSeconds >= Achievements.SurviveSeconds) {
                 Achievements.Earn(Achievement.Survivor);
+            }
+            if (run != null && run.RunSeconds >= Achievements.MarathonSeconds) {
+                Achievements.Earn(Achievement.Marathon);
             }
         }
         UpdateBanner();
@@ -74,18 +79,28 @@ public class AchievementTracker : MonoBehaviour {
         if (UIManager.Instance != null && UIManager.Instance.Score >= Achievements.MillionScore) {
             Achievements.Earn(Achievement.Million);
         }
+        if (++runKills >= Achievements.RunKills) {
+            Achievements.Earn(Achievement.Kills500);
+        }
         if (name == "Cyclops_Boss") {
             Achievements.Earn(Achievement.Cyclops);
+            if (++runCyclopes >= Achievements.CyclopsKills) {
+                Achievements.Earn(Achievement.Cyclops3);
+            }
             if (enemy.LastHitMark == Enemy.EyeHit) {
                 Achievements.Earn(Achievement.Eye, "eye", 1);
             }
         } else if (name == "Sorcerer_Supreme") {
             Achievements.Earn(Achievement.Supreme);
         } else if (name == "Shielded_Enemy" && enemy.LastHitMark == Enemy.BackHit) {
-            Achievements.Earn(Achievement.Backstab, "back", 1);
+            if (++runBackstabs >= Achievements.BackstabKills) {
+                Achievements.Earn(Achievement.Backstab, "back", 1);
+            } else {
+                Achievements.Moment("back", 1);
+            }
         }
         if (Mathf.RoundToInt((combo - 1f) * 10f) >= Achievements.ComboStep) {
-            Achievements.Earn(Achievement.Combo5);
+            Achievements.Earn(Achievement.Combo50);
         }
     }
 

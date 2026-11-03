@@ -33,12 +33,15 @@ public static class PlayerTitles {
         new Title { id = "supreme", name = "Caçador de Magos", how = "Conquista Feitiço Contra o Feiticeiro." },
         new Title { id = "million", name = "Milionário", how = "Conquista Freny Milionário." },
         new Title { id = "eye", name = "Olho de Águia", how = "Conquista Na Menina dos Olhos." },
-        new Title { id = "combo5", name = "Embalado", how = "Conquista Quinta Marcha." },
+        new Title { id = "combo50", name = "Embalado", how = "Conquista Quinta Marcha." },
         new Title { id = "survivor", name = "Sobrevivente", how = "Conquista Duro de Matar." },
         new Title { id = "backstab", name = "Sorrateiro", how = "Conquista Escudo pra Quê?" },
         new Title { id = "grenade5", name = "Granadeiro", how = "Conquista Cinco Coelhos, Uma Granada." },
         new Title { id = "shotgun3", name = "Escopeteiro", how = "Conquista Doze é Demais." },
         new Title { id = "oops", name = "Desastrado", how = "Conquista Ops!" },
+        new Title { id = "cyclops3", name = "Caça-Ciclopes", how = "Conquista Caça-Ciclopes." },
+        new Title { id = "kills500", name = "Exterminador", how = "Conquista Exterminador." },
+        new Title { id = "marathon", name = "Incansável", how = "Conquista Maratonista." },
     };
 
     // the player's pick, for the whole game like the Conquistas (not per save slot)
@@ -227,8 +230,8 @@ public static class PlayerTitles {
     private static Remote Read(Fields f) {
         Remote remote = new Remote { title = f?.title?.stringValue };
         if (f == null) return remote;
-        FsString[] signed = { f.played, f.million, f.cyclops, f.supreme, f.grenade5, f.oops, f.shotgun3, f.backstab, f.eye, f.combo5, f.survivor };
-        string[] keys = { "played", "million", "cyclops", "supreme", "grenade5", "oops", "shotgun3", "backstab", "eye", "combo5", "survivor" };
+        FsString[] signed = { f.played, f.million, f.cyclops, f.supreme, f.grenade5, f.oops, f.shotgun3, f.backstab, f.eye, f.combo50, f.survivor, f.cyclops3, f.kills500, f.marathon };
+        string[] keys = { "played", "million", "cyclops", "supreme", "grenade5", "oops", "shotgun3", "backstab", "eye", "combo50", "survivor", "cyclops3", "kills500", "marathon" };
         for (int i = 0; i < keys.Length; i++) {
             if (signed[i] != null && !string.IsNullOrEmpty(signed[i].stringValue)) remote.has.Add(keys[i]);
         }
@@ -242,6 +245,6 @@ public static class PlayerTitles {
         public Fields fields;
     }
     [Serializable] private class Fields {
-        public FsString title, played, million, cyclops, supreme, grenade5, oops, shotgun3, backstab, eye, combo5, survivor;
+        public FsString title, played, million, cyclops, supreme, grenade5, oops, shotgun3, backstab, eye, combo50, survivor, cyclops3, kills500, marathon;
     }
 }

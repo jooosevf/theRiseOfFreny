@@ -234,6 +234,7 @@ def escudo_pra_que(img):
     paste(img, outline(shielded.transpose(Image.FLIP_LEFT_RIGHT)), 6, N - shielded.height - 6)
     blade = sword().rotate(-60, expand=True, resample=Image.NEAREST)
     paste(img, outline(blade), 20, 10)
+    text(img, 'x10', 22, 7, GOLD_HI, 1)
     return img
 
 
@@ -254,7 +255,28 @@ def quinta_marcha(img):
     d = ImageDraw.Draw(img)
     for y, c in ((25, FIRE[3]), (27, FIRE[2]), (29, FIRE[1]), (31, FIRE[0])):   # speed lines under it
         d.line((6 + (31 - y), y, 33, y), fill=c)
-    text(img, '5x', 9, 7, (255, 255, 255), 3)
+    text(img, '50x', 8, 10, (255, 255, 255), 2)
+    return img
+
+
+def caca_ciclopes(img):
+    paste(img, outline(half(cyclops)), 7, 12)
+    text(img, 'x3', 21, 7, GOLD_HI, 2)
+    return img
+
+
+def exterminador(img):
+    blade = sword().rotate(-45, expand=True, resample=Image.NEAREST)
+    paste(img, outline(blade), 5, 6)
+    paste(img, outline(blade.transpose(Image.FLIP_LEFT_RIGHT)), 19, 6)
+    text(img, '500', 8, 24, GOLD_HI, 2)
+    return img
+
+
+def maratonista(img):
+    big = heart.resize((heart.width * 2, heart.height * 2), Image.NEAREST)
+    paste(img, outline(big), (N - big.width - 2) // 2, 6)
+    text(img, '30:00', 8, 29, GOLD_HI, 1)
     return img
 
 
@@ -268,7 +290,8 @@ def duro_de_matar(img):
 ICONS = [
     ('million', milionario), ('cyclops', maior_a_queda), ('supreme', feitico), ('grenade5', cinco_coelhos),
     ('oops', ops), ('shotgun3', doze), ('backstab', escudo_pra_que), ('eye', menina_dos_olhos),
-    ('combo5', quinta_marcha), ('survivor', duro_de_matar),
+    ('combo50', quinta_marcha), ('survivor', duro_de_matar), ('cyclops3', caca_ciclopes),
+    ('kills500', exterminador), ('marathon', maratonista),
 ]
 
 META = '''fileFormatVersion: 2

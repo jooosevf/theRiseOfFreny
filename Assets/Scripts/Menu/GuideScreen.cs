@@ -175,8 +175,8 @@ public static class GuideScreen {
             "Surge por um portal dourado numa das plataformas mais altas quando a chave cai, e espera até ser aberto. " +
             "Só abre com a chave (encoste ou bata). Dá cerca de 145 moedas (moedas e 2 diamantes), enche a vida, a armadura, " +
             "as balas, os cartuchos e as granadas, " + (Features.Fury ? "solta a Fúria na hora " : "") + "e, se você não tem o Espadão, uns golpes com ele. Não dá pontos. " +
-            "E tem " + Mathf.RoundToInt(FrenyLook.ChestLookChance * 100f) + "% de chance de trazer um visual que só ele dá " +
-            "(Elmo do Ciclope ou Capa dourada), um que você ainda não tem." + (Features.Blessings ? " Ao abrir, escolha 1 de 3 bênçãos." : "") + " " +
+            (FrenyLook.ChestHasLooks ? "E tem " + Mathf.RoundToInt(FrenyLook.ChestLookChance * 100f) + "% de chance de trazer um visual que só ele dá " +
+            "(Elmo do Ciclope ou Capa dourada), um que você ainda não tem." : "") + (Features.Blessings ? " Ao abrir, escolha 1 de 3 bênçãos." : "") + " " +
             "Cada chave traz um baú novo, então dá para ter vários na mesma corrida.");
         if (Features.InstaKill || Features.Nuke || Features.Magnet) Entry(parent, ArenaPowerUps.Icon(ItemPickup.Kind.Nuke), "Insta-kill, Nuke e Ímã",
             "Inimigos que o Freny mata na Arena têm cerca de " + (ArenaPowerUps.DropChance * 100f).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',') +
@@ -189,8 +189,9 @@ public static class GuideScreen {
     private static void Shop(Transform parent, MenuArt art) {
         if (Features.WeaponBuffs) ShopBuffs(parent, art);
         if (Features.Looks) Entry(parent, art ? art.berserkerHelmet : null, "Visual",
-            "Elmos (o Capacete Berserker custa 1.000 e só muda o visual: um chifre quebrado, inteiro quando ele tem armadura), " +
-            "capas, torsos e o Traje Berserker ficam em Armeira > Cosméticos ou Inventário > Visual. A Armeira e o Inventário também abrem direto da pausa.");
+            (Features.ExtraLooks ? "Elmos (o Capacete Berserker custa 1.000 e só muda o visual: um chifre quebrado, inteiro quando ele tem armadura), capas, " :
+                "O Capacete Berserker (1.000, só muda o visual: um chifre quebrado, inteiro quando ele tem armadura), ") +
+            "torsos e o Traje Berserker ficam em Armeira > Cosméticos ou Inventário > Visual. A Armeira e o Inventário também abrem direto da pausa.");
         Entry(parent, art ? art.heart : null, "Freny",
             "Vida máxima +1 (" + Prices(FrenyUpgrade.MaxHealth) + "), velocidade +5% (" + Prices(FrenyUpgrade.MoveSpeed) +
             "), pulo duplo (" + Prices(FrenyUpgrade.DoubleJump) + ")" +
@@ -308,7 +309,7 @@ public static class GuideScreen {
             "Quando o Ciclope chega, a música da Arena dá lugar à dele, mais pesada e rápida, e as tochas piscam " +
             "rápido e ficam vermelhas. Quando ele cai, tudo volta ao normal.");
         Entry(parent, Achievements.Icon(Achievement.Cyclops), "Conquistas",
-            "10 desafios (pausa > Conquistas). Só valem corridas manuais: depois que o piloto joga, a corrida não " +
+            Achievements.All.Length + " desafios (pausa > Conquistas). Só valem corridas manuais: depois que o piloto joga, a corrida não " +
             "dá mais conquistas. No fim da corrida, o servidor confere cada conquista nova e o site mostra quantos % " +
             "dos jogadores têm cada uma.");
         Entry(parent, art ? art.run : null, "XP e piloto automático",
@@ -381,18 +382,20 @@ public static class GuideScreen {
             "Com tudo da Armeira comprado e no nível máximo, Jogar > Renascer troca todas as melhorias (as do " +
             "Armeira e as do piloto automático) e o nível, que volta ao 1, por um bônus para sempre: +5% de dano " +
             "e +5% de moedas a cada renascimento, somando, e uma estrela ★ ao lado do nome no ranking (no jogo " +
-            "e no site). Moedas, recordes, conquistas e o visual ficam. Alguns visuais só abrem renascendo.");
+            "e no site). Moedas, recordes, conquistas e o visual ficam." + (Features.ExtraLooks ? " Alguns visuais só abrem renascendo." : ""));
         if (!Features.Looks) {
             return;
         }
         Entry(parent, art ? art.berserkerHelmet : null, "Visual",
-            "Em Jogar > Visual o Freny troca de traje, elmo, capa e torso, um de cada vez. Uns se compram com moedas, " +
-            "outros abrem com uma conquista, renascendo ou só no baú dourado do Ciclope. Só muda o visual, não a luta. Na Fúria e com " +
+            (Features.ExtraLooks ? "Em Jogar > Visual o Freny troca de traje, elmo, capa e torso, um de cada vez. Uns se compram com moedas, " +
+                "outros abrem com uma conquista, renascendo ou só no baú dourado do Ciclope. " :
+                "Em Jogar > Visual o Freny troca de traje, elmo e torso, um de cada vez, com moedas. ") +
+            "Só muda o visual, não a luta. Na Fúria e com " +
             "armadura ele ainda mostra os capacetes deles.");
         if (Features.BerserkerSuit) Entry(parent, art ? art.berserkerHelmet : null, "Traje Berserker",
             "O primeiro traje: troca a roupa inteira do Freny. Abre depois de derrotar um Ciclope e custa " +
             FrenyLook.Find(FrenyLook.TrajeId).price + " moedas, à parte do Capacete Berserker. Com ele o elmo tem um chifre " +
-            "quebrado, e fica inteiro quando ele tem armadura. A capa continua; o elmo e o torso ficam guardados, e usar um deles tira o Traje. Renascer não tira. " +
+            "quebrado, e fica inteiro quando ele tem armadura. Com o Traje, Elmo, Capa e Torso ficam bloqueados: para trocá-los, tire o Traje. Renascer não tira. " +
             "Só muda o visual, não a luta.");
         foreach (FrenyLook.Item item in FrenyLook.All) {
             if (item.unlock != FrenyLook.Unlock.Free && item.unlock != FrenyLook.Unlock.Coins &&

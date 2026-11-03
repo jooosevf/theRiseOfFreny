@@ -40,8 +40,9 @@ public static class VarietyScreens {
             Text label = open.GetComponentInChildren<Text>();
             label.supportRichText = true;
             rows.Add(() => {
-                string hidden = FrenyLook.WearsTraje && HiddenBySuit(s) ? " (guardado com o Traje)" : "";
-                label.text = SlotName(s) + "\n<size=" + MenuKit.SmallTextSize + ">" + WornOrFirst(s).name + hidden + "</size>";
+                bool locked = FrenyLook.WearsTraje && s != LookSlot.Suit;
+                open.interactable = !locked;
+                label.text = SlotName(s) + "\n<size=" + MenuKit.SmallTextSize + ">" + (locked ? "Bloqueado: tire o Traje" : WornOrFirst(s).name) + "</size>";
             });
         }
         page.Button("Voltar", stack.Back);
@@ -76,7 +77,7 @@ public static class VarietyScreens {
             Text right = InventoryScreens.ItemButton(page, "", null, () => {
                 focus = item;
                 if (FrenyLook.Owns(item) || FrenyLook.TryBuy(item)) {
-                    Put(item);
+                    FrenyLook.Wear(item);
                     onChange();
                 } else {
                     Sfx.Ui("ui_error");
@@ -118,24 +119,12 @@ public static class VarietyScreens {
 
     private static bool IsNothing(FrenyLook.Item item) => item.unlock == FrenyLook.Unlock.Free;
 
-    private static bool HiddenBySuit(LookSlot slot) => slot == LookSlot.Helmet || slot == LookSlot.Color;
-
     private static bool IsWorn(FrenyLook.Item item) => FrenyLook.Owns(item) && WornOrFirst(item.slot) == item;
 
-    // he wears what he has, with this one tried on; the Traje would hide a helmet or a torso, so
-    // he takes it off to show them
+    // he wears what he has, with this one tried on
     private static void ShowOn(FrenyLookPreview preview, LookSlot slot, FrenyLook.Item item) {
         FrenyLook.Item Look(LookSlot s) => s == slot ? item : WornOrFirst(s);
-        bool noSuit = HiddenBySuit(slot) && !IsNothing(item);
-        preview.Show(Look(LookSlot.Helmet), Look(LookSlot.Cape), Look(LookSlot.Color), noSuit ? null : Look(LookSlot.Suit));
-    }
-
-    private static void Put(FrenyLook.Item item) {
-        FrenyLook.Wear(item);
-        // the Traje hides helmets and torsos: who picks one wants to see it
-        if (HiddenBySuit(item.slot) && !IsNothing(item) && FrenyLook.WearsTraje) {
-            FrenyLook.Wear(FrenyLook.InSlot(LookSlot.Suit)[0]);
-        }
+        preview.Show(Look(LookSlot.Helmet), Look(LookSlot.Cape), Look(LookSlot.Color), Look(LookSlot.Suit));
     }
 
     private static string RowState(FrenyLook.Item item) {
@@ -153,8 +142,7 @@ public static class VarietyScreens {
 
     private static string Describe(FrenyLook.Item item) {
         // two short lines, the page has no room for a third: the row in focus already names the item
-        string takesSuit = FrenyLook.WearsTraje && HiddenBySuit(item.slot) && !IsNothing(item) && !IsWorn(item) ? " · Usar tira o Traje" : "";
-        string coins = "Moedas: " + FrenyProgress.Coins + takesSuit + "\n";
+        string coins = "Moedas: " + FrenyProgress.Coins + "\n";
         if (IsWorn(item)) {
             return coins + "<color=" + GreenText + ">É o que ele está usando.</color>";
         }
@@ -212,7 +200,7 @@ public static class VarietyScreens {
         page.Space(4f);
         page.Label("Com tudo da Armeira comprado e no nível máximo, o Freny pode trocar todas as melhorias " +
                    "por um bônus para sempre: +5% de dano e +5% de moedas a cada renascimento, somando, e uma " +
-                   "estrela ★ ao lado do nome no ranking. Alguns visuais só abrem renascendo.");
+                   "estrela ★ ao lado do nome no ranking." + (Features.ExtraLooks ? " Alguns visuais só abrem renascendo." : ""));
         List<string> missing = Rebirth.Missing();
         if (missing.Count > 0) {
             int shownCount = Mathf.Min(4, missing.Count);

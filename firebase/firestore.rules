@@ -332,20 +332,21 @@ service cloud.firestore {
     function validAchievements(userId) {
       let d = request.resource.data;
       return d.keys().hasOnly(['played', 'million', 'cyclops', 'supreme', 'grenade5', 'oops', 'shotgun3',
-                               'backstab', 'eye', 'combo5', 'survivor', 'title', 'updatedAt'])
+                               'backstab', 'eye', 'combo5', 'combo50', 'survivor', 'cyclops3', 'kills500', 'marathon', 'title', 'updatedAt'])
           && d.updatedAt == request.time
           && validTitle(d)
           && (resource == null || d.keys().hasAll(resource.data.keys()))
           && achSig(d, userId, 'played') && achSig(d, userId, 'million') && achSig(d, userId, 'cyclops')
           && achSig(d, userId, 'supreme') && achSig(d, userId, 'grenade5') && achSig(d, userId, 'oops')
           && achSig(d, userId, 'shotgun3') && achSig(d, userId, 'backstab') && achSig(d, userId, 'eye')
-          && achSig(d, userId, 'combo5') && achSig(d, userId, 'survivor');
+          && achSig(d, userId, 'combo5') && achSig(d, userId, 'combo50') && achSig(d, userId, 'survivor')
+          && achSig(d, userId, 'cyclops3') && achSig(d, userId, 'kills500') && achSig(d, userId, 'marathon');
     }
 
     function validTitle(d) {
       return !('title' in d) || d.title == '' || d.title == 'rei'
           || (d.title in ['played', 'million', 'cyclops', 'supreme', 'grenade5', 'oops', 'shotgun3',
-                          'backstab', 'eye', 'combo5', 'survivor'] && d.title in d);
+                          'backstab', 'eye', 'combo5', 'combo50', 'survivor', 'cyclops3', 'kills500', 'marathon'] && d.title in d);
     }
 
     // missing, or sha256("<key>|<uid>|ach|<id>") from the ranking API

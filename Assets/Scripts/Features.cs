@@ -42,6 +42,7 @@ public static class Features {
     public static readonly bool Rebirth = true;             // Renascer (the button, the bonus and its looks)
     public static readonly bool Looks = true;               // Visual: helmets, capes and colours
     public static readonly bool BerserkerSuit = true;       // Traje Berserker, the whole skin (needs Looks)
+    public static readonly bool ExtraLooks = false;         // the other helmets, the capes and the white and gold torsos (José, 2026-11-03: next update)
 
     // the Armeira's shelves, the Inventário and Renascer's list ask here
     public static bool Sold(FrenyUpgrade upgrade) {

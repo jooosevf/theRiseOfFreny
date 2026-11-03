@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum Achievement { Million, Cyclops, Supreme, Grenade5, Oops, Shotgun3, Backstab, Eye, Combo5, Survivor }
+public enum Achievement { Million, Cyclops, Supreme, Grenade5, Oops, Shotgun3, Backstab, Eye, Combo50, Survivor, Cyclops3, Kills500, Marathon }
 
-// The Conquistas (José, 2026-10-29): ten feats of the Arena, kept in PlayerPrefs (freny.ach.<key>)
+// The Conquistas (José, 2026-10-29; remapped 2026-11-03): feats of the Arena, kept in PlayerPrefs (freny.ach.<key>)
 // for the whole game, not per save slot. Like the ranking, only a manual run counts: once the
 // autopilot has driven in a run, nothing more is earned in it (AchievementTracker.Counts).
 // An achievement earned in a run with a ticket from the ranking API is sent to it at the end of the
@@ -24,8 +24,12 @@ public static class Achievements {
     public const long MillionScore = 1000000;
     public const int GrenadeKills = 5;
     public const int ShotgunKills = 3;
-    public const int ComboStep = 39;         // the kill at 4.9x shows 5.0x after it
+    public const int ComboStep = 489;        // the kill at 49.9x shows 50.0x after it
     public const float SurviveSeconds = 600f;
+    public const float MarathonSeconds = 1800f;
+    public const int BackstabKills = 10;
+    public const int CyclopsKills = 3;
+    public const int RunKills = 500;
 
     public static readonly Info[] All = {
         new Info { id = Achievement.Million, key = "million", name = "Freny Milionário",
@@ -41,13 +45,19 @@ public static class Achievements {
         new Info { id = Achievement.Shotgun3, key = "shotgun3", name = "Doze é Demais",
             how = "Derrote 3 inimigos com um tiro só da escopeta." },
         new Info { id = Achievement.Backstab, key = "backstab", name = "Escudo pra Quê?",
-            how = "Derrote um Escudeiro acertando onde o escudo não cobre." },
+            how = "Derrote 10 Escudeiros numa corrida, acertando onde o escudo não cobre." },
         new Info { id = Achievement.Eye, key = "eye", name = "Na Menina dos Olhos",
             how = "Dê o golpe final no Ciclope acertando o olho dele." },
-        new Info { id = Achievement.Combo5, key = "combo5", name = "Quinta Marcha",
-            how = "Chegue ao combo 5.0x." },
+        new Info { id = Achievement.Combo50, key = "combo50", name = "Quinta Marcha",
+            how = "Chegue ao combo 50x." },
         new Info { id = Achievement.Survivor, key = "survivor", name = "Duro de Matar",
             how = "Fique vivo 10 minutos numa corrida." },
+        new Info { id = Achievement.Cyclops3, key = "cyclops3", name = "Caça-Ciclopes",
+            how = "Derrote 3 Ciclopes numa corrida." },
+        new Info { id = Achievement.Kills500, key = "kills500", name = "Exterminador",
+            how = "Derrote 500 inimigos numa corrida." },
+        new Info { id = Achievement.Marathon, key = "marathon", name = "Maratonista",
+            how = "Fique vivo 30 minutos numa corrida." },
     };
 
     public const string KeyPrefix = "freny.ach.";
@@ -98,6 +108,13 @@ public static class Achievements {
             return;
         }
         Grant(a);
+    }
+
+    // a moment for the run's log that doesn't earn anything yet (the API counts them)
+    public static void Moment(string moment, int count) {
+        if (AchievementTracker.Counts) {
+            Happened?.Invoke(moment, count);
+        }
     }
 
     private static void Grant(Achievement a) {
