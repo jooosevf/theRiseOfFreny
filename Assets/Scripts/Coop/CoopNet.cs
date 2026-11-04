@@ -72,8 +72,8 @@ public static class CoopNet {
                 await SignIn();
                 Allocation allocation = await RelayService.Instance.CreateAllocationAsync(MaxPlayers - 1);
                 JoinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
-                Transport.SetRelayServerData(AllocationUtils.ToRelayServerData(allocation, "wss"));
-                Transport.UseWebSockets = true;
+                Transport.SetRelayServerData(AllocationUtils.ToRelayServerData(allocation, CoopArgs.RelayConnection));
+                Transport.UseWebSockets = CoopArgs.UseWebSockets;
             }
             if (!Net.StartHost()) {
                 throw new Exception("o host não iniciou");
@@ -97,8 +97,8 @@ public static class CoopNet {
                 Status = "Procurando a sala...";
                 await SignIn();
                 JoinAllocation allocation = await RelayService.Instance.JoinAllocationAsync(code.Trim().ToUpperInvariant());
-                Transport.SetRelayServerData(AllocationUtils.ToRelayServerData(allocation, "wss"));
-                Transport.UseWebSockets = true;
+                Transport.SetRelayServerData(AllocationUtils.ToRelayServerData(allocation, CoopArgs.RelayConnection));
+                Transport.UseWebSockets = CoopArgs.UseWebSockets;
             }
             if (!Net.StartClient()) {
                 throw new Exception("o cliente não iniciou");
@@ -264,6 +264,14 @@ public static class CoopArgs {
         int i = Array.IndexOf(All, name);
         return i >= 0 && i + 1 < All.Length ? All[i + 1] : null;
     }
+
+    // the browser only has WebSockets; a desktop build (Steam) can use real UDP, encrypted (dtls)
+#if UNITY_WEBGL
+    public static bool UseWebSockets => true;
+#else
+    public static bool UseWebSockets => Has("-coopWss");
+#endif
+    public static string RelayConnection => UseWebSockets ? "wss" : "dtls";
 
     public static bool Direct => Has("-coopDirect");
     public static bool Autopilot => Has("-coopAutopilot");
