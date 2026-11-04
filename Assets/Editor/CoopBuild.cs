@@ -5,13 +5,14 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// Builds the co-op test: only a lobby and the Arena, without FirebaseConfig.json, so it can't touch
+// Builds the co-op test: only the menu, the lobby and the Arena, without FirebaseConfig.json, so it can't touch
 // accounts or the ranking.
 // Unity.exe -batchmode -quit -projectPath <proj> -buildTarget <Win64|WebGL> -executeMethod CoopBuild.Build -coopOut <dir>
 public static class CoopBuild {
 
     private const string LobbyScene = "Assets/Scripts/Coop/Coop Lobby.unity";
     private const string ArenaScene = "Assets/Scenes/ZE Arena.unity";
+    private const string MenuScene = "Assets/Scenes/UI - Main Menu.unity";
     private const string MenuFont = "Assets/Sprites/Interface/Resources/Fonts/PressStart2P.ttf";
 
     public static void Build() {
@@ -39,7 +40,7 @@ public static class CoopBuild {
         BuildReport report;
         try {
             report = BuildPipeline.BuildPlayer(new BuildPlayerOptions {
-                scenes = new[] { LobbyScene, ArenaScene },
+                scenes = new[] { MenuScene, LobbyScene, ArenaScene },
                 locationPathName = location,
                 target = target,
                 options = BuildOptions.None,

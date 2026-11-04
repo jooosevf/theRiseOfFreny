@@ -77,6 +77,7 @@ public class CoopArena : MonoBehaviour {
     private byte peerLives = StartingLives;
     private byte peerReviveIn;
     private float nextTestDeath;
+    private bool leaveOpen;
     private static bool testDied;
     private static float firstStart = -1f;
     private GUIStyle overlay;
@@ -114,6 +115,7 @@ public class CoopArena : MonoBehaviour {
         CoopNet.Effect += OnEffect;
         CoopWorld.Active = true;
         CoopWorld.GainLife = OnLifeGained;
+        GameCursor.ShowWhile(this, () => leaveOpen);
         puppetHolder = new GameObject("Coop Puppets (inactive)");
         puppetHolder.SetActive(false);
     }
@@ -198,6 +200,10 @@ public class CoopArena : MonoBehaviour {
     }
 
     private void Update() {
+        // Esc: a room has no pause, only a way out
+        if (Input.GetKeyDown(KeyCode.Escape)) {
+            leaveOpen = !leaveOpen;
+        }
         float now = Time.unscaledTime;
         if (now >= nextSend && player != null) {
             nextSend = now + SendInterval;
@@ -625,6 +631,10 @@ public class CoopArena : MonoBehaviour {
                       $"Outro Freny: {(CoopNet.Connected ? (peerDead ? (peerReviveIn > 0 ? $"caído, volta em {peerReviveIn} s" : "fora") : $"{peerHealth} corações") : "desconectado")}" +
                       (isHost ? "" : $" | Pontos do host: {hostScore}");
         GUI.Box(new Rect(Screen.width - 340f, 72f, 330f, 136f), text, overlay);
+        if (leaveOpen && GUI.Button(new Rect((Screen.width - 260f) / 2f, Screen.height * 0.5f, 260f, 48f), "Sair da sala")) {
+            CoopNet.Leave();
+            return;
+        }
         if (player != null && player.IsDead) {
             string wait = reviveAt >= 0f ? $"Você volta em {Mathf.CeilToInt(ReviveLeft)} s"
                 : PeerOut ? "Os dois caíram"

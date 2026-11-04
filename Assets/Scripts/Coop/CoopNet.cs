@@ -19,6 +19,7 @@ using UnityEngine.SceneManagement;
 public static class CoopNet {
 
     public const string ArenaScene = "ZE Arena";
+    public const string LobbyScene = "Coop Lobby";
     private const ushort ProtocolVersion = 6;
     private const int MaxPlayers = 2;
     private const float PingInterval = 0.5f;
@@ -27,6 +28,7 @@ public static class CoopNet {
     public static NetworkManager Net { get; private set; }
     public static UnityTransport Transport { get; private set; }
     public static bool IsHost => Net != null && Net.IsHost;
+    public static bool InRoom => Net != null && Net.IsListening;
     public static bool Connected { get; private set; }
     public static ulong PeerId { get; private set; }
     public static string JoinCode { get; private set; }
@@ -149,6 +151,11 @@ public static class CoopNet {
         go.AddComponent<CoopPump>();
     }
 
+    public static void Shutdown() {
+        Reset();
+        Status = "";
+    }
+
     private static void Reset() {
         if (Net != null) {
             UnityEngine.Object.Destroy(Net.gameObject);
@@ -213,9 +220,17 @@ public static class CoopNet {
         Connected = false;
         Status = "O outro jogador saiu.";
         if (!IsHost) {
-            Net.Shutdown();
-            SceneManager.LoadScene(0);
+            Leave();
+            Status = "O host saiu, a sala acabou.";
         }
+    }
+
+    // back to the list of rooms, with nothing left of this one
+    public static void Leave() {
+        CoopRooms.Close();
+        Reset();
+        Status = "";
+        SceneManager.LoadScene(LobbyScene);
     }
 
     // both Frenys have fallen: the host starts the next run on both sides

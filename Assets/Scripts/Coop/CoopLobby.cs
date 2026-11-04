@@ -23,6 +23,16 @@ public class CoopLobby : MonoBehaviour {
     private Vector2 scroll;
     private GUIStyle title, label, small, button, field;
 
+    // the test binaries start in the menu like everyone; these arguments go straight to the rooms
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    private static void TestShortcut() {
+        if (CoopArgs.Has("-coopMenuTest")) {
+            new GameObject("Coop Menu Test").AddComponent<CoopMenuTest>();
+        } else if (CoopArgs.AutoHost || CoopArgs.AutoJoin != null || CoopArgs.Value("-coopJoinRoom") != null) {
+            UnityEngine.SceneManagement.SceneManager.LoadScene(CoopNet.LobbyScene);
+        }
+    }
+
     private void Start() {
         Application.runInBackground = true;
         Application.targetFrameRate = 60;
@@ -93,6 +103,14 @@ public class CoopLobby : MonoBehaviour {
         busy = false;
     }
 
+    private void BackToMenu() {
+        CoopRooms.Close();
+        if (CoopNet.InRoom) {
+            CoopNet.Shutdown();
+        }
+        GameMenus.LoadMainMenu();
+    }
+
     private void Styles() {
         if (title != null) {
             return;
@@ -133,6 +151,9 @@ public class CoopLobby : MonoBehaviour {
             GUI.enabled = true;
         }
         GUILayout.Space(8f);
+        if (GameMenus.HasMainMenu && GUILayout.Button(CoopNet.JoinCode != null ? "Fechar a sala e voltar" : "Voltar ao menu", button, GUILayout.Height(36f))) {
+            BackToMenu();
+        }
         GUILayout.Label(CoopNet.Status, label);
         GUILayout.EndArea();
     }
