@@ -20,7 +20,7 @@
 <!-- Written by /setup-engine. Read by /ux-design, /ux-review, /test-setup, /team-ui, and /dev-story -->
 <!-- to scope interaction specs, test helpers, and implementation to the correct input methods. -->
 
-- **Target Platforms**: Web (WebGL)
+- **Target Platforms**: PC (Steam) as the main release; Web (WebGL) to share with friends, maybe arena only
 - **Input Methods**: Mixed (keyboard, gamepad, touch)
 - **Primary Input**: Keyboard
 - **Gamepad Support**: Partial (confirm with José)
