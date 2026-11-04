@@ -283,6 +283,10 @@ public class FrenyMotion : MonoBehaviour {
         lunge.v -= 1.5f;
     }
 
+    public void Revive() {
+        dead = false;
+    }
+
     public void Die() {
         if (dead || rig == null) {
             return;

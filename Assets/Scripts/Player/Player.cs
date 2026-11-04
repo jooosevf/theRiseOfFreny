@@ -1019,12 +1019,41 @@ public class Player : MonoBehaviour, IDamageable {
         if (_sprite) {
             _sprite.enabled = false;
         }
+        if (CoopWorld.Active) {
+            // a room: he comes back (Revive), so the body only goes to sleep
+            rg2d.simulated = false;
+            col2d.enabled = false;
+            return;
+        }
         if (gameOver) {
             gameOver.SetActive(true);
         }
         // the body stops moving and colliding at once; Dash and the enemies check for a missing rb/collider
         Destroy(rg2d);
         Destroy(col2d);
+    }
+
+    // co-op: back on his feet at that spot, with that much life and a moment nothing can hurt him
+    public void Revive(Vector3 at, int health, float safeSeconds) {
+        if (!isDead) {
+            return;
+        }
+        isDead = false;
+        transform.position = at;
+        rg2d.simulated = true;
+        rg2d.SetVel(Vector2.zero);
+        col2d.enabled = true;
+        if (_sprite) {
+            _sprite.enabled = true;
+        }
+        Health = Mathf.Clamp(health, 1, MaxHealth);
+        invulnerableUntil = Time.time + safeSeconds;
+        if (UIManager.Instance) {
+            UIManager.Instance.UpdateLives(Health, false);
+        }
+        _playerAnim.Revive();
+        Fx.Burst(transform.position + Vector3.up * 0.4f, new Color(0.55f, 0.8f, 1f), 30, 3f, 0.1f, 0.7f);
+        Sfx.Play("upgrade", transform.position);
     }
 
     // drinks the potion bought at the shop (Q, or the autopilot when it has the upgrade)

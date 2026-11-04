@@ -71,6 +71,13 @@ public class PlayerAnimation : MonoBehaviour {
         _motion.Die();
     }
 
+    // co-op: back from the Death state, as at the start of a run
+    public void Revive() {
+        _anim.Rebind();
+        _anim.Update(0f);
+        _motion.Revive();
+    }
+
     // a trigger stays armed until some state has a transition for it; if the current state has
     // none, it used to fire the animation seconds later (a pistol draw right after landing)
     private void Fire(string trigger) {

@@ -12,7 +12,7 @@ using UnityEngine.SceneManagement;
 // client's ArenaDirector stays off and it draws puppets, and a puppet hit asks the host for the hit.
 //
 // The enemies go after the nearer Freny (CoopWorld); a hit on the client's Freny travels as a message.
-// Whoever falls watches, and the host starts the next run when both have fallen.
+// Whoever falls comes back on a timer; the host starts the next run when both have fallen.
 // Props, chests and pickups are CoopShared; shots, grenades and portals are drawn on both sides.
 // Limits for now: a net doesn't catch a puppet; Ciclope, mines and acid only hurt the host; the other
 // player's helmet and looks don't show.
@@ -24,6 +24,12 @@ public class CoopArena : MonoBehaviour {
     private const int MaxEnemyBytes = 1200;
     private const float NameTagHeight = 0.9f;
     private const float RestartDelay = 4f;
+    // José, 2026-11-04: whoever falls comes back on a timer, longer each time in the same run. To tune
+    // after playing; it stays out of the score, so the ranking isn't affected.
+    private const float ReviveSeconds = 20f;
+    private const float ReviveExtraPerFall = 10f;
+    private const float ReviveSafeSeconds = 2f;
+    private const int ReviveHealth = 2;
     private static readonly Color GhostTint = new Color(0.55f, 0.8f, 1f);
 
     private Player player;
@@ -65,10 +71,14 @@ public class CoopArena : MonoBehaviour {
     private int peerPortals;
     private static bool testSpawned;
     private float bothDownAt = -1f;
+    private float reviveAt = -1f;
+    private int falls;
+    private byte peerReviveIn;
     private static bool testDied;
     private static float firstStart = -1f;
     private GUIStyle overlay;
     private GUIStyle nameTag;
+    private GUIStyle reviveStyle;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void Hook() {
@@ -193,6 +203,7 @@ public class CoopArena : MonoBehaviour {
         }
         DrawGhost(now);
         DrawPuppets(now);
+        WatchRevive(now);
         WatchRunEnd(now);
         if (now - rateStart >= 1f) {
             receivedRate = received;
@@ -217,6 +228,7 @@ public class CoopArena : MonoBehaviour {
         writer.WriteValueSafe(state.normalizedTime);
         writer.WriteValueSafe((byte)(player.IsDead ? 1 : 0));
         writer.WriteValueSafe((byte)Mathf.Max(0, player.Health));
+        writer.WriteValueSafe((byte)Mathf.CeilToInt(ReviveLeft));
         CoopNet.Send("coop.p", writer, NetworkDelivery.UnreliableSequenced);
     }
 
@@ -227,6 +239,7 @@ public class CoopArena : MonoBehaviour {
         reader.ReadValueSafe(out float time);
         reader.ReadValueSafe(out byte dead);
         reader.ReadValueSafe(out byte health);
+        reader.ReadValueSafe(out peerReviveIn);
         received++;
         ghostTrack.Add(Time.unscaledTime, position);
         peerDead = dead != 0;
@@ -286,6 +299,25 @@ public class CoopArena : MonoBehaviour {
                 Fx.Portal(position, duration, color);
                 peerPortals++;
                 break;
+        }
+    }
+
+    private float ReviveLeft => reviveAt < 0f ? 0f : Mathf.Max(0f, reviveAt - Time.unscaledTime);
+
+    // whoever falls comes back beside the other, as long as the other is still standing
+    private void WatchRevive(float now) {
+        if (player == null || !player.IsDead) {
+            reviveAt = -1f;
+            return;
+        }
+        if (reviveAt < 0f) {
+            reviveAt = now + ReviveSeconds + falls * ReviveExtraPerFall;
+            falls++;
+            Debug.Log($"[Coop] {(isHost ? "host" : "cliente")} caiu ({falls}ª vez), volta em {reviveAt - now:0} s");
+        }
+        if (now >= reviveAt && !peerDead && CoopNet.Connected && ghost != null && ghost.gameObject.activeSelf) {
+            player.Revive(ghost.position, ReviveHealth, ReviveSafeSeconds);
+            Debug.Log($"[Coop] {(isHost ? "host" : "cliente")} voltou em {ghost.position}");
         }
     }
 
@@ -533,6 +565,8 @@ public class CoopArena : MonoBehaviour {
             overlay.normal.textColor = new Color(1f, 0.95f, 0.75f);
             nameTag = new GUIStyle(GUI.skin.label) { fontSize = 14, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
             nameTag.normal.textColor = GhostTint;
+            reviveStyle = new GUIStyle(GUI.skin.label) { fontSize = 26, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
+            reviveStyle.normal.textColor = new Color(0.85f, 0.2f, 0.18f);
         }
         if (ghost != null && ghost.gameObject.activeSelf && Camera.main != null) {
             Vector3 point = Camera.main.WorldToScreenPoint(ghost.position + Vector3.up * NameTagHeight);
@@ -541,9 +575,13 @@ public class CoopArena : MonoBehaviour {
         string text = (isHost ? $"HOST | código {CoopNet.JoinCode}\n" : "CLIENTE\n") +
                       $"Ping: {CoopNet.RttSummary()}\n" +
                       $"Transporte: {CoopNet.TransportRtt} ms | Recebendo {receivedRate} msg/s | Enviando {CoopNet.BytesPerSecond} B/s\n" +
-                      $"Outro Freny: {(CoopNet.Connected ? (peerDead ? "caído" : $"{peerHealth} corações") : "desconectado")}" +
+                      $"Outro Freny: {(CoopNet.Connected ? (peerDead ? $"caído, volta em {peerReviveIn} s" : $"{peerHealth} corações") : "desconectado")}" +
                       (isHost ? "" : $" | Pontos do host: {hostScore}");
         GUI.Box(new Rect(Screen.width - 340f, 72f, 330f, 118f), text, overlay);
+        if (player != null && player.IsDead) {
+            string wait = peerDead || !CoopNet.Connected ? "Os dois caíram" : $"Você volta em {Mathf.CeilToInt(ReviveLeft)} s";
+            GUI.Label(new Rect(0f, Screen.height * 0.4f, Screen.width, 40f), wait, reviveStyle);
+        }
     }
 
     // ---- only for the test binaries, driven from the command line

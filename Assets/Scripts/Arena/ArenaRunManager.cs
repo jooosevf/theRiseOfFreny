@@ -56,7 +56,10 @@ public class ArenaRunManager : MonoBehaviour {
         if (!RunOver || GameMenus.Paused) {
             return;
         }
-        if (CoopWorld.Active) {   // whoever falls watches; CoopArena restarts both when both have fallen
+        if (CoopWorld.Active) {   // whoever falls watches and comes back; CoopArena ends the run when both have fallen
+            if (!player.IsDead) {
+                deathTime = -1f;
+            }
             if (player.gameOver != null && player.gameOver.activeSelf) {
                 player.gameOver.SetActive(false);
             }
