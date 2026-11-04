@@ -10,7 +10,8 @@ using UnityEngine;
 // power-ups are items too; ArenaPowerUps rolls them, spins them and does what they do.
 public class ItemPickup : MonoBehaviour {
 
-    public enum Kind { Potion, Bullets, Shells, Grenades, Shotgun, GreatSword, Armor, Diamond, Staff, InstaKill, Nuke, Magnet }
+    public enum Kind { Potion, Bullets, Shells, Grenades, Shotgun, GreatSword, Armor, Diamond, Staff, InstaKill, Nuke, Magnet, Life }
+    private const float LifeSpinSpeed = 4f;   // co-op's extra life: Freny's head, turning like the power-ups
 
     // enemy drops, rolled once per death on top of its coin. These are the chances when Freny is
     // half short of that item; each one is scaled by what he needs right now (Need: none at full
@@ -235,7 +236,7 @@ public class ItemPickup : MonoBehaviour {
             case Kind.Diamond: return WorldSize * 0.8f;
             case Kind.Potion: return WorldSize * 0.7f;
             case Kind.Staff: return WorldSize * 1.4f;   // the Cajado do Mago (MageStaff), long and thin
-            case Kind.InstaKill: case Kind.Nuke: case Kind.Magnet: return WorldSize * 1.25f;   // rare: they stand out
+            case Kind.InstaKill: case Kind.Nuke: case Kind.Magnet: case Kind.Life: return WorldSize * 1.25f;   // rare: they stand out
             default: return WorldSize;
         }
     }
@@ -260,6 +261,9 @@ public class ItemPickup : MonoBehaviour {
         }
         if (ArenaPowerUps.IsPowerUp(kind)) {
             sprite = ArenaPowerUps.Icon(kind);
+        }
+        if (kind == Kind.Life) {
+            sprite = CoopWorld.LifeIcon;
         }
         return sprite != null ? sprite : FallbackSprite();
     }
@@ -374,6 +378,10 @@ public class ItemPickup : MonoBehaviour {
                 AnimateDiamond();
             } else if (ArenaPowerUps.IsPowerUp(kind)) {
                 sprite.sprite = ArenaPowerUps.FrameAt(kind, Time.time + bobPhase);
+            } else if (kind == Kind.Life) {
+                Vector3 scale = transform.localScale;
+                scale.x = Mathf.Abs(scale.y) * Mathf.Cos((Time.time + bobPhase) * LifeSpinSpeed);
+                transform.localScale = scale;
             }
         }
         // the Ímã brings what he can use; the rest stays where it is
@@ -450,7 +458,7 @@ public class ItemPickup : MonoBehaviour {
             case Kind.Armor: return player.WantsArmor;
             case Kind.Diamond: return true;
             case Kind.Staff: return true;
-            case Kind.InstaKill: case Kind.Nuke: case Kind.Magnet: return true;
+            case Kind.InstaKill: case Kind.Nuke: case Kind.Magnet: case Kind.Life: return true;
             default: return false;
         }
     }
@@ -469,6 +477,7 @@ public class ItemPickup : MonoBehaviour {
             case Kind.InstaKill: return "o Insta-kill";
             case Kind.Nuke: return "o Nuke";
             case Kind.Magnet: return "o Ímã";
+            case Kind.Life: return "a vida";
             default: return "o item";
         }
     }
@@ -512,6 +521,7 @@ public class ItemPickup : MonoBehaviour {
             case Kind.Diamond: player.AddCoins(RunModifiers.ScaleCoins(DiamondValue * amount)); return true;
             case Kind.Staff: return MageStaff.Give(player);
             case Kind.InstaKill: case Kind.Nuke: case Kind.Magnet: return ArenaPowerUps.Take(kind);
+            case Kind.Life: return CoopWorld.GainLife != null && CoopWorld.GainLife();
             default: return false;
         }
     }
@@ -524,7 +534,7 @@ public class ItemPickup : MonoBehaviour {
             case Kind.Armor: return "upgrade";
             case Kind.Staff: return "hexball_launch";
             case Kind.Diamond: return "coin";
-            case Kind.InstaKill: case Kind.Nuke: case Kind.Magnet: return "upgrade";
+            case Kind.InstaKill: case Kind.Nuke: case Kind.Magnet: case Kind.Life: return "upgrade";
             default: return "pickup_ammo";
         }
     }

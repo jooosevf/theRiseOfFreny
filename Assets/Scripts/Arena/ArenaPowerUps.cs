@@ -124,6 +124,10 @@ public class ArenaPowerUps : MonoBehaviour {
     }
 
     private void OnEnemyKilled(Enemy enemy) {
+        // co-op's extra life (José, 2026-11-04): rare from any monster, certain from the Ciclope
+        if (CoopWorld.HostActive && (enemy is Cyclops || Random.value < CoopWorld.LifeDropChance)) {
+            ItemPickup.Spawn(ItemPickup.Kind.Life, 1, enemy.Center, new Vector2(Random.Range(-1.2f, 1.2f), Random.Range(4f, 5.5f)));
+        }
         if (nuking || enemy is Cyclops || OneOnTheFloor()) {
             return;   // a Nuke can't chain into another one, and the boss has its own loot
         }

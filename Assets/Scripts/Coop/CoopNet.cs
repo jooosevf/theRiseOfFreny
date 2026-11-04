@@ -19,7 +19,7 @@ using UnityEngine.SceneManagement;
 public static class CoopNet {
 
     public const string ArenaScene = "ZE Arena";
-    private const ushort ProtocolVersion = 5;
+    private const ushort ProtocolVersion = 6;
     private const int MaxPlayers = 2;
     private const float PingInterval = 0.5f;
     private const int RttWindow = 240;   // the last 2 minutes of pings
@@ -116,9 +116,19 @@ public static class CoopNet {
         }
     }
 
-    private static async Task SignIn() {
+    public static void SetStatus(string status) {
+        Status = status;
+    }
+
+    public static async Task SignIn() {
         if (UnityServices.State != ServicesInitializationState.Initialized) {
-            await UnityServices.InitializeAsync();
+            // two copies on one PC would share a player id, and a room refuses its own creator
+            string profile = CoopArgs.Value("-coopProfile");
+            InitializationOptions options = new InitializationOptions();
+            if (!string.IsNullOrEmpty(profile)) {
+                options.SetProfile(profile);
+            }
+            await UnityServices.InitializeAsync(options);
         }
         if (!AuthenticationService.Instance.IsSignedIn) {
             await AuthenticationService.Instance.SignInAnonymouslyAsync();
@@ -188,6 +198,7 @@ public static class CoopNet {
         }
         PeerId = id;
         Connected = true;
+        CoopRooms.Close();
         Debug.Log($"[Coop] jogador {id} entrou");
         using FastBufferWriter writer = new FastBufferWriter(4, Allocator.Temp);
         Send("coop.start", writer, NetworkDelivery.ReliableSequenced);
@@ -232,6 +243,7 @@ public static class CoopNet {
     // ---- ping: a message of ours through the same path as the game's, so the time a frame takes
     // on each side counts, which is what a player feels
     public static void Tick() {
+        CoopRooms.Tick();
         float now = Time.unscaledTime;
         if (now - secondStart >= 1f) {
             BytesPerSecond = bytesThisSecond;
@@ -298,6 +310,7 @@ public static class CoopArgs {
     public static string AutoJoin => Value("-coopJoin");
     public static string ShotDir => Value("-coopShots");
     public static float ShotEvery => float.TryParse(Value("-coopShotEvery"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float seconds) ? seconds : 5f;
+    public static float DieEvery => float.TryParse(Value("-coopDieEvery"), out float seconds) ? seconds : 0f;
     public static float DieAt => float.TryParse(Value("-coopDieAt"), out float seconds) ? seconds : 0f;
     public static float QuitAfter => float.TryParse(Value("-coopQuitAfter"), out float seconds) ? seconds : 0f;
 

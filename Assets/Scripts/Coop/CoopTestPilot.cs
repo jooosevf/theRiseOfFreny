@@ -8,6 +8,7 @@ public class CoopTestPilot : MonoBehaviour, IPlayerInputSource {
     private const float SwordReach = 1.4f;
     private const float StepUp = 1f;
     private const float GunRange = 6f;
+    private const float ItemBias = 10f;   // goes for an item before anything else
     private const float GrenadeEvery = 8f;
     private float nextGrenade;
     private Player player;
@@ -36,6 +37,13 @@ public class CoopTestPilot : MonoBehaviour, IPlayerInputSource {
         foreach (Breakable prop in Breakable.Active) {
             if (!prop.Broken) {
                 Consider(prop.transform, 0f, ref target, ref best, ref swing);
+            }
+        }
+        foreach (ItemPickup item in ItemPickup.Active) {
+            float distance = Vector2.Distance(item.transform.position, transform.position) - ItemBias;
+            if (distance < best && item.UsefulTo(player)) {
+                best = distance;
+                target = item.transform;
             }
         }
         foreach (Coin coin in Coin.Active) {

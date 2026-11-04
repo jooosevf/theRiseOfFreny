@@ -10,6 +10,20 @@ public static class CoopWorld {
     // turn back and forth when the two stand close together
     private const float SwitchMargin = 1.5f;
 
+    public const float LifeDropChance = 0.01f;   // per kill, like the rare power-ups; to tune after playing
+    public static System.Func<bool> GainLife { get; set; }
+
+    private static Sprite lifeIcon;
+    public static Sprite LifeIcon {
+        get {
+            if (lifeIcon == null) {
+                Sprite[] heads = Resources.LoadAll<Sprite>("FrenyHeads/berserker");
+                lifeIcon = heads.Length > 0 ? heads[0] : null;
+            }
+            return lifeIcon;
+        }
+    }
+
     public static bool Active { get; set; }
     public static bool HostActive => Active && CoopNet.IsHost;
     public static bool IsClient => Active && !CoopNet.IsHost;
@@ -46,7 +60,15 @@ public static class CoopWorld {
     }
 
     // ---- what one side draws and the other has to draw too; the copies do no damage
-    public enum Fx : byte { Shot, Grenade, Portal }
+    public enum Fx : byte { Shot, Grenade, Portal, LifeGift }
+
+    // a life picked up while the other player has none left brings him back
+    public static void GiveLifeToPeer() {
+        using FastBufferWriter writer = new FastBufferWriter(16, Allocator.Temp);
+        writer.WriteValueSafe((byte)Fx.LifeGift);
+        writer.WriteValueSafe(Vector2.zero);
+        CoopNet.Send("coop.fx", writer, NetworkDelivery.ReliableSequenced);
+    }
 
     public static void ShotFired(Vector3 from, Vector3 direction, float push) {
         if (!Active) {
