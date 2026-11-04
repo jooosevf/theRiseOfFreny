@@ -7,7 +7,8 @@
 | **Release Date** | December 2025 |
 | **Latest editor on the pinned line** | 6000.3.26f1 (Oct 8, 2026) |
 | **Project Pinned** | 2026-02-13 |
-| **Last Docs Verified** | 2026-10-17 (release timeline, newer releases, latest 6.3 LTS editor); 2026-02-13 (rest of directory) |
+| **Last Docs Verified** | 2026-11-04 (latest 6.6 editor only); 2026-10-17 (release timeline, newer releases, latest 6.3 LTS editor); 2026-02-13 (rest of directory) |
+| **Newer patch on the project's line** | 6000.6.8f1 (Nov 3, 2026) exists; the project stays on 6000.6.7f1 (Oct 21, 2026, date unconfirmed) because CI rejects any other version. Bumping is José's call. |
 | **LLM Knowledge Cutoff** | May 2025 |
 
 ## Knowledge Gap Warning
@@ -44,7 +45,7 @@ Unity's docs for that release. 6.0 LTS support ends in October 2026.
 |---------|---------|---------------------|-----------|
 | 6.4 | Mar 2026 | Reached end of life | ECS (Entities, Collections, Mathematics, Entities Graphics) ships as Core packages, Project Auditor built into the Editor, DirectStorage on Windows, `EntityId` replaces `InstanceID`, URP Compatibility Mode removed in favor of Render Graph |
 | 6.5 | Jun 2026 | Reached end of life | Entity unification (`InstanceID` to `EntityId`), Editor Lifecycle API toward a CoreCLR Editor, 2D (custom lights and shadows, `RenderSprite` API, Physics Core 2D), on-tile post-processing for mobile, Built-In Render Pipeline deprecated |
-| 6.6 | Sep 2026 | Supported until 6.7 ships | Final supported release of the Unity 6 family: Play Mode skips domain reloads by default for new projects, Content Directories, Build Analysis window, WebGPU as a production Web option |
+| 6.6 | Sep 2026 (latest editor 6000.6.8f1, Nov 3, 2026) | Supported until 6.7 ships | Final supported release of the Unity 6 family: Play Mode skips domain reloads by default for new projects, Content Directories, Build Analysis window, WebGPU as a production Web option |
 | 6.7 | Beta | Not released | 6000.7.0b1 on Sep 17, 2026, latest 6000.7.0b5 on Oct 15, 2026; Unity's 6.6 post calls it the 6.7 LTS |
 
 Dates and status, verified 2026-10-17: 6.4 (announced Mar 17, 2026; editor
