@@ -85,6 +85,7 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]cripts/[Oo]nline/ScoreKey.cs
 /[Aa]ssets/[Ss]cripts/[Oo]nline/ScoreKey.cs.meta
 /Tools/ScoreKey/firestore.rules.publish
+/firebase/firestore.rules.publish
 
 # compile-check build output
 /.ci/**/bin/

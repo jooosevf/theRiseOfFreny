@@ -1,8 +1,9 @@
 rules_version = '2';
 
 // Security rules for The Rise of Freny.
-// Publish them in the Firebase console (Firestore Database > Rules)
-// or with `firebase deploy --only firestore:rules` from this folder.
+// Never publish this file as it is: __SCORE_KEY__ would become a public signing key and anyone
+// could forge scores. Tools/ScoreKey/make_score_key.py writes firestore.rules.publish, with the
+// secret key, and that is what the console or `firebase deploy` takes (docs/firebase/SETUP.md).
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -16,10 +17,12 @@ service cloud.firestore {
     // "rebirths" (Renascer's count, the star after the name: cosmetic, the game sends it with a
     // rename or a new score once the player has rebirthed).
     // "leaderboard" is the old board that mixed every difficulty: still readable, no longer writable.
+    // A banned account (bans/, only the API writes it) writes nothing here, not even with a signature
+    // it was given before: signatures don't expire.
     match /{board}/{userId} {
       allow read: if isBoard(board) || board == 'leaderboard';
-      allow create: if isBoard(board) && isOwner(userId) && validEntry() && validSig(board, userId);
-      allow update: if isBoard(board) && isOwner(userId) && validEntry()
+      allow create: if isBoard(board) && isOwner(userId) && notBanned() && validEntry() && validSig(board, userId);
+      allow update: if isBoard(board) && isOwner(userId) && notBanned() && validEntry()
                     && request.time > resource.data.get('updatedAt', timestamp.value(0)) + duration.value(20, 's')
                     && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'rebirths', 'updatedAt'])
                         || (request.resource.data.score >= resource.data.score && validSig(board, userId)));
@@ -53,7 +56,7 @@ service cloud.firestore {
     // the Difícil board) or the key of a Conquista whose signed field is in this same document.
     match /achievements/{userId} {
       allow read: if true;
-      allow create, update: if isOwner(userId) && validAchievements(userId);
+      allow create, update: if isOwner(userId) && notBanned() && validAchievements(userId);
       allow delete: if false;
     }
 
@@ -105,7 +108,7 @@ service cloud.firestore {
     // and each best carries the signature the ranking API gave it (the same one its board entry has).
     match /perfis/{userId} {
       allow read: if true;
-      allow create, update: if isOwner(userId) && isAccount() && validPerfil(userId)
+      allow create, update: if isOwner(userId) && notBanned() && isAccount() && validPerfil(userId)
                     && (resource == null || request.time > resource.data.lastSeen + duration.value(10, 's'));
       allow delete: if false;
     }
@@ -127,6 +130,10 @@ service cloud.firestore {
       allow read: if isOwner(userId);
       allow create, update: if isOwner(userId) && isAccount() && validFriends(userId);
       allow delete: if false;
+    }
+
+    function notBanned() {
+      return !exists(/databases/$(database)/documents/bans/$(request.auth.uid));
     }
 
     // not a guest
