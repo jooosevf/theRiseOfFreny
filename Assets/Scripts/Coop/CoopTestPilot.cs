@@ -23,7 +23,7 @@ public class CoopTestPilot : MonoBehaviour, IPlayerInputSource {
             }
         }
         PlayerInputFrame frame = default;
-        if (nearest == null) {
+        if (nearest == null || CoopArgs.Has("-coopPassive")) {   // standing still: the enemies' hits get tested
             return frame;
         }
         Vector2 delta = nearest.transform.position - transform.position;

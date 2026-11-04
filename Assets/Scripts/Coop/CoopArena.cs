@@ -11,9 +11,10 @@ using UnityEngine.SceneManagement;
 // between the last two positions received. The host runs the enemies and sends them too; the
 // client's ArenaDirector stays off and it draws puppets, and a puppet hit asks the host for the hit.
 //
-// Limits of this first version, on purpose: the enemies only chase the host's Freny; the client gets
-// hurt by touching a puppet; a grenade or a net only hurts the enemies on the host; score and drops
-// are the host's.
+// The enemies go after the nearer Freny (CoopWorld); a hit on the client's Freny travels as a message.
+// Whoever falls watches, and the host starts the next run when both have fallen.
+// Limits for now: a grenade or a net only hurts the enemies on the host; score and drops are the
+// host's; props, chests and pickups aren't shared yet; Ciclope, mines and acid only hurt the host.
 public class CoopArena : MonoBehaviour {
 
     private const float SendInterval = 0.05f;        // 20 messages a second per stream
@@ -21,6 +22,7 @@ public class CoopArena : MonoBehaviour {
     private const float HitFlashSeconds = 0.12f;
     private const int MaxEnemyBytes = 1200;
     private const float NameTagHeight = 0.9f;
+    private const float RestartDelay = 4f;
     private static readonly Color GhostTint = new Color(0.55f, 0.8f, 1f);
 
     private Player player;
@@ -55,6 +57,11 @@ public class CoopArena : MonoBehaviour {
     private int hostScore;
     private int remoteHits;
     private int remoteKills;
+    private int hurtsTaken;
+    private int hexesSeen;
+    private float bothDownAt = -1f;
+    private static bool testDied;
+    private static float firstStart = -1f;
     private GUIStyle overlay;
     private GUIStyle nameTag;
 
@@ -83,6 +90,9 @@ public class CoopArena : MonoBehaviour {
         CoopNet.PlayerState += OnPlayerState;
         CoopNet.EnemyState += OnEnemyState;
         CoopNet.EnemyHit += OnEnemyHit;
+        CoopNet.Hurt += OnHurt;
+        CoopNet.HexCast += OnHexCast;
+        CoopWorld.Active = true;
         puppetHolder = new GameObject("Coop Puppets (inactive)");
         puppetHolder.SetActive(false);
     }
@@ -91,6 +101,10 @@ public class CoopArena : MonoBehaviour {
         CoopNet.PlayerState -= OnPlayerState;
         CoopNet.EnemyState -= OnEnemyState;
         CoopNet.EnemyHit -= OnEnemyHit;
+        CoopNet.Hurt -= OnHurt;
+        CoopNet.HexCast -= OnHexCast;
+        CoopWorld.Active = false;
+        CoopWorld.PeerAlive = false;
     }
 
     private IEnumerator Start() {
@@ -104,6 +118,7 @@ public class CoopArena : MonoBehaviour {
         player = playerObj.GetComponent<Player>();
         playerCol = playerObj.GetComponent<Collider2D>();
         playerAnim = playerObj.GetComponentInChildren<Animator>();
+        CoopWorld.LocalBody = playerCol;
         MakeGhost(playerObj);
         if (!isHost) {
             foreach (Enemy enemy in new List<Enemy>(Enemy.Active)) {
@@ -138,6 +153,16 @@ public class CoopArena : MonoBehaviour {
         foreach (SpriteRenderer sprite in ghostSprites) {
             sprite.color = GhostTint;
         }
+        if (isHost && playerCol != null) {
+            // what the enemies reach for: a trigger, so it doesn't push anything or stop a bullet
+            Bounds bounds = playerCol.bounds;
+            BoxCollider2D box = copy.AddComponent<BoxCollider2D>();
+            box.isTrigger = true;
+            box.size = bounds.size;
+            box.offset = bounds.center - source.transform.position;
+            CoopWorld.PeerBody = box;
+            CoopWorld.PeerTransform = copy.transform;
+        }
         copy.SetActive(false);
         SceneManager.MoveGameObjectToScene(copy, gameObject.scene);
     }
@@ -153,6 +178,7 @@ public class CoopArena : MonoBehaviour {
         }
         DrawGhost(now);
         DrawPuppets(now);
+        WatchRunEnd(now);
         if (now - rateStart >= 1f) {
             receivedRate = received;
             received = 0;
@@ -160,7 +186,7 @@ public class CoopArena : MonoBehaviour {
         }
         if (now >= nextLog) {
             nextLog = now + 5f;
-            Debug.Log($"[Coop] {(isHost ? "host" : "cliente")} RTT {CoopNet.RttSummary()} | transporte {CoopNet.TransportRtt} ms | {receivedRate} msg/s recebidas | {CoopNet.BytesPerSecond} B/s enviados | {puppets.Count} bonecos | golpes do cliente {remoteHits}, mortes {remoteKills}");
+            Debug.Log($"[Coop] {(isHost ? "host" : "cliente")} RTT {CoopNet.RttSummary()} | transporte {CoopNet.TransportRtt} ms | {receivedRate} msg/s recebidas | {CoopNet.BytesPerSecond} B/s enviados | {puppets.Count} bonecos | golpes do cliente {remoteHits}, mortes {remoteKills} | golpes recebidos {hurtsTaken}, feitiços {hexesSeen} | visando o outro {TargetingPeer()}");
         }
         TestRunner(now);
     }
@@ -212,6 +238,81 @@ public class CoopArena : MonoBehaviour {
             ghostState = 0;
         }
         ghost.position = ghostTrack.At(now - RenderDelay);
+        CoopWorld.PeerAlive = visible;
+        CoopWorld.PeerHealth = peerHealth;
+    }
+
+    // the host decides when the run is over, so both sides restart together
+    private void WatchRunEnd(float now) {
+        if (!isHost || player == null) {
+            return;
+        }
+        bool peerDown = peerDead || !CoopNet.Connected;
+        if (!player.IsDead || !peerDown) {
+            bothDownAt = -1f;
+            return;
+        }
+        if (bothDownAt < 0f) {
+            bothDownAt = now;
+            Debug.Log($"[Coop] os dois caíram, {(UIManager.Instance ? UIManager.Instance.Score : 0)} pontos");
+        } else if (now - bothDownAt >= RestartDelay) {
+            bothDownAt = float.MaxValue;
+            CoopNet.RestartRun();
+        }
+    }
+
+    // ---- what the host tells the client's Freny
+    private void OnHurt(ulong sender, FastBufferReader reader) {
+        reader.ReadValueSafe(out byte amount);
+        reader.ReadValueSafe(out Vector2 push);
+        reader.ReadValueSafe(out byte heavy);
+        reader.ReadValueSafe(out FixedString32Bytes source);
+        if (player == null) {
+            return;
+        }
+        Player.NextDamageSource = source.ToString();
+        if (player.TryDamage(amount)) {
+            hurtsTaken++;
+            player.Knockback(push, heavy != 0);
+        }
+    }
+
+    private void OnHexCast(ulong sender, FastBufferReader reader) {
+        reader.ReadValueSafe(out Vector2 position);
+        reader.ReadValueSafe(out Vector2 direction);
+        reader.ReadValueSafe(out float speed);
+        reader.ReadValueSafe(out byte damage);
+        reader.ReadValueSafe(out float push);
+        reader.ReadValueSafe(out float homingTurn);
+        GameObject prefab = HexballPrefab();
+        if (prefab == null) {
+            return;
+        }
+        HexballEffect effect = Instantiate(prefab, position, Quaternion.identity).GetComponent<HexballEffect>();
+        if (effect != null) {
+            effect.speedMultiplier = speed;
+            effect.damage = damage;
+            effect.knockback = push;
+            effect.SetDirection(direction);
+            if (homingTurn > 0f && player != null) {
+                effect.homingTarget = player;
+                effect.homingTurn = homingTurn;
+            }
+        }
+        hexesSeen++;
+    }
+
+    private GameObject HexballPrefab() {
+        ArenaDirector.Entry[] entries = Entries();
+        if (entries != null) {
+            foreach (ArenaDirector.Entry entry in entries) {
+                Sorcerer sorcerer = entry.prefab != null ? entry.prefab.GetComponent<Sorcerer>() : null;
+                if (sorcerer != null && sorcerer.hexballEffectPrefab != null) {
+                    return sorcerer.hexballEffectPrefab;
+                }
+            }
+        }
+        return null;
     }
 
     // ---- the enemies: host to client
@@ -359,12 +460,16 @@ public class CoopArena : MonoBehaviour {
         }
     }
 
-    // called by a puppet overlapping Freny (the prototype's stand-in for enemy attacks on the client)
-    public void TouchedBy(Collider2D body) {
-        if (player != null && playerCol != null && !player.IsDead && !player.IsInvulnerable
-            && body.bounds.Intersects(playerCol.bounds)) {
-            player.TryDamage(1);
+    private int TargetingPeer() {
+        int count = 0;
+        if (isHost) {
+            foreach (Enemy enemy in Enemy.Active) {
+                if (enemy != null && enemy.AimsAtPeer) {
+                    count++;
+                }
+            }
         }
+        return count;
     }
 
     public static float FlashSeconds => HitFlashSeconds;
@@ -392,7 +497,16 @@ public class CoopArena : MonoBehaviour {
     // ---- only for the test binaries, driven from the command line
     private void TestRunner(float now) {
         string shots = CoopArgs.ShotDir;
-        float elapsed = now - startedAt;
+        if (firstStart < 0f) {
+            firstStart = now;
+        }
+        float elapsed = now - firstStart;
+        float dieAt = CoopArgs.DieAt;
+        if (dieAt > 0f && !testDied && elapsed >= dieAt && player != null) {
+            testDied = true;
+            Debug.Log($"[Coop] teste: {(isHost ? "host" : "cliente")} cai agora");
+            player.TryDamage(99, false);
+        }
         if (!string.IsNullOrEmpty(shots) && elapsed >= 5f + nextShot * CoopArgs.ShotEvery) {
             ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(shots, $"{(isHost ? "host" : "client")}_{nextShot:00}.png"));
             nextShot++;
@@ -454,7 +568,6 @@ public class CoopPuppet : MonoBehaviour, IDamageable {
     private readonly Track track = new Track();
     private Animator anim;
     private SpriteRenderer[] sprites;
-    private Collider2D body;
     private int animState;
     private float flashUntil;
     private int health = 1;
@@ -469,7 +582,6 @@ public class CoopPuppet : MonoBehaviour, IDamageable {
             anim.fireEvents = false;
         }
         sprites = GetComponentsInChildren<SpriteRenderer>(true);
-        body = GetComponent<Collider2D>();
         foreach (Collider2D col in GetComponentsInChildren<Collider2D>(true)) {
             col.isTrigger = true;
             if (col.gameObject != gameObject && col.GetComponent<IDamageable>() == null) {
@@ -507,9 +619,6 @@ public class CoopPuppet : MonoBehaviour, IDamageable {
             if (sprite != null) {
                 sprite.color = flash ? new Color(1f, 0.35f, 0.3f) : Color.white;
             }
-        }
-        if (body != null) {
-            arena.TouchedBy(body);
         }
     }
 

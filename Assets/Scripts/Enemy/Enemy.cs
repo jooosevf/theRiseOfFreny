@@ -259,6 +259,7 @@ public abstract class Enemy : MonoBehaviour, IDamageable
             return;
         }
 
+        AimInCoop();
         UpdateRival();
         if (rival != null) {
             // fighting another enemy: it goes after that one, wherever Freny is
@@ -293,8 +294,8 @@ public abstract class Enemy : MonoBehaviour, IDamageable
             bool reachable = sameLevel || (Climbs && dy <= ClimbSight);
             bool nearby = reachable && (dx <= sight || provoked);
             // from afar only walkers that climb come for him (they work their way up or down)
-            bool shouldChase = player.Health > 0 && (sameLevel || Climbs || nearby) && JoinChase(nearby);
-            if (player.Health <= 0) {
+            bool shouldChase = TargetHealth > 0 && (sameLevel || Climbs || nearby) && JoinChase(nearby);
+            if (TargetHealth <= 0) {
                 LeaveChase();
             }
 
@@ -859,7 +860,7 @@ public abstract class Enemy : MonoBehaviour, IDamageable
                 if (!foe.isDead && InAttackReach()) {
                     foe.HitBy(this, HitDamage);
                 }
-            } else if (player != null && player.Health > 0 && InAttackReach()) {
+            } else if (player != null && TargetHealth > 0 && InAttackReach()) {
                 HitPlayer();
             }
             HitBystanders(foe);
@@ -1114,7 +1115,35 @@ public abstract class Enemy : MonoBehaviour, IDamageable
     // how much of the knockback goes upwards (the Ciclope throws Freny high as well as far)
     protected virtual float KnockbackLift => 0.5f;
 
+    // co-op, on the host: each enemy goes after the nearer Freny, and the other player's body takes
+    // the place of player_t and playerCol. Off in a normal game (CoopWorld.HostActive is false).
+    protected bool targetsPeer;
+    public bool AimsAtPeer => targetsPeer;
+    protected int TargetHealth => targetsPeer ? CoopWorld.PeerHealth : player != null ? player.Health : 0;
+
+    protected void AimInCoop() {
+        if (!CoopWorld.HostActive || player == null) {
+            return;
+        }
+        targetsPeer = CoopWorld.AimAtPeer(player, transform.position, targetsPeer);
+        player_t = targetsPeer ? CoopWorld.PeerTransform : player.transform;
+        playerCol = targetsPeer ? CoopWorld.PeerBody : CoopWorld.LocalBody;
+    }
+
+    private void HitPeer() {
+        float side = Mathf.Sign(player_t.position.x - transform.position.x);
+        bool heavy = knockback > LightKnockback;
+        Vector2 push = heavy
+            ? new Vector2(side * knockback, knockback * KnockbackLift)
+            : new Vector2(side * LightKnockback, LightKnockback * 0.4f);
+        CoopWorld.HitPeer(HitDamage + BloodDamage + RunModifiers.SlainDamage, push, heavy, Online.RunLog.PrefabName(gameObject.name));
+    }
+
     protected void HitPlayer() {
+        if (targetsPeer) {
+            HitPeer();
+            return;
+        }
         Player.NextDamageSource = Online.RunLog.PrefabName(gameObject.name);
         if (!player.TryDamage(HitDamage + BloodDamage + RunModifiers.SlainDamage)) {
             return;

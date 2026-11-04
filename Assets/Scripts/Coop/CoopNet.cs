@@ -19,6 +19,7 @@ using UnityEngine.SceneManagement;
 public static class CoopNet {
 
     public const string ArenaScene = "ZE Arena";
+    private const ushort ProtocolVersion = 2;
     private const int MaxPlayers = 2;
     private const float PingInterval = 0.5f;
     private const int RttWindow = 240;   // the last 2 minutes of pings
@@ -34,6 +35,8 @@ public static class CoopNet {
     public static event Action<ulong, FastBufferReader> PlayerState;
     public static event Action<ulong, FastBufferReader> EnemyState;
     public static event Action<ulong, FastBufferReader> EnemyHit;
+    public static event Action<ulong, FastBufferReader> Hurt;
+    public static event Action<ulong, FastBufferReader> HexCast;
 
     // ---- what the overlay and the log report
     public static float LastRtt { get; private set; }
@@ -129,6 +132,7 @@ public static class CoopNet {
             NetworkTransport = Transport,
             EnableSceneManagement = false,
             ConnectionApproval = false,
+            ProtocolVersion = ProtocolVersion,   // a build with other messages can't join by mistake
         };
         go.AddComponent<CoopPump>();
     }
@@ -160,6 +164,9 @@ public static class CoopNet {
         messages.RegisterNamedMessageHandler("coop.p", (id, r) => PlayerState?.Invoke(id, r));
         messages.RegisterNamedMessageHandler("coop.e", (id, r) => EnemyState?.Invoke(id, r));
         messages.RegisterNamedMessageHandler("coop.h", (id, r) => EnemyHit?.Invoke(id, r));
+        messages.RegisterNamedMessageHandler("coop.hurt", (id, r) => Hurt?.Invoke(id, r));
+        messages.RegisterNamedMessageHandler("coop.hex", (id, r) => HexCast?.Invoke(id, r));
+        messages.RegisterNamedMessageHandler("coop.restart", (_, __) => LoadArena());
     }
 
     private static void OnConnected(ulong id) {
@@ -193,6 +200,13 @@ public static class CoopNet {
             Net.Shutdown();
             SceneManager.LoadScene(0);
         }
+    }
+
+    // both Frenys have fallen: the host starts the next run on both sides
+    public static void RestartRun() {
+        using FastBufferWriter writer = new FastBufferWriter(4, Allocator.Temp);
+        Send("coop.restart", writer, NetworkDelivery.ReliableSequenced);
+        LoadArena();
     }
 
     private static void LoadArena() {
@@ -279,6 +293,7 @@ public static class CoopArgs {
     public static string AutoJoin => Value("-coopJoin");
     public static string ShotDir => Value("-coopShots");
     public static float ShotEvery => float.TryParse(Value("-coopShotEvery"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float seconds) ? seconds : 5f;
+    public static float DieAt => float.TryParse(Value("-coopDieAt"), out float seconds) ? seconds : 0f;
     public static float QuitAfter => float.TryParse(Value("-coopQuitAfter"), out float seconds) ? seconds : 0f;
 
     // the test runner reads the Relay code from this file and hands it to the client
