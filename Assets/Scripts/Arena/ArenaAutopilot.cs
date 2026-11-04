@@ -559,8 +559,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
                 frame.jumpPressed = true;
                 frame.jumpHeld = true;
                 frame.move = towardTarget;
-                nextJumpTime = Time.time + jumpCooldown;
-                action = "Pulando no olho do Ciclope";
+                action = "Pulando no olho do Ciclope";   // Drive starts the cooldown
                 return frame;
             }
             if (!player.IsGrounded) {
@@ -1693,8 +1692,7 @@ public class ArenaAutopilot : MonoBehaviour, IPlayerInputSource {
         if (canJump && (homing || !HexHits(ball, 0f, true))) {
             frame.jumpPressed = true;
             frame.jumpHeld = true;
-            nextJumpTime = Time.time + jumpCooldown;
-            action = "Pulando o feitiço";
+            action = "Pulando o feitiço";   // Drive starts the cooldown
             return true;
         }
         float facing = player.FacingRight ? 1f : -1f;

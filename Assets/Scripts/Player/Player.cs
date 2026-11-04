@@ -355,6 +355,9 @@ public class Player : MonoBehaviour, IDamageable {
 
         UpdateDropThrough();
         CheckGround();
+        if (isDead) {
+            return;   // the landing killed him: no shot, grenade or jump in this frame
+        }
         if (_input.Current.meleePressed) {
             meleePressedTime = Time.time;
         }

@@ -960,7 +960,8 @@ public abstract class Enemy : MonoBehaviour, IDamageable
             }
             // keeps the side it chose unless the other is clearly shorter, so Freny pacing underneath
             // doesn't turn it back and forth
-            if (keepCost <= bestCost + 3f) {
+            // (no way down on its side: both costs are infinite, and it must not keep an edge it never found)
+            if (!float.IsInfinity(keepCost) && keepCost <= bestCost + 3f) {
                 bestDir = dropDir;
                 bestEdge = keepEdge;
             }
