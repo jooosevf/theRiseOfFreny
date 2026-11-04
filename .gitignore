@@ -118,6 +118,8 @@ CLAUDE.local.md
 .claude/worktrees/
 production/session-logs/
 production/session-state/
+# o repo é público: relatório de /security-audit não vai para o git
+production/security/
 .scratch/
 docs/consistency-failures.md
 /reports/
