@@ -4,8 +4,8 @@ The ranking API (freny-online, api/run/finish) signs the scores of the runs it c
 SCORE_KEY env var on Vercel; the rules only take scores with that signature. The key must not be
 committed (this repository is public), and the game no longer has it:
   python Tools/ScoreKey/make_score_key.py <key-file>
-    writes Tools/ScoreKey/firestore.rules.publish (git-ignored): firebase/firestore.rules with the
-    key in place of __SCORE_KEY__, ready to paste in the Firebase console.
+    writes firebase/firestore.rules.publish (git-ignored): firebase/firestore.rules with the
+    key in place of __SCORE_KEY__, ready to paste in the Firebase console or for `firebase deploy`.
   python Tools/ScoreKey/make_score_key.py --new <key-file>
     makes a new random key first. Changing the key needs new rules AND the new SCORE_KEY on
     Vercel at the same time.
@@ -35,9 +35,9 @@ def main(args):
         rules = f.read()
     if "__SCORE_KEY__" not in rules:
         sys.exit("firebase/firestore.rules has no __SCORE_KEY__")
-    with open(os.path.join(ROOT, "Tools", "ScoreKey", "firestore.rules.publish"), "w", newline="\n") as f:
+    with open(os.path.join(ROOT, "firebase", "firestore.rules.publish"), "w", newline="\n") as f:
         f.write(rules.replace("__SCORE_KEY__", key))
-    print("wrote Tools/ScoreKey/firestore.rules.publish; SCORE_KEY on Vercel must be the same key")
+    print("wrote firebase/firestore.rules.publish; SCORE_KEY on Vercel must be the same key")
 
 
 if __name__ == "__main__":

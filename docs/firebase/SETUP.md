@@ -37,7 +37,7 @@ Os passos abaixo servem para recriar tudo em outro projeto.
 1. Vá em **Build > Firestore Database > Criar banco de dados**.
 2. Escolha uma região perto dos jogadores (por exemplo `southamerica-east1`, São Paulo).
 3. Comece em **modo de produção**.
-4. Gere a chave de assinatura do ranking (passo 5) e, na aba **Regras**, apague o que estiver lá, cole o conteúdo de `Tools/ScoreKey/firestore.rules.publish` e clique em **Publicar**. Não publique o `firebase/firestore.rules` direto: ele tem `__SCORE_KEY__` no lugar da chave, e aí nenhuma pontuação seria aceita.
+4. Gere a chave de assinatura do ranking (passo 5) e, na aba **Regras**, apague o que estiver lá, cole o conteúdo de `firebase/firestore.rules.publish` e clique em **Publicar**. **Nunca publique o `firebase/firestore.rules` direto:** ele tem `__SCORE_KEY__` no lugar da chave, e esse texto viraria uma chave pública. Qualquer pessoa que leia o repositório poderia forjar pontuações, sem nenhum erro visível. O `firebase deploy` só aceita o `firestore.rules.publish` (`firebase/firebase.json`) e falha se ele não existir.
 
 ### 4. Configurar o jogo
 
@@ -63,7 +63,14 @@ python Tools/ScoreKey/make_score_key.py caminho/da/api-score.key          # chav
 python Tools/ScoreKey/make_score_key.py --new caminho/da/api-score.key    # chave nova
 ```
 
-Isso escreve `Tools/ScoreKey/firestore.rules.publish` (no `.gitignore`). Trocar a chave exige publicar as regras novas e mudar a `SCORE_KEY` na Vercel juntos.
+Isso escreve `firebase/firestore.rules.publish` (no `.gitignore`). Trocar a chave exige publicar as regras novas e mudar a `SCORE_KEY` na Vercel juntos.
+
+Para trocar a chave de um ranking já no ar (ela vazou, por exemplo), a ordem é:
+
+1. Gere a chave nova com `--new`, num caminho fora do repositório.
+2. No `freny-online`, rode `node tools/rotate-score-key.mjs` com `FIREBASE_SERVICE_ACCOUNT` e `NEW_SCORE_KEY`. Sem `--apply`, ele só conta e mostra o topo de cada ranking. Apague o que for forjado antes de seguir, porque o que for reassinado fica.
+3. Rode de novo com `--apply`. Sem isso, os perfis públicos e as Conquistas param de salvar, porque as regras conferem de novo as assinaturas antigas a cada escrita.
+4. Publique `firebase/firestore.rules.publish` e troque a `SCORE_KEY` na Vercel, juntos. Até os dois terminarem, um recorde novo pode ser recusado.
 
 Para testar no editor, rode a API local no `freny-online` (`SCORE_KEY=... npm run api`, ou com a chave no `.env.local`) e ponha `"apiUrl": "http://localhost:3000"` no `FirebaseConfig.json`. No editor toda corrida da Arena vai para `Logs/arena-run.json`, e as do piloto automático são conferidas pela API sem gravar nada (o resultado aparece no Console).
 
