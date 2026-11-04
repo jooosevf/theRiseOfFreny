@@ -45,7 +45,10 @@ public class ArenaChest : MonoBehaviour, IDamageable {
         }
     }
 
+    public GameObject CoinPrefab => coinPrefab;
+
     private void Start() {
+        CoopShared.ChestSpawned(this);
         Destroy(gameObject, lifetime);
         // rest on the floor instead of hanging at the spawner's height
         SpriteRenderer sprite = GetComponentInChildren<SpriteRenderer>();
@@ -58,7 +61,7 @@ public class ArenaChest : MonoBehaviour, IDamageable {
 
     // one hit is enough (MeleeAttack and RangedAttack find this through IDamageable)
     public void Damage() {
-        if (broken) {
+        if (broken || CoopShared.AskToBreak(this)) {
             return;
         }
         broken = true;
@@ -69,6 +72,10 @@ public class ArenaChest : MonoBehaviour, IDamageable {
         Fx.Burst(center, new Color(0.45f, 0.48f, 0.55f), 18, 3f, 0.1f, 0.6f);   // steel
         Fx.Burst(center, new Color(0.85f, 0.88f, 0.95f), 24, 3.5f, 0.1f, 0.8f);    // silver
         Sfx.Play("chest_break", center);
+        if (CoopWorld.IsClient) {
+            Destroy(gameObject);   // the reward is the host's roll, and comes as its own messages
+            return;
+        }
 
         // the weights follow what Freny is short of: no grenades when his pouch is full, the
         // shotgun more often while he has none (ItemPickup.Need, 1 when half short)

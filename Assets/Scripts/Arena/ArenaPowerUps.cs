@@ -164,7 +164,15 @@ public class ArenaPowerUps : MonoBehaviour {
             return false;
         }
         instance.Activate(kind);
+        CoopShared.PowerUpTaken(kind);   // it works for both players
         return true;
+    }
+
+    // co-op: the host's room took one
+    public static void ShowFromHost(ItemPickup.Kind kind) {
+        if (instance != null) {
+            instance.Activate(kind);
+        }
     }
 
     private void Activate(ItemPickup.Kind kind) {

@@ -129,7 +129,7 @@ public class Breakable : MonoBehaviour, IDamageable {
     public Vector3 Center => transform.position + (Vector3)GetComponent<BoxCollider2D>().offset;
 
     public void Damage() {
-        if (broken) {
+        if (broken || CoopShared.AskToBreak(this)) {
             return;
         }
         broken = true;
@@ -178,12 +178,16 @@ public class Breakable : MonoBehaviour, IDamageable {
             yield break;
         }
         sprite.enabled = false;
+        if (CoopWorld.IsClient) {
+            yield break;   // it comes back when the host's does
+        }
         yield return new WaitForSeconds(regrowAfter * Random.Range(0.8f, 1.2f));
         Regrow();
     }
 
     // back as it was painted, with a puff of dust
-    private void Regrow() {
+    public void Regrow() {
+        CoopShared.PropRegrew(this);
         transform.localScale = Vector3.one;
         transform.position = tilePosition;
         sprite.sprite = tileSprite;

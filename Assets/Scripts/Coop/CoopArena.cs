@@ -13,8 +13,8 @@ using UnityEngine.SceneManagement;
 //
 // The enemies go after the nearer Freny (CoopWorld); a hit on the client's Freny travels as a message.
 // Whoever falls watches, and the host starts the next run when both have fallen.
-// Limits for now: a grenade or a net only hurts the enemies on the host; score and drops are the
-// host's; props, chests and pickups aren't shared yet; Ciclope, mines and acid only hurt the host.
+// Props, chests and pickups are CoopShared. Limits for now: a net doesn't catch a puppet; Ciclope,
+// mines and acid only hurt the host; shots, portals and particles show only on the side they happen.
 public class CoopArena : MonoBehaviour {
 
     private const float SendInterval = 0.05f;        // 20 messages a second per stream
@@ -92,6 +92,7 @@ public class CoopArena : MonoBehaviour {
         CoopNet.EnemyHit += OnEnemyHit;
         CoopNet.Hurt += OnHurt;
         CoopNet.HexCast += OnHexCast;
+        CoopNet.World += OnWorld;
         CoopWorld.Active = true;
         puppetHolder = new GameObject("Coop Puppets (inactive)");
         puppetHolder.SetActive(false);
@@ -103,6 +104,7 @@ public class CoopArena : MonoBehaviour {
         CoopNet.EnemyHit -= OnEnemyHit;
         CoopNet.Hurt -= OnHurt;
         CoopNet.HexCast -= OnHexCast;
+        CoopNet.World -= OnWorld;
         CoopWorld.Active = false;
         CoopWorld.PeerAlive = false;
     }
@@ -120,6 +122,8 @@ public class CoopArena : MonoBehaviour {
         playerAnim = playerObj.GetComponentInChildren<Animator>();
         CoopWorld.LocalBody = playerCol;
         MakeGhost(playerObj);
+        FieldInfo chestField = typeof(ArenaDirector).GetField("chestPrefab", BindingFlags.NonPublic | BindingFlags.Instance);
+        CoopShared.Begin(director != null ? (GameObject)chestField.GetValue(director) : null);
         if (!isHost) {
             foreach (Enemy enemy in new List<Enemy>(Enemy.Active)) {
                 Destroy(enemy.gameObject);
@@ -186,7 +190,7 @@ public class CoopArena : MonoBehaviour {
         }
         if (now >= nextLog) {
             nextLog = now + 5f;
-            Debug.Log($"[Coop] {(isHost ? "host" : "cliente")} RTT {CoopNet.RttSummary()} | transporte {CoopNet.TransportRtt} ms | {receivedRate} msg/s recebidas | {CoopNet.BytesPerSecond} B/s enviados | {puppets.Count} bonecos | golpes do cliente {remoteHits}, mortes {remoteKills} | golpes recebidos {hurtsTaken}, feitiços {hexesSeen} | visando o outro {TargetingPeer()}");
+            Debug.Log($"[Coop] {(isHost ? "host" : "cliente")} RTT {CoopNet.RttSummary()} | transporte {CoopNet.TransportRtt} ms | {receivedRate} msg/s recebidas | {CoopNet.BytesPerSecond} B/s enviados | {puppets.Count} bonecos | golpes do cliente {remoteHits}, mortes {remoteKills} | golpes recebidos {hurtsTaken}, feitiços {hexesSeen} | visando o outro {TargetingPeer()} | {CoopShared.Counts()} | ganhou {CoopShared.CoinsGranted} moedas, {CoopShared.ItemsGranted} itens, quebrou {CoopShared.PropsBrokenByAsk} a pedido");
         }
         TestRunner(now);
     }
@@ -240,6 +244,10 @@ public class CoopArena : MonoBehaviour {
         ghost.position = ghostTrack.At(now - RenderDelay);
         CoopWorld.PeerAlive = visible;
         CoopWorld.PeerHealth = peerHealth;
+    }
+
+    private void OnWorld(ulong sender, FastBufferReader reader) {
+        CoopShared.OnWorld(sender, reader, player);
     }
 
     // the host decides when the run is over, so both sides restart together
@@ -372,6 +380,9 @@ public class CoopArena : MonoBehaviour {
 
     private void OnEnemyState(ulong sender, FastBufferReader reader) {
         reader.ReadValueSafe(out hostScore);
+        if (UIManager.Instance && UIManager.Instance.Score != hostScore) {
+            UIManager.Instance.UpdateScore(hostScore - UIManager.Instance.Score, true);   // one score for the room
+        }
         reader.ReadValueSafe(out ushort count);
         float now = Time.unscaledTime;
         seen.Clear();
@@ -443,16 +454,18 @@ public class CoopArena : MonoBehaviour {
     }
 
     // a puppet was hit on this side: only the host can hurt the real one
-    public void RequestHit(ushort id) {
+    public void RequestHit(ushort id, int amount) {
         using FastBufferWriter writer = new FastBufferWriter(4, Allocator.Temp);
         writer.WriteValueSafe(id);
+        writer.WriteValueSafe((byte)Mathf.Clamp(amount, 1, 255));
         CoopNet.Send("coop.h", writer, NetworkDelivery.ReliableSequenced);
     }
 
     private void OnEnemyHit(ulong sender, FastBufferReader reader) {
         reader.ReadValueSafe(out ushort id);
+        reader.ReadValueSafe(out byte amount);
         if (enemiesById.TryGetValue(id, out Enemy enemy) && enemy != null && !enemy.IsDead) {
-            enemy.Damage(1);
+            enemy.Damage(amount);
             remoteHits++;
             if (enemy.IsDead) {
                 remoteKills++;
@@ -623,8 +636,12 @@ public class CoopPuppet : MonoBehaviour, IDamageable {
     }
 
     public void Damage() {
+        DamageBy(1);
+    }
+
+    public void DamageBy(int amount) {
         flashUntil = Time.unscaledTime + CoopArena.FlashSeconds;
-        arena.RequestHit(id);
+        arena.RequestHit(id, amount);
     }
 }
 

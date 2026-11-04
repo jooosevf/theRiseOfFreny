@@ -124,6 +124,7 @@ public class ItemPickup : MonoBehaviour {
         pickup.restLift = RestGap - art.min.y * scale;
         pickup.tossing = true;
         pickup.dieAt = Time.time + Lifetime;
+        CoopShared.ItemSpawned(pickup, position, toss);
         return pickup;
     }
 
@@ -146,6 +147,9 @@ public class ItemPickup : MonoBehaviour {
     // one roll over the weighted kinds: each chance times what Freny needs of it and how many of
     // it are already on the floor, all of it thinned out when the floor is full of drops
     private static void RollDrop(Vector3 position, Vector2 toss, float scale, params (Kind kind, float chance)[] table) {
+        if (CoopWorld.IsClient) {
+            return;   // the host rolls, and the item comes as a message
+        }
         Player player = FindPlayer();
         float[] chances = new float[table.Length];
         float total = 0f;
@@ -475,9 +479,22 @@ public class ItemPickup : MonoBehaviour {
             return;
         }
         Player player = other.GetComponent<Player>();
-        if (player == null || !Apply(player)) {
+        if (player == null || !UsefulTo(player) || CoopShared.AskToPick(this) || !Apply(player)) {
             return;
         }
+        CoopShared.Picked(this);
+        Finish();
+    }
+
+    // co-op: the host said this one is the client's
+    public void GrantTo(Player player) {
+        if (player != null && !ArenaPowerUps.IsPowerUp(kind)) {
+            Apply(player);
+        }
+        Finish();
+    }
+
+    private void Finish() {
         Fx.Burst(transform.position, TintFor(kind) == Color.white ? new Color(1f, 0.95f, 0.7f) : TintFor(kind), 10, 2f, 0.07f, 0.35f);
         Sfx.Play(PickupSound(kind), transform.position);
         Destroy(gameObject);

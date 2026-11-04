@@ -12,6 +12,7 @@ public static class CoopWorld {
 
     public static bool Active { get; set; }
     public static bool HostActive => Active && CoopNet.IsHost;
+    public static bool IsClient => Active && !CoopNet.IsHost;
 
     // on the host: the other player's body, and his life as he last reported it
     public static Transform PeerTransform { get; set; }

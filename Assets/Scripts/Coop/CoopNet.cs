@@ -19,7 +19,7 @@ using UnityEngine.SceneManagement;
 public static class CoopNet {
 
     public const string ArenaScene = "ZE Arena";
-    private const ushort ProtocolVersion = 2;
+    private const ushort ProtocolVersion = 3;
     private const int MaxPlayers = 2;
     private const float PingInterval = 0.5f;
     private const int RttWindow = 240;   // the last 2 minutes of pings
@@ -37,6 +37,7 @@ public static class CoopNet {
     public static event Action<ulong, FastBufferReader> EnemyHit;
     public static event Action<ulong, FastBufferReader> Hurt;
     public static event Action<ulong, FastBufferReader> HexCast;
+    public static event Action<ulong, FastBufferReader> World;
 
     // ---- what the overlay and the log report
     public static float LastRtt { get; private set; }
@@ -166,6 +167,8 @@ public static class CoopNet {
         messages.RegisterNamedMessageHandler("coop.h", (id, r) => EnemyHit?.Invoke(id, r));
         messages.RegisterNamedMessageHandler("coop.hurt", (id, r) => Hurt?.Invoke(id, r));
         messages.RegisterNamedMessageHandler("coop.hex", (id, r) => HexCast?.Invoke(id, r));
+        messages.RegisterNamedMessageHandler("coop.w", (id, r) => World?.Invoke(id, r));
+        messages.RegisterNamedMessageHandler("coop.a", CoopShared.OnAsk);
         messages.RegisterNamedMessageHandler("coop.restart", (_, __) => LoadArena());
     }
 

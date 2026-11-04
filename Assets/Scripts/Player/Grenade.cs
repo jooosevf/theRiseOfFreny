@@ -115,10 +115,14 @@ public class Grenade : MonoBehaviour {
 
         Collider2D[] caught = Physics2D.OverlapCircleAll(at, radius);
         HashSet<Enemy> hit = new HashSet<Enemy>();
+        HashSet<CoopPuppet> puppetsHit = new HashSet<CoopPuppet>();
         Player freny = null;
         foreach (Collider2D col in caught) {
             if (freny == null && col.GetComponentInParent<Player>() is Player p) {
                 freny = p;
+            }
+            if (col.GetComponentInParent<CoopPuppet>() is CoopPuppet puppet && puppetsHit.Add(puppet)) {
+                puppet.DamageBy(damage);   // co-op: only the host can hurt the real one
             }
             Enemy enemy = col.GetComponentInParent<Enemy>();
             if (enemy == null || enemy.IsDead || !hit.Add(enemy)) {
