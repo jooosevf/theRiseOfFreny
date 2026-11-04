@@ -13,8 +13,9 @@ using UnityEngine.SceneManagement;
 //
 // The enemies go after the nearer Freny (CoopWorld); a hit on the client's Freny travels as a message.
 // Whoever falls watches, and the host starts the next run when both have fallen.
-// Props, chests and pickups are CoopShared. Limits for now: a net doesn't catch a puppet; Ciclope,
-// mines and acid only hurt the host; shots, portals and particles show only on the side they happen.
+// Props, chests and pickups are CoopShared; shots, grenades and portals are drawn on both sides.
+// Limits for now: a net doesn't catch a puppet; Ciclope, mines and acid only hurt the host; the other
+// player's helmet and looks don't show.
 public class CoopArena : MonoBehaviour {
 
     private const float SendInterval = 0.05f;        // 20 messages a second per stream
@@ -59,6 +60,10 @@ public class CoopArena : MonoBehaviour {
     private int remoteKills;
     private int hurtsTaken;
     private int hexesSeen;
+    private int peerShots;
+    private int peerGrenades;
+    private int peerPortals;
+    private static bool testSpawned;
     private float bothDownAt = -1f;
     private static bool testDied;
     private static float firstStart = -1f;
@@ -93,6 +98,7 @@ public class CoopArena : MonoBehaviour {
         CoopNet.Hurt += OnHurt;
         CoopNet.HexCast += OnHexCast;
         CoopNet.World += OnWorld;
+        CoopNet.Effect += OnEffect;
         CoopWorld.Active = true;
         puppetHolder = new GameObject("Coop Puppets (inactive)");
         puppetHolder.SetActive(false);
@@ -105,6 +111,7 @@ public class CoopArena : MonoBehaviour {
         CoopNet.Hurt -= OnHurt;
         CoopNet.HexCast -= OnHexCast;
         CoopNet.World -= OnWorld;
+        CoopNet.Effect -= OnEffect;
         CoopWorld.Active = false;
         CoopWorld.PeerAlive = false;
     }
@@ -156,6 +163,10 @@ public class CoopArena : MonoBehaviour {
         ghostSprites = copy.GetComponentsInChildren<SpriteRenderer>(true);
         foreach (SpriteRenderer sprite in ghostSprites) {
             sprite.color = GhostTint;
+            // these layers show this player's own look, not the other's
+            if (sprite.name.StartsWith("Look ")) {
+                sprite.enabled = false;
+            }
         }
         if (isHost && playerCol != null) {
             // what the enemies reach for: a trigger, so it doesn't push anything or stop a bullet
@@ -190,7 +201,7 @@ public class CoopArena : MonoBehaviour {
         }
         if (now >= nextLog) {
             nextLog = now + 5f;
-            Debug.Log($"[Coop] {(isHost ? "host" : "cliente")} RTT {CoopNet.RttSummary()} | transporte {CoopNet.TransportRtt} ms | {receivedRate} msg/s recebidas | {CoopNet.BytesPerSecond} B/s enviados | {puppets.Count} bonecos | golpes do cliente {remoteHits}, mortes {remoteKills} | golpes recebidos {hurtsTaken}, feitiços {hexesSeen} | visando o outro {TargetingPeer()} | {CoopShared.Counts()} | ganhou {CoopShared.CoinsGranted} moedas, {CoopShared.ItemsGranted} itens, quebrou {CoopShared.PropsBrokenByAsk} a pedido");
+            Debug.Log($"[Coop] {(isHost ? "host" : "cliente")} RTT {CoopNet.RttSummary()} | transporte {CoopNet.TransportRtt} ms | {receivedRate} msg/s recebidas | {CoopNet.BytesPerSecond} B/s enviados | {puppets.Count} bonecos | golpes do cliente {remoteHits}, mortes {remoteKills} | golpes recebidos {hurtsTaken}, feitiços {hexesSeen} | visando o outro {TargetingPeer()} | {CoopShared.Counts()} | ganhou {CoopShared.CoinsGranted} moedas, {CoopShared.ItemsGranted} itens, quebrou {CoopShared.PropsBrokenByAsk} a pedido | do outro: {peerShots} tiros, {peerGrenades} granadas, {peerPortals} portais | power-ups {ArenaPowerUps.InstaKillOn}");
         }
         TestRunner(now);
     }
@@ -248,6 +259,34 @@ public class CoopArena : MonoBehaviour {
 
     private void OnWorld(ulong sender, FastBufferReader reader) {
         CoopShared.OnWorld(sender, reader, player);
+    }
+
+    private void OnEffect(ulong sender, FastBufferReader reader) {
+        reader.ReadValueSafe(out byte raw);
+        reader.ReadValueSafe(out Vector2 position);
+        switch ((CoopWorld.Fx)raw) {
+            case CoopWorld.Fx.Shot:
+                reader.ReadValueSafe(out Vector2 direction);
+                if (player != null) {
+                    player.DrawPeerShot(position, direction);
+                    peerShots++;
+                }
+                break;
+            case CoopWorld.Fx.Grenade:
+                reader.ReadValueSafe(out Vector2 velocity);
+                reader.ReadValueSafe(out float fuse);
+                if (player != null) {
+                    player.DrawPeerGrenade(position, velocity, fuse);
+                    peerGrenades++;
+                }
+                break;
+            case CoopWorld.Fx.Portal:
+                reader.ReadValueSafe(out float duration);
+                reader.ReadValueSafe(out Color color);
+                Fx.Portal(position, duration, color);
+                peerPortals++;
+                break;
+        }
     }
 
     // the host decides when the run is over, so both sides restart together
@@ -514,6 +553,21 @@ public class CoopArena : MonoBehaviour {
             firstStart = now;
         }
         float elapsed = now - firstStart;
+        // test only: a Sorcerer next to the client's Freny, and an Insta-kill for him to pick up
+        if (CoopArgs.Has("-coopSpawnTest") && isHost && !testSpawned && elapsed >= 12f && ghost != null) {
+            testSpawned = true;
+            GameObject prefab = null;
+            foreach (ArenaDirector.Entry entry in Entries()) {
+                if (entry.prefab != null && entry.prefab.GetComponent<Sorcerer>() != null) {
+                    prefab = entry.prefab;
+                }
+            }
+            if (prefab != null) {
+                Instantiate(prefab, ghost.position + new Vector3(4f, 0.5f, 0f), Quaternion.identity);
+            }
+            ItemPickup.Spawn(ItemPickup.Kind.InstaKill, 1, ghost.position + Vector3.up, Vector2.zero);
+            Debug.Log($"[Coop] teste: feiticeiro {(prefab != null ? "criado" : "não existe na lista")} e Insta-kill ao lado do cliente");
+        }
         float dieAt = CoopArgs.DieAt;
         if (dieAt > 0f && !testDied && elapsed >= dieAt && player != null) {
             testDied = true;

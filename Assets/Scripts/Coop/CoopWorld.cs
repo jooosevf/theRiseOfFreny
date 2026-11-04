@@ -45,6 +45,44 @@ public static class CoopWorld {
         CoopNet.Send("coop.hurt", writer, NetworkDelivery.ReliableSequenced);
     }
 
+    // ---- what one side draws and the other has to draw too; the copies do no damage
+    public enum Fx : byte { Shot, Grenade, Portal }
+
+    public static void ShotFired(Vector3 from, Vector3 direction, float push) {
+        if (!Active) {
+            return;
+        }
+        using FastBufferWriter writer = new FastBufferWriter(32, Allocator.Temp);
+        writer.WriteValueSafe((byte)Fx.Shot);
+        writer.WriteValueSafe((Vector2)from);
+        writer.WriteValueSafe((Vector2)direction);
+        CoopNet.Send("coop.fx", writer, NetworkDelivery.ReliableSequenced);
+    }
+
+    public static void GrenadeThrown(Vector3 from, Vector2 velocity, float fuse) {
+        if (!Active) {
+            return;
+        }
+        using FastBufferWriter writer = new FastBufferWriter(32, Allocator.Temp);
+        writer.WriteValueSafe((byte)Fx.Grenade);
+        writer.WriteValueSafe((Vector2)from);
+        writer.WriteValueSafe(velocity);
+        writer.WriteValueSafe(fuse);
+        CoopNet.Send("coop.fx", writer, NetworkDelivery.ReliableSequenced);
+    }
+
+    public static void PortalOpened(Vector3 position, float duration, Color color) {
+        if (!HostActive) {
+            return;
+        }
+        using FastBufferWriter writer = new FastBufferWriter(40, Allocator.Temp);
+        writer.WriteValueSafe((byte)Fx.Portal);
+        writer.WriteValueSafe((Vector2)position);
+        writer.WriteValueSafe(duration);
+        writer.WriteValueSafe(color);
+        CoopNet.Send("coop.fx", writer, NetworkDelivery.ReliableSequenced);
+    }
+
     // a Sorcerer cast on the host: the client flies its own copy, and each copy only hurts the Freny
     // of the side it flies on
     public static void HexCast(Vector3 position, HexballEffect effect, bool homing) {

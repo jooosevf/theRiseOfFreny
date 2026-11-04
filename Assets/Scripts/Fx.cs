@@ -75,6 +75,7 @@ public static class Fx {
     // swirling ring where an enemy is about to appear; lasts `duration` seconds
     public static void Portal(Vector3 position, float duration, Color color) {
         Ensure();
+        CoopWorld.PortalOpened(position, duration, color);
         runner.StartCoroutine(PortalRoutine(position, duration, color));
     }
 

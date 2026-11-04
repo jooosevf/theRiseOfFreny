@@ -7,6 +7,9 @@ public class CoopTestPilot : MonoBehaviour, IPlayerInputSource {
 
     private const float SwordReach = 1.4f;
     private const float StepUp = 1f;
+    private const float GunRange = 6f;
+    private const float GrenadeEvery = 8f;
+    private float nextGrenade;
     private Player player;
 
     private void Awake() {
@@ -49,6 +52,14 @@ public class CoopTestPilot : MonoBehaviour, IPlayerInputSource {
         frame.move = Mathf.Abs(delta.x) > 0.3f ? Mathf.Sign(delta.x) : 0f;
         frame.jumpPressed = delta.y > StepUp && player.IsGrounded;
         frame.meleePressed = swing && player.AttackReady;
+        // now and then the gun and a grenade, to test their copies and that they hit puppets
+        bool nearPuppet = target.GetComponent<CoopPuppet>() != null && best < GunRange;
+        frame.rangedPressed = nearPuppet && !swing && player.GunReady;
+        frame.grenadePressed = nearPuppet && Time.time >= nextGrenade && player.CanThrowGrenade;
+        if (frame.grenadePressed) {
+            nextGrenade = Time.time + GrenadeEvery;
+            frame.grenadeCharge = Player.GrenadeTapCharge;
+        }
         return frame;
     }
 

@@ -17,6 +17,7 @@ public class Grenade : MonoBehaviour {
     // the Armeira's grenade levels (WeaponLevels) widen the blast and raise the damage
     public float radius = BlastRadius;
     public int damage = EnemyDamage;
+    public bool Cosmetic { get; set; }   // co-op: the other player's grenade, drawn here without damage
 
     // the grenades on the floor, for the autopilot to keep away from
     public static readonly List<Grenade> Live = new List<Grenade>();
@@ -112,6 +113,10 @@ public class Grenade : MonoBehaviour {
         Fx.Burst(at, new Color(1f, 0.3f, 0.1f), 50, radius * 2.2f, 0.18f, 0.6f);
         Sfx.Play("grenade_explode", at);
         Fx.Burst(at, new Color(0.3f, 0.3f, 0.3f, 0.8f), 36, radius * 1.2f, 0.32f, 1.2f);
+        if (Cosmetic) {
+            Destroy(gameObject);
+            return;
+        }
 
         Collider2D[] caught = Physics2D.OverlapCircleAll(at, radius);
         HashSet<Enemy> hit = new HashSet<Enemy>();

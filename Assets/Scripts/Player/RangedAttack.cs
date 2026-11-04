@@ -26,6 +26,7 @@ public class RangedAttack : MonoBehaviour {
     // the shotgun shot this pellet belongs to (0 for the revolver)
     public int ShotgunShot { get; set; }
     public bool FromShotgun { get; set; }   // a pellet (the shotgun's damage buff) or a revolver bullet
+    public bool Cosmetic { get; set; }      // co-op: the other player's shot, drawn here without damage
 
     public void SetPush(float amount) {
         push = amount;
@@ -62,7 +63,9 @@ public class RangedAttack : MonoBehaviour {
         IDamageable hit = other.GetComponent<IDamageable>();
 
         if (hit != null) {
-            if (hit is Enemy enemy) {
+            if (Cosmetic) {
+                // nothing: the side that fired it deals the hit
+            } else if (hit is Enemy enemy) {
                 bool alive = !enemy.IsDead;
                 if (alive) Enemy.NextHitPower = WeaponLevels.Roll(FromShotgun ? WeaponLevels.ShotgunPower : WeaponLevels.PistolPower, transform.position);
                 if (alive) Enemy.NextHitSource = FromShotgun ? PlayerStats.WeaponShotgun : PlayerStats.WeaponGun;

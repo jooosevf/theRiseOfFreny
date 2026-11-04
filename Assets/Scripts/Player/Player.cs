@@ -765,7 +765,23 @@ public class Player : MonoBehaviour, IDamageable {
 
     private const float RevolverPush = 0f; // the revolver only hurts: no shove
 
+    // co-op: the other player's shot, drawn here; it does no damage (his side has the real one)
+    public void DrawPeerShot(Vector3 from, Vector3 direction) {
+        RangedAttack shot = Instantiate(revolverBulletPrefab, from, Quaternion.identity).GetComponent<RangedAttack>();
+        if (shot) {
+            shot.Cosmetic = true;
+            shot.SetDirection(direction);
+        }
+        Sfx.Play("pistol_shot", from);
+    }
+
+    // co-op: the same for a grenade
+    public void DrawPeerGrenade(Vector3 from, Vector2 velocity, float fuse) {
+        SpawnGrenade(from, velocity, fuse).Cosmetic = true;
+    }
+
     private void FireBullet(Vector3 from, Vector3 direction, float push = 1f, int shotgunShot = 0, bool fromShotgun = false) {
+        CoopWorld.ShotFired(from, direction, push);
         GameObject bullet = Instantiate(revolverBulletPrefab, from, Quaternion.identity);
         RangedAttack shot = bullet.GetComponent<RangedAttack>();
         if (shot) {
@@ -880,12 +896,13 @@ public class Player : MonoBehaviour, IDamageable {
         float rad = (tap ? GrenadeTapAngle : grenadeAngle) * Mathf.Deg2Rad;
         Vector2 velocity = new Vector2(facing * Mathf.Cos(rad), Mathf.Sin(rad)) * speed;
         SpawnGrenade(from, velocity, fuse);
+        CoopWorld.GrenadeThrown(from, velocity, fuse);
         Fx.Spray(from, velocity, new Color(1f, 0.9f, 0.6f), 4, 2f, 0.4f);
         Sfx.Play("grenade_throw", from);
     }
 
     // built at runtime, so no prefab is needed; it bounces and rolls (only its fuse sets it off)
-    private void SpawnGrenade(Vector3 from, Vector2 velocity, float fuse) {
+    private Grenade SpawnGrenade(Vector3 from, Vector2 velocity, float fuse) {
         GameObject grenade = new GameObject("Grenade");
         grenade.transform.position = from;
         grenade.transform.localScale = Vector3.one * 0.35f;
@@ -912,6 +929,7 @@ public class Player : MonoBehaviour, IDamageable {
         blast.fuse = fuse;
         blast.radius = WeaponLevels.GrenadeRadius;
         blast.damage = WeaponLevels.GrenadeDamage;
+        return blast;
     }
 
     // about how long a throw at this charge flies to cover dx (the autopilot times its cooking with it)
