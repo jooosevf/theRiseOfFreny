@@ -347,8 +347,6 @@ public class ArenaRunVariety : MonoBehaviour {
         Text what = MenuKit.MakeText(card.transform, info.what, MenuKit.SmallTextSize, MenuKit.TextColor, TextAnchor.UpperCenter);
         Place(what.rectTransform, new Vector2(0f, -46f), new Vector2(204f, 92f));
 
-        Text key = MenuKit.MakeText(card.transform, (index + 1).ToString(), MenuKit.SmallTextSize, MenuKit.DimTextColor, TextAnchor.UpperLeft);
-        Place(key.rectTransform, new Vector2(-92f, 78f), new Vector2(30f, 24f));
         return card;
     }
 
