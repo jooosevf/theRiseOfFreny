@@ -123,6 +123,8 @@ Conflitos registrados:
 
 ### Regra de recorte (inimigo sobre tile)
 
+**Teste de 2026-11-05, na arena:** as paredes de tijolo ficam iluminadas pelas torchas e pelo ciclo do dia, e os inimigos sem aro já se leem bem nas fotos. Os números abaixo são de arquivo, sem luz, e superestimam o problema nesse cenário. O aro testado (`#5868A0`) deixou o inimigo com cara de contorno neon. A regra fica para reavaliar nas masmorras escuras da campanha; na arena, a recomendação passa a ser não aplicar. O José decide vendo as fotos.
+
 O inimigo tem 1,55:1 sobre `#080810` e 1,40:1 sobre `#101818`: clima bom, leitura ruim. O acento violeta `#484098` chega a 2,34, e a 1,99 sobre `#201830`. A regra abaixo é verificável e não mexe no corpo.
 
 1. **Teto do fundo.** Nenhum tile de área jogável passa de 1,2:1 sobre `#080810`. O mais claro medido, `#201830`, tem 1,17.
@@ -429,12 +431,12 @@ Respostas de 2026-11-05. **O foco agora é só a arena.** "Testar" quer dizer: t
 
 | # | Assunto | Decisão | Próximo passo |
 |---|---|---|---|
-| 1 | Dia azul da arena | Seguir a recomendação: ciclo fica, dia de cinza no lugar do azul | Testar |
+| 1 | Dia azul da arena | Seguir a recomendação: ciclo fica, dia de cinza no lugar do azul | Foto enviada; aguarda aprovação |
 | 2 | Menus em roxo-magenta | **Fica.** O José gosta e vê Dark Fantasy nele; não tirar de uma vez | Nenhum |
-| 3 | Fonte | Testar outra | Testar |
-| 4 | Câmera e escala | Testar | Testar |
+| 3 | Fonte | Testar outra. Candidata: Jersey 10 no texto, Jacquard 12 nos títulos de página (ambas OFL, com todos os acentos do pt-BR). Pixelify Sans reprovada: o 5 lê como S. Jacquard no banner reprovada: "PENTA" fica ilegível | Foto enviada; aguarda aprovação |
+| 4 | Câmera e escala | Testar. Em 7,2 o pixel fica uniforme, mas corta o alto e as laterais das torres e mexe no balanceamento e no ranking | Foto enviada; aguarda aprovação |
 | 5 | Menu player | Não mexer | Nenhum |
-| 6 | Aro dos inimigos | Seguir a recomendação: aro assado por script | Testar |
+| 6 | Aro dos inimigos | Testado. Nova recomendação: não aplicar na arena; reavaliar na campanha | Foto enviada; aguarda aprovação |
 | 7 | Folclore brasileiro | Fica para depois. Os desenhos atuais estão feios; redesenhar, provavelmente com artista contratado | Depois da arena |
 | 8 | Sino do Arauto | Sem preocupação agora | Depois da arena |
 | 9 | Máscara do Arauto | Sem preocupação agora | Depois da arena |
@@ -444,13 +446,13 @@ Respostas de 2026-11-05. **O foco agora é só a arena.** "Testar" quer dizer: t
 | 13 | Foco de menu | Seguir a recomendação, sem trocar a paleta: moldura e barra em magenta | Quando o menu for mexido |
 | 14 | Vermelho no pico do combo | Aprovado: pode ficar vermelho no HUD | Nenhum |
 | 15 | Grade da fonte e pop de combate | **Em aberto:** o José pediu explicação. Recomendação: número fica no tamanho nítido em repouso, e só cresce fora dele durante o pulo curto de um golpe | Mostrar no teste de fonte |
-| 16 | Fontes por papel | Separar as fontes e testar | Testar |
+| 16 | Fontes por papel | Separar as fontes e testar. Placar e banner seguem em Press Start 2P | Foto enviada; aguarda aprovação |
 | 17 | Efeito VHS nas fases | Testar quando chegar a campanha | Depois da arena |
 | 18 | Nome de sprite e código | Aprovado: manter `Tileset_N` por ora | Nenhum |
 
 ## Fora deste documento
 
-- **Nada foi visto rodando na Unity.** Nenhuma regra de luz, clima, dia e noite, Lua de Sangue ou hype foi vista em jogo. Luzes 2D mudam as cores e as razões de contraste, e isso não foi medido.
+- **Visto na Unity em 2026-11-05, só na arena:** dia e noite, aro, câmera e fontes, em fotos com inimigos parados. Fora disso, nenhuma regra de luz, clima, Lua de Sangue ou hype foi vista em jogo. Luzes 2D mudam as cores e as razões de contraste, e isso não foi medido.
 - **As cores são dos arquivos.** Os hex medidos estão arredondados a múltiplos de 8, o verde ácido é aproximado, e os de `MenuKit` e de combate foram convertidos dos valores do código.
 - **Contrastes:** as 42 razões principais, as 7 violações de orçamento e a regex foram conferidas por script em 2026-11-04. As razões de UX vieram da revisão, também por script. Tudo é cor de arquivo.
 - **A regra de 40%, a borda e o ponto focal não foram rodados** em nenhum sprite. O número é uma proposta.
