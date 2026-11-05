@@ -58,9 +58,13 @@ namespace Online {
             PhysicsShapeGroup2D group = new PhysicsShapeGroup2D();
             List<Vector2> vertices = new List<Vector2>();
             int total = 0;
-            foreach (Collider2D col in UnityEngine.Object.FindObjectsByType<Collider2D>(FindObjectsSortMode.None)) {
+            foreach (Collider2D col in FindCompat.All<Collider2D>()) {
                 if (col.isTrigger || !col.enabled || !col.gameObject.activeInHierarchy) continue;
+#if UNITY_6000_0_OR_NEWER
                 if (col.compositeOperation != Collider2D.CompositeOperation.None) continue;   // its composite has it
+#else
+                if (col.usedByComposite) continue;
+#endif
                 Rigidbody2D body = col.attachedRigidbody;
                 if (body != null && body.bodyType != RigidbodyType2D.Static) continue;
                 if (col.GetComponentInParent<Enemy>() != null || col.GetComponentInParent<Player>() != null) continue;
