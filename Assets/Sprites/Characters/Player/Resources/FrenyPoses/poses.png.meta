@@ -68,6 +68,45 @@ TextureImporter:
   - first:
       213: -2938857750163721687
     second: Freny swing_90
+  - first:
+      213: 3236357939364071500
+    second: Freny shotgun_0
+  - first:
+      213: 2732855823896424525
+    second: Freny shotgun_1
+  - first:
+      213: 3309521661452070955
+    second: Freny shotgun_2
+  - first:
+      213: -1984638019628134380
+    second: Freny shotgun_3
+  - first:
+      213: -2360938768572367981
+    second: Freny shotgun_4
+  - first:
+      213: 18566278380686950
+    second: Freny air shotgun_0
+  - first:
+      213: 2805386702150880079
+    second: Freny air shotgun_1
+  - first:
+      213: 2802946681084793418
+    second: Freny air shotgun_2
+  - first:
+      213: -875642228048037928
+    second: Freny air shotgun_3
+  - first:
+      213: -4440557494948885997
+    second: Freny air shotgun_4
+  - first:
+      213: -1847556761499084459
+    second: Freny crouch shotgun_0
+  - first:
+      213: 2027958687394497879
+    second: Freny crouch shotgun_1
+  - first:
+      213: -925333494326358103
+    second: Freny crouch shotgun_2
   externalObjects: {}
   serializedVersion: 12
   mipmaps:
@@ -206,7 +245,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 0
-        y: 600
+        y: 800
         width: 280
         height: 200
       alignment: 9
@@ -216,7 +255,7 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 3957002abc4049cf9ca187147e3fcd6e
+      spriteID: 1c7517ba87de4487bb48946e24748dba
       internalID: 1281762758697591833
       vertices: []
       indices: 
@@ -227,7 +266,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 280
-        y: 600
+        y: 800
         width: 280
         height: 200
       alignment: 9
@@ -237,7 +276,7 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 346f3ce094094e69b92df4d7fc0c1ce2
+      spriteID: d17bc2bb87a3476d8448f19f892e2b5a
       internalID: 3147290335399028457
       vertices: []
       indices: 
@@ -248,7 +287,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 560
-        y: 600
+        y: 800
         width: 280
         height: 200
       alignment: 9
@@ -258,7 +297,7 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 3e28cf92f4484be084cb8ace9337c52a
+      spriteID: 061e903fb76c4bc0967d6763c55f76ad
       internalID: 4443901822933087423
       vertices: []
       indices: 
@@ -269,7 +308,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 840
-        y: 600
+        y: 800
         width: 280
         height: 200
       alignment: 9
@@ -279,7 +318,7 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 47412f5d55ac4cd9803ae9d695d02380
+      spriteID: eb0f81085711415fb76aea706417c297
       internalID: 3525080503606983398
       vertices: []
       indices: 
@@ -290,7 +329,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 1120
-        y: 600
+        y: 800
         width: 280
         height: 200
       alignment: 9
@@ -300,7 +339,7 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: e2ee75e7446045239c9344d6cb2929a8
+      spriteID: 376a2ee971ee426f82f988c711b14666
       internalID: -4564926455042256413
       vertices: []
       indices: 
@@ -311,7 +350,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 1400
-        y: 600
+        y: 800
         width: 280
         height: 200
       alignment: 9
@@ -321,7 +360,7 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 069b8de9e90941e0b3292562010f0848
+      spriteID: 68b9a75aebd3465fa33ea6117c128315
       internalID: -3122597141751759380
       vertices: []
       indices: 
@@ -332,7 +371,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 1680
-        y: 600
+        y: 800
         width: 280
         height: 200
       alignment: 9
@@ -342,7 +381,7 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 589144037a7849f68fd485e059436d23
+      spriteID: d547dd8737ec4e7e98178bf182f110d7
       internalID: 686960640578370293
       vertices: []
       indices: 
@@ -353,6 +392,153 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 0
+        y: 600
+        width: 280
+        height: 200
+      alignment: 9
+      pivot: {x: 0.357143, y: 0.500000}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 26bf1ccda0b44719a8c65c415950a504
+      internalID: -2802952854236084819
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny air ranged_4
+      rect:
+        serializedVersion: 2
+        x: 280
+        y: 600
+        width: 280
+        height: 200
+      alignment: 9
+      pivot: {x: 0.357143, y: 0.500000}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5bdbb690960044e78879dedea63cf4c2
+      internalID: -4399754493112314798
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny climb_0
+      rect:
+        serializedVersion: 2
+        x: 560
+        y: 600
+        width: 280
+        height: 200
+      alignment: 9
+      pivot: {x: 0.357143, y: 0.500000}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5742ceba6c884ae7a0c35cdce34544ef
+      internalID: 4432507918585680993
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny climb_1
+      rect:
+        serializedVersion: 2
+        x: 840
+        y: 600
+        width: 280
+        height: 200
+      alignment: 9
+      pivot: {x: 0.357143, y: 0.500000}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 203b8af7b5ba456894ee3b14e4778347
+      internalID: 1184892067255185169
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny swing_-60
+      rect:
+        serializedVersion: 2
+        x: 1120
+        y: 600
+        width: 280
+        height: 200
+      alignment: 9
+      pivot: {x: 0.357143, y: 0.500000}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 50088751165447158d272e5b009c0d5b
+      internalID: 2715681764597123200
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny swing_-45
+      rect:
+        serializedVersion: 2
+        x: 1400
+        y: 600
+        width: 280
+        height: 200
+      alignment: 9
+      pivot: {x: 0.357143, y: 0.500000}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 64e9210ddd1b419daad7b265a715506f
+      internalID: 1801469302619187644
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny swing_-30
+      rect:
+        serializedVersion: 2
+        x: 1680
+        y: 600
+        width: 280
+        height: 200
+      alignment: 9
+      pivot: {x: 0.357143, y: 0.500000}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cbc0c19efb96485484aafbfc238cb02f
+      internalID: 1967087956043218188
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny swing_-15
+      rect:
+        serializedVersion: 2
+        x: 0
         y: 400
         width: 280
         height: 200
@@ -363,14 +549,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: f5d21529659741d9b6ceb4103a209f69
-      internalID: -2802952854236084819
+      spriteID: ba79ec2e49d34004b7ba99423e7b442a
+      internalID: 2330644464531235552
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Freny air ranged_4
+      name: Freny swing_0
       rect:
         serializedVersion: 2
         x: 280
@@ -384,14 +570,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 009dd72da6a74e0987877fa9dce9da49
-      internalID: -4399754493112314798
+      spriteID: 45b095bad04e463895d37325ed55a01d
+      internalID: -2957659334925608619
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Freny climb_0
+      name: Freny swing_15
       rect:
         serializedVersion: 2
         x: 560
@@ -405,14 +591,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 18def0eed6ec4d4a9c082f70b53f5c53
-      internalID: 4432507918585680993
+      spriteID: a068832d48d742cdb9ce4b0f70fe3ccc
+      internalID: 693633354088087488
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Freny climb_1
+      name: Freny swing_30
       rect:
         serializedVersion: 2
         x: 840
@@ -426,14 +612,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: c16956cd7a244570b8f24b7e7ba19fa2
-      internalID: 1184892067255185169
+      spriteID: 19c45c030e67413e9751e89129fd9a16
+      internalID: -2012754610768622461
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Freny swing_-60
+      name: Freny swing_45
       rect:
         serializedVersion: 2
         x: 1120
@@ -447,14 +633,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 91cefa9079d94ff8ba82c6d112dd8f43
-      internalID: 2715681764597123200
+      spriteID: da8612fc1cd54f518705451460338a39
+      internalID: 1088334119602095216
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Freny swing_-45
+      name: Freny swing_60
       rect:
         serializedVersion: 2
         x: 1400
@@ -468,14 +654,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 411d44393bb54395ace4b8de996ceb85
-      internalID: 1801469302619187644
+      spriteID: aa82f53fe4474b32850d40e1df478fbc
+      internalID: 2192295974019994336
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Freny swing_-30
+      name: Freny swing_75
       rect:
         serializedVersion: 2
         x: 1680
@@ -489,14 +675,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 0f36594ed41949439b27a9a116166004
-      internalID: 1967087956043218188
+      spriteID: 37b97178f40f48f6b671b3bd0eb5ce6d
+      internalID: 3893600756914264733
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Freny swing_-15
+      name: Freny swing_90
       rect:
         serializedVersion: 2
         x: 0
@@ -510,14 +696,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: fbb59e60b97f4e1badd3cfc7a3060a7a
-      internalID: 2330644464531235552
+      spriteID: 28ac24032fb940caa2418f6041e7dfcf
+      internalID: -2938857750163721687
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Freny swing_0
+      name: Freny shotgun_0
       rect:
         serializedVersion: 2
         x: 280
@@ -531,14 +717,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: a53dab066375414fab9a2a8240bcac99
-      internalID: -2957659334925608619
+      spriteID: 7df242c047044db3874343270a17c128
+      internalID: 3236357939364071500
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Freny swing_15
+      name: Freny shotgun_1
       rect:
         serializedVersion: 2
         x: 560
@@ -552,14 +738,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 0cca3d04dc00461fa786ceadcd85e083
-      internalID: 693633354088087488
+      spriteID: bd63ae70c29447c6a2bfb76663d844e5
+      internalID: 2732855823896424525
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Freny swing_30
+      name: Freny shotgun_2
       rect:
         serializedVersion: 2
         x: 840
@@ -573,14 +759,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: a342e1fbb62d46dfab69147053efe7d2
-      internalID: -2012754610768622461
+      spriteID: 0184f83d827d437e9e4c02a152eb84e5
+      internalID: 3309521661452070955
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Freny swing_45
+      name: Freny shotgun_3
       rect:
         serializedVersion: 2
         x: 1120
@@ -594,14 +780,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 68838256d33c414881e58db7d75c7f08
-      internalID: 1088334119602095216
+      spriteID: 2a28a36177624ecda45931c6a3348192
+      internalID: -1984638019628134380
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Freny swing_60
+      name: Freny shotgun_4
       rect:
         serializedVersion: 2
         x: 1400
@@ -615,14 +801,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 9b29c5bacbe242f1b9cada75b223116d
-      internalID: 2192295974019994336
+      spriteID: 44d05b64fd664d51b5d1f059be4f510a
+      internalID: -2360938768572367981
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Freny swing_75
+      name: Freny air shotgun_0
       rect:
         serializedVersion: 2
         x: 1680
@@ -636,14 +822,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 2838d00135484c7693555fddd325395f
-      internalID: 3893600756914264733
+      spriteID: 2232b116ec634effa536b29502645b74
+      internalID: 18566278380686950
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Freny swing_90
+      name: Freny air shotgun_1
       rect:
         serializedVersion: 2
         x: 0
@@ -657,8 +843,134 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 911b0efd6e944e64bac941143f8e4ab8
-      internalID: -2938857750163721687
+      spriteID: 5ce50483bab24cf7a25f2902a50ea7a7
+      internalID: 2805386702150880079
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny air shotgun_2
+      rect:
+        serializedVersion: 2
+        x: 280
+        y: 0
+        width: 280
+        height: 200
+      alignment: 9
+      pivot: {x: 0.357143, y: 0.500000}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6ec9e5d34d524f67bc90d7f54ffa64e0
+      internalID: 2802946681084793418
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny air shotgun_3
+      rect:
+        serializedVersion: 2
+        x: 560
+        y: 0
+        width: 280
+        height: 200
+      alignment: 9
+      pivot: {x: 0.357143, y: 0.500000}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b5dd5369710c4ebcb2257356d84b16f0
+      internalID: -875642228048037928
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny air shotgun_4
+      rect:
+        serializedVersion: 2
+        x: 840
+        y: 0
+        width: 280
+        height: 200
+      alignment: 9
+      pivot: {x: 0.357143, y: 0.500000}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 210d31c0b4c045869cf2d8a819b161d7
+      internalID: -4440557494948885997
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny crouch shotgun_0
+      rect:
+        serializedVersion: 2
+        x: 1120
+        y: 0
+        width: 280
+        height: 200
+      alignment: 9
+      pivot: {x: 0.357143, y: 0.500000}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 04088188aa744d31ae43959d33493847
+      internalID: -1847556761499084459
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny crouch shotgun_1
+      rect:
+        serializedVersion: 2
+        x: 1400
+        y: 0
+        width: 280
+        height: 200
+      alignment: 9
+      pivot: {x: 0.357143, y: 0.500000}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f6eaf4027776441281a5cef7dd7cd650
+      internalID: 2027958687394497879
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny crouch shotgun_2
+      rect:
+        serializedVersion: 2
+        x: 1680
+        y: 0
+        width: 280
+        height: 200
+      alignment: 9
+      pivot: {x: 0.357143, y: 0.500000}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 05638ec86eb149c7a4fc3481a0208753
+      internalID: -925333494326358103
       vertices: []
       indices: 
       edges: []
@@ -696,6 +1008,19 @@ TextureImporter:
       Freny swing_60: 2192295974019994336
       Freny swing_75: 3893600756914264733
       Freny swing_90: -2938857750163721687
+      Freny shotgun_0: 3236357939364071500
+      Freny shotgun_1: 2732855823896424525
+      Freny shotgun_2: 3309521661452070955
+      Freny shotgun_3: -1984638019628134380
+      Freny shotgun_4: -2360938768572367981
+      Freny air shotgun_0: 18566278380686950
+      Freny air shotgun_1: 2805386702150880079
+      Freny air shotgun_2: 2802946681084793418
+      Freny air shotgun_3: -875642228048037928
+      Freny air shotgun_4: -4440557494948885997
+      Freny crouch shotgun_0: -1847556761499084459
+      Freny crouch shotgun_1: 2027958687394497879
+      Freny crouch shotgun_2: -925333494326358103
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

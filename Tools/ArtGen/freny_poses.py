@@ -159,12 +159,130 @@ def slash_frames():
     return [ARM_RAISED] * 5
 
 
+# ---- the shotgun (José, 2026-11-05): the Ranged frames drew the pistol whatever gun he fired.
+# These poses hold the shotgun pickup's own art (Items 100x100_2) at the hip, at belly height:
+# his right arm is the idle frame's, hanging down, with the hand on the grip; the stock sits
+# behind his thigh. The flash and the smoke are the pistol frames' own, moved to the longer barrel.
+#   Freny shotgun_0..4         standing (the Ranged clip's 5 frames, swapped by name)
+#   Freny air shotgun_0..4     in the air (Jump Ranged)
+#   Freny crouch shotgun_0..2  crouched
+# The gun's grey is one step off the shirt's SHADE, and the smoke's off MID/SHADE, so the Traje and
+# the shirt tint (freny_traje.py, freny_cosmetics.py match those greys exactly) leave them alone.
+SHADE_GREY, MID_GREY = (99, 86, 85, 255), (129, 111, 109, 255)
+OFF_GREY = {SHADE_GREY: (98, 85, 84, 255), MID_GREY: (128, 110, 108, 255)}
+FLASH = {(219, 165, 40, 255), (251, 242, 54, 255), (255, 255, 255, 255)}
+
+
+def shotgun_art():
+    """the pickup's drawing in art pixels {(x, y): rgba}, cropped to the cell (grip at (10, 13))"""
+    items = Image.open(os.path.join(ROOT, 'Assets/Sprites/Items/Items 100x100.png')).convert('RGBA')
+    cell = items.crop((200, 0, 300, 100))
+    return {(x, y): OFF_GREY.get(cell.getpixel((x * PX, y * PX)), cell.getpixel((x * PX, y * PX)))
+            for x in range(25) for y in range(25) if cell.getpixel((x * PX, y * PX))[3] > 0}
+
+
+SHOTGUN = shotgun_art()
+SG_GRIP = (10, 13)        # the wrist of the stock, under his hand
+SG_TIP = (19, 12.5)       # the end of the barrel
+IDLE = frame('Player idle', 0)
+IDLE_ARM = take(IDLE, lambda x, y: x >= 29 and 28 <= y <= 38)   # the sleeve down to the hand
+IDLE_HAND = (30, 37)      # where the grip goes, in the idle frame
+# each shot frame's body offset from the idle frame (its shoulder row), standing and in the air
+SHOT_FRAMES = {('Player ranged', i): o for i, o in enumerate([(-1, 1), (-1, 1), (0, 1), (0, 1), (0, 1)])}
+SHOT_FRAMES.update({('Player jump ranged', i): o for i, o in enumerate([(-1, 0), (-1, 0), (0, 0), (0, 0), (0, 0)])})
+TILT = [0, 0, 0, 20, 45]  # degrees the barrel dips as the gun comes down after the shot
+PISTOL_TIP = (43, 30.5)   # the first flash column past the pistol's muzzle, in the idle frame's space
+
+
+def gun_at(hand, deg=0):
+    """the shotgun with its grip on hand, the barrel dipped deg degrees"""
+    if deg == 0:
+        return moved(SHOTGUN, hand[0] - SG_GRIP[0], hand[1] - SG_GRIP[1])
+    a = math.radians(deg)
+    out = {}
+    for x in range(hand[0] - 16, hand[0] + 17):
+        for y in range(hand[1] - 16, hand[1] + 17):
+            rx, ry = x - hand[0], y - hand[1]
+            u, v = math.cos(a) * rx + math.sin(a) * ry, -math.sin(a) * rx + math.cos(a) * ry
+            p = (round(SG_GRIP[0] + u), round(SG_GRIP[1] + v))
+            if p in SHOTGUN:
+                out[(x, y)] = SHOTGUN[p]
+    return out
+
+
+FLASH_SCALE = 1.5        # the shotgun's blast is the pistol's flash, half as big again
+
+
+def muzzle_fx(pix, ox, oy, shift):
+    """the flash (scaled up from its base) and the smoke of a pistol frame, moved by shift"""
+    fx, flash = {}, {}
+    for (x, y), c in pix.items():
+        if c in FLASH and x >= 40 + ox:
+            flash[(x, y)] = c
+        elif c in (MID_GREY, SHADE_GREY) and x >= 42 + ox and y <= 32 + oy:
+            fx[(x + shift[0], y + shift[1])] = OFF_GREY[c]
+    if flash:
+        bx, by = PISTOL_TIP[0] + ox, PISTOL_TIP[1] + oy + 0.5     # its base: the barrel's end
+        xs = [x for x, _ in flash]; ys = [y for _, y in flash]
+        for x in range(bx, round(bx + (max(xs) - bx + 1) * FLASH_SCALE) + 1):
+            for y in range(round(by + (min(ys) - by) * FLASH_SCALE) - 1, round(by + (max(ys) + 1 - by) * FLASH_SCALE) + 1):
+                src = (math.floor(bx + (x + 0.5 - bx) / FLASH_SCALE), math.floor(by + (y + 0.5 - by) / FLASH_SCALE))
+                if src in flash:
+                    fx[(x + shift[0], y + shift[1])] = flash[src]
+    return fx
+
+
+def shotgun_frame(sheet, i):
+    ox, oy = SHOT_FRAMES[(sheet, i)]
+    pix = frame(sheet, i)
+    body = {p: c for p, c in pix.items() if not (p[0] >= 29 + ox and p[1] <= 38 + oy)}  # no pistol arm
+    arm = moved(IDLE_ARM, ox, oy)
+    if i >= 3:   # lowering: the body of frame 2 (the Animator's own frames 3-4 hang the pistol at his side)
+        ox, oy = SHOT_FRAMES[(sheet, 2)]
+        base = frame(sheet, 2)
+        body = {p: c for p, c in base.items() if not (p[0] >= 29 + ox and p[1] <= 38 + oy)}
+        arm = moved(IDLE_ARM, ox, oy)
+    hand = (IDLE_HAND[0] + ox, IDLE_HAND[1] + oy)
+    gun = gun_at(hand, TILT[i])
+    tip = (hand[0] - SG_GRIP[0] + SG_TIP[0] + 1, hand[1] - SG_GRIP[1] + SG_TIP[1])
+    fo = SHOT_FRAMES[(sheet, i)]
+    shift = (round(tip[0] - (PISTOL_TIP[0] + fo[0])), round(tip[1] - (PISTOL_TIP[1] + fo[1])))
+    out = dict(body)
+    out.update(gun)        # the stock pressed against his hip, over the coat
+    out.update(arm)        # the hand closes over the grip
+    out.update(muzzle_fx(pix, *fo, shift))
+    return out
+
+
+# crouched: his own forward arm (the crouch frame's), the grip under that hand at belly height
+CROUCH_HAND = (33, 42)
+
+
+def crouch_shotgun(i):
+    ox, oy = SHOT_FRAMES[('Player ranged', i)]
+    hand = CROUCH_HAND
+    tip = (hand[0] - SG_GRIP[0] + SG_TIP[0] + 1, hand[1] - SG_GRIP[1] + SG_TIP[1])
+    shift = (round(tip[0] - (PISTOL_TIP[0] + ox)), round(tip[1] - (PISTOL_TIP[1] + oy)))
+    out = gun_at(hand)
+    out.update(CROUCH)
+    out.update(muzzle_fx(frame('Player ranged', i), ox, oy, shift))
+    return out
+
+
+def shotgun_poses():
+    return [('Freny shotgun_%d' % i, shotgun_frame('Player ranged', i)) for i in range(5)] \
+      + [('Freny air shotgun_%d' % i, shotgun_frame('Player jump ranged', i)) for i in range(5)] \
+      + [('Freny crouch shotgun_%d' % i, crouch_shotgun(i)) for i in range(3)]
+
+
 def poses():
+    # new poses go at the end, so the old ones keep their sprite ids
     return [('Freny crouch_0', CROUCH)] \
       + [('Freny crouch ranged_%d' % i, {**CROUCH, **moved(g, 0, 8)}) for i, g in enumerate(GUN)] \
       + [('Freny air ranged_%d' % i, frame('Player jump ranged', i)) for i in range(5)] \
       + [('Freny climb_%d' % i, frame('Player climb', i)) for i in range(2)] \
-      + [('Freny swing_%d' % d, swing_pose(d)[0]) for d in SWING_ANGLES]
+      + [('Freny swing_%d' % d, swing_pose(d)[0]) for d in SWING_ANGLES] \
+      + shotgun_poses()
 
 
 def draw(pix):

@@ -212,8 +212,13 @@ public static class FrenyLook {
 
     // the Traje's frame for a normal body frame: same name, same pivot (the head layers, the capes
     // and the sword look frames up by name, so they all go on working)
+    // (traje2 holds the frames the first 2048 sheet had no room for: the shotgun poses)
     public static Sprite TrajeFrame(Sprite frame) {
-        return frame != null && Sheet("FrenyLook/traje").TryGetValue(frame.name, out Sprite dressed) ? dressed : frame;
+        if (frame == null) {
+            return null;
+        }
+        return Sheet("FrenyLook/traje").TryGetValue(frame.name, out Sprite dressed)
+            || Sheet("FrenyLook/traje2").TryGetValue(frame.name, out dressed) ? dressed : frame;
     }
 
     // after the Animator or a pose picked the frame

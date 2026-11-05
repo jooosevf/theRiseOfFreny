@@ -731,7 +731,9 @@ public class Player : MonoBehaviour, IDamageable {
         }
         rangedPressedTime = -10f;
 
-        _playerAnim.Ranged();
+        // the shotgun fires three bullets in a fan, one shell per shot; only its pellets shove enemies back
+        bool shotgun = UsingShotgun && !MageStaff.Held(this);
+        _playerAnim.Ranged(shotgun);
         Vector3 muzzle = playerRevolverShootPosition ? playerRevolverShootPosition.position : transform.position;
         Vector3 forward = FacingRight ? Vector3.right : Vector3.left;
         if (AimingUp) {
@@ -739,6 +741,11 @@ public class Player : MonoBehaviour, IDamageable {
             forward = Vector3.up;
         } else if (IsCrouching) {
             muzzle += Vector3.down * CrouchMuzzleDrop;
+            if (shotgun) {
+                muzzle += forward * CrouchShotgunMuzzle.x + Vector3.down * CrouchShotgunMuzzle.y;
+            }
+        } else if (shotgun) {
+            muzzle += forward * ShotgunMuzzle.x + Vector3.down * ShotgunMuzzle.y;   // the hip, not the raised pistol
         }
         if (MageStaff.Held(this)) {
             // the Cajado do Mago: a spell ball instead of a bullet, no ammo used
@@ -748,8 +755,6 @@ public class Player : MonoBehaviour, IDamageable {
         }
         Fx.Spray(muzzle, forward, new Color(1f, 0.9f, 0.5f), 6, 5f, 0.3f);
 
-        // the shotgun fires three bullets in a fan, one shell per shot; only its pellets shove enemies back
-        bool shotgun = UsingShotgun;
         Sfx.Play(shotgun ? "shotgun_shot" : "pistol_shot", muzzle);
         if (shotgun) {
             ShotgunShells--;
@@ -766,6 +771,11 @@ public class Player : MonoBehaviour, IDamageable {
     }
 
     private const float CrouchMuzzleDrop = 0.32f; // the crouched gun sits 8 art pixels lower
+
+    // the shotgun poses hold it at the hip (Tools/ArtGen/freny_poses.py): its barrel ends 3 art
+    // pixels (0.04 each) short of the pistol's and 6 lower standing or in the air, 1 further and 2 lower crouched
+    private static readonly Vector2 ShotgunMuzzle = new Vector2(-0.12f, 0.24f);
+    private static readonly Vector2 CrouchShotgunMuzzle = new Vector2(0.04f, 0.08f);
 
     private const float RevolverPush = 0f; // the revolver only hurts: no shove
 

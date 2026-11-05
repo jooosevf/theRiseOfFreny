@@ -104,6 +104,7 @@ public static class CoopWorld {
         writer.WriteValueSafe((Vector2)from);
         writer.WriteValueSafe((Vector2)direction);
         writer.WriteValueSafe((byte)(shotgun ? 1 : 0));
+        writer.WriteValueSafe(CoopNet.LocalId);   // whose copy shows the shot (the shotgun poses)
         CoopNet.Send("coop.fx", writer, NetworkDelivery.ReliableSequenced);
     }
 
