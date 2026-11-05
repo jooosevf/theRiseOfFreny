@@ -32,7 +32,7 @@ public static class Features {
     public static readonly bool Magnet = true;              // Ímã (the drop; the Ímã de moedas blessing is Blessings)
 
     // ---- a run's variety ----
-    public static readonly bool Coop = true;                // the Co-op button (Jogar); off, no way into a room
+    public static readonly bool Coop = false;               // the Co-op button (Jogar); off, no way into a room (José, 2026-11-05: waits for the major release)
     public static readonly bool Blessings = true;          // Bênçãos (the golden chest stops offering them)
     public static readonly bool WeeklyMutators = false;     // Mutador da semana (José, 2026-11-02: off until there is a better idea for it)
     public static readonly bool GoldenChest = true;         // the Ciclope's key, the golden chest and its exclusive looks
