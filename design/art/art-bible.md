@@ -60,7 +60,7 @@ Os limiares em números são do design de jogo; aqui fica só a aparência. A co
 
 O ciclo fica: é pedido do José (2026-10-28) e dá ritmo à corrida, com 1 minuto de dia e 2 de noite. A noite é o estado de identidade. O dia é a maior fuga de Dark Fantasy do jogo: céu azul limpo, de `#4A88D4` a `#B0D4EC`. José já disse que ficou claro demais e que os inimigos ficam azuis.
 
-Recomendo trocar a cor do dia, não o ciclo: um **dia de cinza**, sob céu coberto e frio, de `#7C8884` a `#A8B0A8`, com sol velado. A tabela mostra que o problema atual é de clima mais que de leitura (razões por cor de arquivo, sem luz).
+Recomendo trocar a cor do dia, não o ciclo: um **dia de cinza**, sob céu coberto e frio, com sol velado. Aprovado pelo José em 2026-11-05 com `#6A7074` a `#929696`, mais cinza que os valores da tabela abaixo, que são da primeira prova. A tabela mostra que o problema atual é de clima mais que de leitura (razões por cor de arquivo, sem luz).
 
 | Céu | Navy `#283050` | Calça `#402838` | Túnica `#806868` | Elmo `#B0A088` |
 |---|---|---|---|---|
@@ -123,7 +123,7 @@ Conflitos registrados:
 
 ### Regra de recorte (inimigo sobre tile)
 
-**Teste de 2026-11-05, na arena:** as paredes de tijolo ficam iluminadas pelas torchas e pelo ciclo do dia, e os inimigos sem aro já se leem bem nas fotos. Os números abaixo são de arquivo, sem luz, e superestimam o problema nesse cenário. O aro testado (`#5868A0`) deixou o inimigo com cara de contorno neon. A regra fica para reavaliar nas masmorras escuras da campanha; na arena, a recomendação passa a ser não aplicar. O José decide vendo as fotos.
+**Decisão de 2026-11-05: sem aro na arena.** O José testou em foto e não gostou. As paredes de tijolo ficam iluminadas pelas torchas e pelo ciclo do dia, e os inimigos sem aro já se leem bem. Os números abaixo são de arquivo, sem luz, e superestimam o problema nesse cenário. O restante desta regra só vale como ponto de partida para as masmorras escuras da campanha, e precisa de novo teste lá.
 
 O inimigo tem 1,55:1 sobre `#080810` e 1,40:1 sobre `#101818`: clima bom, leitura ruim. O acento violeta `#484098` chega a 2,34, e a 1,99 sobre `#201830`. A regra abaixo é verificável e não mexe no corpo.
 
@@ -135,7 +135,7 @@ O inimigo tem 1,55:1 sobre `#080810` e 1,40:1 sobre `#101818`: clima bom, leitur
 
 A borda não precisa fechar: é luz vinda de cima e dos lados, não um contorno. **Isso muda em parte a convenção "sem contorno preto" das folhas v2.** O contorno preto continua proibido, com bom motivo: preto sobre `#080810` dá 1,05:1 e não recorta nada. O que muda é que "sem contorno" não pode mais significar "sem borda clara", porque o corpo navy sozinho não passa em leitura sobre o tile real.
 
-**Arte antiga:** os itens 3 e 4 valem por arquivo só para arte nova. Pelas cores dominantes medidas, os inimigos atuais não devem passar. Proponho aro assado por script em `Tools/ArtGen`, com os mesmos GUIDs e fatias, verificado pelo item 5, e olhos por objeto filho sem luz, como já faz `Enemy.cs`. O script roda antes de `enemy_skins.py` e não pinta os quadros de flash branco. Isso altera os PNGs e pode estourar orçamentos em bytes. Material com shader próprio fica só para o caso de o assado falhar no ponto mais escuro: nem Sprite Lit nem `SpriteFlash.shader` têm aro, e seriam preciso um shader novo, ajustes em 7 prefabs e cuidado com a luz, que escurece o aro. Decisão do José, com teste na Unity.
+**Arte antiga:** os itens 3 e 4 valem por arquivo só para arte nova. Pelas cores dominantes medidas, os inimigos atuais não devem passar. Se a campanha precisar, a técnica de menor risco é aro assado por script em `Tools/ArtGen`, com os mesmos GUIDs e fatias, verificado pelo item 5, e olhos por objeto filho sem luz, como já faz `Enemy.cs`. O script roda antes de `enemy_skins.py` e não pinta os quadros de flash branco. Isso altera os PNGs e pode estourar orçamentos em bytes. Material com shader próprio fica só para o caso de o assado falhar no ponto mais escuro: nem Sprite Lit nem `SpriteFlash.shader` têm aro, e seriam preciso um shader novo, ajustes em 7 prefabs e cuidado com a luz, que escurece o aro. Decisão do José, com teste na Unity.
 
 ### Temperatura por área
 
@@ -294,15 +294,15 @@ Direção de arte revisada pelo papel de UX, lendo o código de `MenuKit`, `Comb
 
 **Armeira.** Mantém a paleta dos menus: placas, ícones em 25 x 25, Freny com a arma ou o elmo escolhido, luz neutra. Preço em ouro; indisponível com cadeado ou texto, não só com `#A89C8C`. Ouro é sempre dinheiro e não destaca seleção.
 
-**PressStart2P: em teste.** O José aprovou separar as fontes e testar outra (2026-11-05); nada muda sem foto aprovada. A proposta é tirá-la dos menus e dos textos e mantê-la nos números de combate e no ranking até haver substituta. É fonte de fliperama, larga e cansativa em pt-BR acentuado e em frase longa. Mas números de combate pedem peso, e o tom de fliperama combina com pontuação de arena. Trocar tudo de uma vez afetaria todas as telas, então a mudança é em etapas. Até a troca, PressStart2P vale para strings inteiras do HUD de combate, porque a mesma string mistura palavra e número ("Combo: x3"), e os banners de `MultiKill` ficam nela até passarem no teste de leitura em movimento. `MenuKit.Font` é única e alimenta também o HUD, então a etapa exige separar `BodyFont` e `NumberFont` antes.
+**Fontes por papel, aprovadas pelo José (2026-11-05).** Menus usam Jersey 10 no texto e Jacquard 12 nos títulos de página, ambas com licença OFL. Tudo que aparece durante a corrida segue em PressStart2P: placar, combo, banners, números, painel de fim de corrida, bênçãos, avisos e botões de toque. O teste reprovou Pixelify Sans, cujo 5 lê como S, e Jacquard nos banners, porque "PENTA" fica ilegível. É fonte de fliperama, larga e cansativa em pt-BR acentuado e em frase longa. Mas números de combate pedem peso, e o tom de fliperama combina com pontuação de arena. Trocar tudo de uma vez afetaria todas as telas, então a mudança é em etapas. Até a troca, PressStart2P vale para strings inteiras do HUD de combate, porque a mesma string mistura palavra e número ("Combo: x3"), e os banners de `MultiKill` ficam nela até passarem no teste de leitura em movimento. `MenuKit.Font` é única e alimenta também o HUD, então a etapa exige separar `BodyFont` e `NumberFont` antes.
 
-| Uso | Direção | Candidatas |
-|---|---|---|
-| Títulos e banners | Pixel com serifa ou gótica leve | Alagard (licença e acentos não verificados) |
-| Texto e menus | Pixel estreita, boa em frase longa | m5x7, Pixel Operator (licença e acentos não verificados). ChiKareGo2 está reprovada: não tem ú, ü, … e — (tabela de glifos conferida) |
-| Números de combate, ranking | PressStart2P por ora | Mantida |
+| Uso | Fonte |
+|---|---|
+| Títulos de página | Jacquard 12 |
+| Texto e botões de menu | Jersey 10 |
+| Tudo durante a corrida | PressStart2P |
 
-Candidata a fonte só entra com áàâãéêíóôõúüç, maiúsculas e … —. PressStart2P tem todos os acentos do pt-BR.
+ChiKareGo2 está reprovada: não tem ú, ü, … e — (tabela de glifos conferida). Candidata a fonte só entra com áàâãéêíóôõúüç, maiúsculas e … —. PressStart2P tem todos os acentos do pt-BR.
 
 **Tamanhos.** O `MenuKit` usa 12, 16 e 28 em referência 1280x720, e `InventoryScreens` tem um 7 literal. PressStart2P é desenhada numa grade de 8, então 16 cai certo, e 12 e 28 não caem. Regra: cada fonte pixel só nos múltiplos da sua grade, medidos em pixels finais (tamanho x escala do Canvas). `CreateCanvas` dá 1,5x em 1080p, e em 1280x800, 1366x768 e 900p nem 16 cai na grade. Por isso a escala do Canvas passa a ser em degraus: 1x até 900p, 1,5x em 1080p, 2x em 1440p, 3x em 4K. Corpo de texto tem mínimo de 14 px de altura de maiúscula na referência; título fica perto de 32. O padrão de `Label` passa a corpo, e 12 só com fonte cuja grade aceite. PressStart a 16 não cabe nos botões de Controles ("Analógico" pede 144 px em 110 úteis), então esse mínimo só vale depois da troca de fonte. Números e banners de combate podem sair da grade só durante o pop (até 0,18 s, o valor do combo hoje) e o throb; em repouso voltam ao múltiplo. Essa exceção está nas decisões pendentes.
 
@@ -396,7 +396,7 @@ Como o audit marca NON-COMPLIANT em qualquer violação de tamanho, esse será o
 | Câmera ajustada | Tamanho 7,2; 360 px; 3x | Tamanho 5,4; 270 px; 4x | Pixel exato em 1080p | Arena vê 10% menos de altura; campanha, 8% mais; rebalancear |
 | URP `PixelPerfectCamera`, Assets PPU 25 | Sem Crop, o tamanho muda com a resolução. Com Crop X e Y, fica fixo (referência 360 = 7,2), com barras fora dos múltiplos | Igual, referência 270 = 5,4 | Pixel exato | Campo de visão fixo ou tela cheia; luzes, UI e pós não verificados. O 2D Renderer lê o componente de URP, não o de `com.unity.2d.pixel-perfect` que está no manifesto |
 
-Outras telas contam: 400 de altura dá 2x exato em 800p, 360 dá 4x em 1440p, e 270 não é inteiro em 1440p. **Este documento não resolve o conflito.** A arte nova a 4x serve às três opções. O José pediu teste com foto antes de aprovar (2026-11-05).
+Outras telas contam: 400 de altura dá 2x exato em 800p, 360 dá 4x em 1440p, e 270 não é inteiro em 1440p. **Este documento não resolve o conflito.** **O José decidiu em 2026-11-05: a arena fica no tamanho 8**, porque 7,2 deixa área importante do jogo fora. A escala não inteira em 1080p fica como dívida aceita. Campanha continua em aberto.
 
 ### Critério de aceitação de arte nova
 
@@ -431,12 +431,12 @@ Respostas de 2026-11-05. **O foco agora é só a arena.** "Testar" quer dizer: t
 
 | # | Assunto | Decisão | Próximo passo |
 |---|---|---|---|
-| 1 | Dia azul da arena | Seguir a recomendação: ciclo fica, dia de cinza no lugar do azul | Foto enviada; aguarda aprovação |
+| 1 | Dia azul da arena | **Aprovado, mais cinza que a primeira prova:** `#6A7074` a `#929696`, no ciclo de sempre | PR do dia cinza; o José confere a foto |
 | 2 | Menus em roxo-magenta | **Fica.** O José gosta e vê Dark Fantasy nele; não tirar de uma vez | Nenhum |
-| 3 | Fonte | Testar outra. Candidata: Jersey 10 no texto, Jacquard 12 nos títulos de página (ambas OFL, com todos os acentos do pt-BR). Pixelify Sans reprovada: o 5 lê como S. Jacquard no banner reprovada: "PENTA" fica ilegível | Foto enviada; aguarda aprovação |
-| 4 | Câmera e escala | Testar. Em 7,2 o pixel fica uniforme, mas corta o alto e as laterais das torres e mexe no balanceamento e no ranking | Foto enviada; aguarda aprovação |
+| 3 | Fonte | **Aprovada a A nos menus:** Jersey 10 no texto, Jacquard 12 nos títulos de página | PR do dia cinza e das fontes |
+| 4 | Câmera e escala | **Fica em 8.** A 7,2 deixa área importante do jogo fora | Nenhum |
 | 5 | Menu player | Não mexer | Nenhum |
-| 6 | Aro dos inimigos | Testado. Nova recomendação: não aplicar na arena; reavaliar na campanha | Foto enviada; aguarda aprovação |
+| 6 | Aro dos inimigos | **Descartado** na arena; o José não gostou | Nenhum |
 | 7 | Folclore brasileiro | Fica para depois. Os desenhos atuais estão feios; redesenhar, provavelmente com artista contratado | Depois da arena |
 | 8 | Sino do Arauto | Sem preocupação agora | Depois da arena |
 | 9 | Máscara do Arauto | Sem preocupação agora | Depois da arena |
@@ -445,8 +445,8 @@ Respostas de 2026-11-05. **O foco agora é só a arena.** "Testar" quer dizer: t
 | 12 | Runner | Fica fora por enquanto | Nenhum |
 | 13 | Foco de menu | Seguir a recomendação, sem trocar a paleta: moldura e barra em magenta | Quando o menu for mexido |
 | 14 | Vermelho no pico do combo | Aprovado: pode ficar vermelho no HUD | Nenhum |
-| 15 | Grade da fonte e pop de combate | **Em aberto:** o José pediu explicação. Recomendação: número fica no tamanho nítido em repouso, e só cresce fora dele durante o pulo curto de um golpe | Mostrar no teste de fonte |
-| 16 | Fontes por papel | Separar as fontes e testar. Placar e banner seguem em Press Start 2P | Foto enviada; aguarda aprovação |
+| 15 | Grade da fonte e pop de combate | Sem mudança: as fontes de combate ficam como hoje | Nenhum |
+| 16 | Fontes por papel | **Separadas:** tudo que aparece durante a corrida segue como hoje, em Press Start 2P | PR do dia cinza e das fontes |
 | 17 | Efeito VHS nas fases | Testar quando chegar a campanha | Depois da arena |
 | 18 | Nome de sprite e código | Aprovado: manter `Tileset_N` por ora | Nenhum |
 
@@ -455,7 +455,7 @@ Respostas de 2026-11-05. **O foco agora é só a arena.** "Testar" quer dizer: t
 - **Visto na Unity em 2026-11-05, só na arena:** dia e noite, aro, câmera e fontes, em fotos com inimigos parados. Fora disso, nenhuma regra de luz, clima, Lua de Sangue ou hype foi vista em jogo. Luzes 2D mudam as cores e as razões de contraste, e isso não foi medido.
 - **As cores são dos arquivos.** Os hex medidos estão arredondados a múltiplos de 8, o verde ácido é aproximado, e os de `MenuKit` e de combate foram convertidos dos valores do código.
 - **Contrastes:** as 42 razões principais, as 7 violações de orçamento e a regex foram conferidas por script em 2026-11-04. As razões de UX vieram da revisão, também por script. Tudo é cor de arquivo.
-- **A regra de 40%, a borda e o ponto focal não foram rodados** em nenhum sprite. O número é uma proposta.
+- **A regra de 40%, a borda e o ponto focal não foram rodados** em nenhum sprite. O aro foi visto em foto na arena e descartado.
 - **Vistos:** folha de contato, Freny, céu, Menu player, `fundo.png`, `Tileset.png`, Mina-aranha, Tentáculo e as folhas v2, a geral em tamanho reduzido. **Não vistos:** céus de dia, Lua de Sangue, a maior parte da UI, retratos, cenas montadas.
 - **Escala:** os números vêm de `conceitos_v2.md`, sem nova medição. Os demais inimigos não foram medidos, e o Tentáculo é estimativa visual.
 - **`.meta`:** o pivô foi lido só em `Player idle`, `Menu player`, `Cyclops Smash` e `Monster attack`. O tamanho máximo foi medido nos 297.
