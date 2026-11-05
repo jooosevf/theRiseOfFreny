@@ -444,7 +444,7 @@ public class ArenaRunVariety : MonoBehaviour {
         Color cardColor = button.colors.highlightedColor;
         button.transition = Selectable.Transition.None;
         if (button.targetGraphic != null) {
-            button.targetGraphic.canvasRenderer.SetColor(Color.white);
+            button.targetGraphic.CrossFadeColor(Color.white, 0f, true, true);   // also stops the running tint fade
             button.targetGraphic.color = cardColor;
         }
         RectTransform card = (RectTransform)button.transform;
@@ -495,6 +495,7 @@ public class ArenaRunVariety : MonoBehaviour {
             }
             yield return WhileMenuPaused();
         }
+        card.position = to;   // a long frame can end the loop short of the slot
         Sfx.Ui("ui_select");
         ClosePicker();
         Choose(offered[index]);
