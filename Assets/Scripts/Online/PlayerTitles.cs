@@ -84,7 +84,7 @@ public static class PlayerTitles {
     public static string Decorate(string name, string userId) {
         Title title = Of(Shown(userId));
         if (title == null) return name;
-        return name + " <size=" + (MenuKit.SmallTextSize - 2) + "><color=#FFD84A>· " + title.name + "</color></size>";
+        return name + " <size=" + MenuKit.MenuSize(MenuKit.SmallTextSize - 2) + "><color=#FFD84A>· " + title.name + "</color></size>";
     }
 
     // the title the ranking shows for this player, or null

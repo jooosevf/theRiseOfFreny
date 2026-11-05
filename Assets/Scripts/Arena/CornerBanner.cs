@@ -133,7 +133,7 @@ public class CornerBanner : MonoBehaviour {
         iconRect.anchoredPosition = new Vector2(5f, 0f);
         iconRect.sizeDelta = new Vector2(BannerHeight - 8f, BannerHeight - 8f);
 
-        title = MenuKit.MakeText(panel, "", MenuKit.SmallTextSize, AchievementsScreen.Earned, TextAnchor.MiddleLeft);
+        title = MenuKit.MakeCombatText(panel, "", MenuKit.SmallTextSize, AchievementsScreen.Earned, TextAnchor.MiddleLeft);
         title.supportRichText = true;
         title.raycastTarget = false;
         title.horizontalOverflow = HorizontalWrapMode.Overflow;

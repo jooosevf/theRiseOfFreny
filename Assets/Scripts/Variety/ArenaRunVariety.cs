@@ -255,9 +255,9 @@ public class ArenaRunVariety : MonoBehaviour {
         edge.effectColor = MenuKit.ButtonColor;
         edge.effectDistance = new Vector2(3f, -3f);
 
-        Text title = MenuKit.MakeText(panel.transform, "Escolha uma bênção", MenuKit.TitleSize, MenuKit.TitleColor, TextAnchor.MiddleCenter);
+        Text title = MenuKit.MakeCombatText(panel.transform, "Escolha uma bênção", MenuKit.TitleSize, MenuKit.TitleColor, TextAnchor.MiddleCenter);
         Place(title.rectTransform, new Vector2(0f, 160f), new Vector2(720f, 50f));
-        Text sub = MenuKit.MakeText(panel.transform, "Vale até o fim da corrida e soma com as outras.",
+        Text sub = MenuKit.MakeCombatText(panel.transform, "Vale até o fim da corrida e soma com as outras.",
             MenuKit.SmallTextSize, MenuKit.DimTextColor, TextAnchor.MiddleCenter);
         Place(sub.rectTransform, new Vector2(0f, 122f), new Vector2(720f, 24f));
 
@@ -273,7 +273,7 @@ public class ArenaRunVariety : MonoBehaviour {
             nav.selectOnRight = cards[(i + 1) % cards.Length];
             cards[i].navigation = nav;
         }
-        Text hint = MenuKit.MakeText(panel.transform, "Clique ou toque na bênção que quiser (no controle: escolha e segure A)",
+        Text hint = MenuKit.MakeCombatText(panel.transform, "Clique ou toque na bênção que quiser (no controle: escolha e segure A)",
             MenuKit.SmallTextSize - 2, MenuKit.DimTextColor, TextAnchor.MiddleCenter);
         Place(hint.rectTransform, new Vector2(0f, -150f), new Vector2(720f, 24f));
         // nothing comes selected: a Space, Enter or A from the fight has nothing to press
@@ -310,7 +310,7 @@ public class ArenaRunVariety : MonoBehaviour {
         button.targetGraphic = background;
         button.colors = MenuKit.Colors();
         button.onClick.AddListener(() => onClick());
-        Text text = MenuKit.MakeText(background.transform, "", MenuKit.TextSize, MenuKit.TextColor, TextAnchor.MiddleCenter);
+        Text text = MenuKit.MakeCombatText(background.transform, "", MenuKit.TextSize, MenuKit.TextColor, TextAnchor.MiddleCenter);
         MenuKit.Stretch(text.rectTransform);
         return button;
     }
@@ -354,7 +354,7 @@ public class ArenaRunVariety : MonoBehaviour {
         label.color = MenuKit.TitleColor;
         Place(label.rectTransform, new Vector2(0f, 16f), new Vector2(208f, 30f));
 
-        Text what = MenuKit.MakeText(card.transform, info.what, MenuKit.SmallTextSize, MenuKit.TextColor, TextAnchor.UpperCenter);
+        Text what = MenuKit.MakeCombatText(card.transform, info.what, MenuKit.SmallTextSize, MenuKit.TextColor, TextAnchor.UpperCenter);
         Place(what.rectTransform, new Vector2(0f, -46f), new Vector2(204f, 92f));
 
         return card;

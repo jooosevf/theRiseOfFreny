@@ -74,7 +74,7 @@ public static class PerfilScreens {
         LookBox(head, 110f, helmet, cape, color, suit);
         Text label = MenuKit.MakeText(head, "", MenuKit.SmallTextSize, MenuKit.DimTextColor, TextAnchor.MiddleLeft);
         label.supportRichText = true;
-        label.text = "<size=" + MenuKit.TextSize + "><color=#" + ColorUtility.ToHtmlStringRGB(MenuKit.TitleColor) + ">" + name + "</color></size>\n" + text;
+        label.text = "<size=" + MenuKit.MenuSize(MenuKit.TextSize) + "><color=#" + ColorUtility.ToHtmlStringRGB(MenuKit.TitleColor) + ">" + name + "</color></size>\n" + text;
         MenuKit.Size(label, -1f, -1f).flexibleWidth = 1f;
     }
 
@@ -209,7 +209,7 @@ public static class PerfilScreens {
             FriendsService.Pedido pedido = online.Friends.Incoming[i];
             Image row = MenuKit.MakeRow(requests, (string.IsNullOrEmpty(pedido.apelido) ? "Alguém" : pedido.apelido) + " quer ser seu amigo", out Text label);
             row.color = new Color(1f, 0.85f, 0.3f, 0.12f);
-            label.fontSize = MenuKit.SmallTextSize;
+            label.fontSize = MenuKit.MenuSize(MenuKit.SmallTextSize);
             Button yes = MenuKit.MakeButton(row.transform, "Aceitar", () => online.StartCoroutine(online.Friends.Accept(pedido, e => Answered(page, message, e, again))), MenuKit.SmallTextSize);
             MenuKit.Size(yes, 130f, -1f);
             Button no = MenuKit.MakeButton(row.transform, "Recusar", () => online.StartCoroutine(online.Friends.Decline(pedido, e => Answered(page, message, e, again))), MenuKit.SmallTextSize);
@@ -227,7 +227,7 @@ public static class PerfilScreens {
         }
         if (perfis.Count > FriendsPerPage) {
             Image pager = MenuKit.MakeRow(list, (start + 1) + "-" + Mathf.Min(perfis.Count, start + FriendsPerPage) + " de " + perfis.Count, out Text count);
-            count.fontSize = MenuKit.SmallTextSize;
+            count.fontSize = MenuKit.MenuSize(MenuKit.SmallTextSize);
             MenuKit.Size(pager, -1f, 36f);
             pager.color = new Color(1f, 1f, 1f, 0.03f);
             Button back = MenuKit.MakeButton(pager.transform, "<", () => stack.ReplaceTop(Friends(stack, Mathf.Max(0, start - FriendsPerPage))), MenuKit.SmallTextSize);
@@ -256,9 +256,9 @@ public static class PerfilScreens {
         look.SetAsFirstSibling();
         FrenyLookPreview preview = FrenyLookPreview.Create(look, 44f);
         preview.Show(FrenyLook.Find(friend.helmet), FrenyLook.Find(friend.cape), FrenyLook.Find(friend.color), FrenyLook.Find(friend.suit));
-        label.fontSize = MenuKit.SmallTextSize;
+        label.fontSize = MenuKit.MenuSize(MenuKit.SmallTextSize);
         label.supportRichText = true;
-        label.text = friend.apelido + "\n<size=" + (MenuKit.SmallTextSize - 2) + "><color=#" + ColorUtility.ToHtmlStringRGB(MenuKit.DimTextColor) + ">Recorde " +
+        label.text = friend.apelido + "\n<size=" + MenuKit.MenuSize(MenuKit.SmallTextSize - 2) + "><color=#" + ColorUtility.ToHtmlStringRGB(MenuKit.DimTextColor) + ">Recorde " +
                      Points(friend.Best(ArenaLevel.Hard)) + " no " + ArenaDifficulty.Label(ArenaLevel.Hard) + " · online " + friend.SeenText() + "</color></size>";
         Button open = MenuKit.MakeButton(row.transform, "Ver", () => stack.Push(Friend(stack, friend)), MenuKit.SmallTextSize);
         MenuKit.Size(open, 90f, -1f);
@@ -328,7 +328,7 @@ public static class PerfilScreens {
         Image row = MenuKit.MakeRow(page.Content, label, out Text text);
         row.color = new Color(1f, 1f, 1f, 0.04f);
         MenuKit.Size(row, -1f, 24f);
-        text.fontSize = MenuKit.SmallTextSize;
+        text.fontSize = MenuKit.MenuSize(MenuKit.SmallTextSize);
         Value(row.transform, mine, a > b);
         Value(row.transform, theirs, b > a);
     }

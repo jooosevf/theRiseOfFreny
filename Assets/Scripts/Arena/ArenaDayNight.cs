@@ -36,8 +36,9 @@ public class ArenaDayNight : MonoBehaviour {
     private static readonly Color CastleNight = new Color(0.26f, 0.23f, 0.32f);
 
     // the day sky, top to bottom, and the sunrise / sunset glow over it
-    private static readonly Color DayTop = new Color32(74, 136, 212, 255);
-    private static readonly Color DayBottom = new Color32(176, 212, 236, 255);
+    // José, 2026-11-05: a grey, overcast day instead of the clear blue one (art bible, section 2)
+    private static readonly Color DayTop = new Color32(106, 112, 116, 255);
+    private static readonly Color DayBottom = new Color32(146, 150, 150, 255);
     private static readonly Color DuskTop = new Color32(96, 84, 160, 255);
     private static readonly Color DuskBottom = new Color32(244, 148, 96, 255);
 

@@ -37,8 +37,8 @@ public static class ProfileScreens {
             bool has = PlayerTitles.Unlocked(t.id);
             Text text = Cell(grid, has);
             text.text = "<color=#" + (has ? "FFD84A" : ColorUtility.ToHtmlStringRGB(MenuKit.TitleColor)) + ">" + t.name + "</color>" +
-                        (has ? "" : "  <size=" + (MenuKit.SmallTextSize - 2) + ">(bloqueado)</size>") +
-                        "\n<size=" + (MenuKit.SmallTextSize - 2) + ">" + t.how + "</size>";
+                        (has ? "" : "  <size=" + MenuKit.MenuSize(MenuKit.SmallTextSize - 2) + ">(bloqueado)</size>") +
+                        "\n<size=" + MenuKit.MenuSize(MenuKit.SmallTextSize - 2) + ">" + t.how + "</size>";
         }
 
         page.Space(4f);

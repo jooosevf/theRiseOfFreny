@@ -45,7 +45,7 @@ public static class OnlineScreens {
             Image row = MenuKit.MakeRow(page.Content, "", out names[i]);
             row.color = new Color(1f, 1f, 1f, i % 2 == 0 ? 0.05f : 0.02f);
             MenuKit.Size(row, -1f, 26f);
-            names[i].fontSize = MenuKit.SmallTextSize;
+            names[i].fontSize = MenuKit.MenuSize(MenuKit.SmallTextSize);
             names[i].supportRichText = true;
             scores[i] = MenuKit.MakeText(row.transform, "", MenuKit.SmallTextSize, MenuKit.TextColor, TextAnchor.MiddleRight);
             scores[i].supportRichText = true;

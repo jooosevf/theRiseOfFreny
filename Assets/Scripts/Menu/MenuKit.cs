@@ -24,7 +24,10 @@ public static class MenuKit {
     public const int TitleSize = 28;
     public const float RowHeight = 44f;
 
-    private static Font font;
+    // José, 2026-11-05: menus read Jersey 10, page titles Jacquard 12. Font stays Press Start 2P,
+    // for everything seen during a run (score, combo, banners, numbers): see MakeCombatText
+    private const float MenuFontScale = 1.5f;   // both draw smaller than Press Start at the same size
+    private static Font font, bodyFont, titleFont;
 
     public static Font Font {
         get {
@@ -82,11 +85,27 @@ public static class MenuKit {
         return image;
     }
 
+    public static Font BodyFont => bodyFont != null ? bodyFont : bodyFont = Resources.Load<Font>("Fonts/Jersey10-Regular") ?? Font;
+    public static Font TitleFont => titleFont != null ? titleFont : titleFont = Resources.Load<Font>("Fonts/Jacquard12-Regular") ?? Font;
+
+    // the real font size of a menu text written at the sizes above
+    public static int MenuSize(int size) {
+        return Mathf.RoundToInt(size * MenuFontScale);
+    }
+
+    // a text seen during a run, in the combat font, at exactly this size
+    public static Text MakeCombatText(Transform parent, string text, int size, Color color, TextAnchor anchor) {
+        Text label = MakeText(parent, text, size, color, anchor);
+        label.font = Font;
+        label.fontSize = size;
+        return label;
+    }
+
     public static Text MakeText(Transform parent, string text, int size, Color color, TextAnchor anchor) {
         RectTransform rect = MakeRect("Text", parent);
         Text label = rect.gameObject.AddComponent<Text>();
-        label.font = Font;
-        label.fontSize = size;
+        label.font = size >= TitleSize ? TitleFont : BodyFont;
+        label.fontSize = MenuSize(size);
         label.color = color;
         label.alignment = anchor;
         label.text = text;

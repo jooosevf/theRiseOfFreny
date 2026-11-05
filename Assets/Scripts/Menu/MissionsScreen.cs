@@ -39,7 +39,7 @@ public static class MissionsScreen {
 
         Text text = MenuKit.MakeText(row.transform, "", MenuKit.TextSize, MenuKit.TextColor, TextAnchor.MiddleLeft);
         text.supportRichText = true;
-        text.text = "<size=" + MenuKit.SmallTextSize + "><color=#" + ColorUtility.ToHtmlStringRGB(MenuKit.TitleColor) + ">" +
+        text.text = "<size=" + MenuKit.MenuSize(MenuKit.SmallTextSize) + "><color=#" + ColorUtility.ToHtmlStringRGB(MenuKit.TitleColor) + ">" +
                     DailyMissions.TierNames[m.tier] + "</color> · <color=#FFD84A>" + m.Reward + " moedas</color></size>\n" + m.text;
         MenuKit.Size(text, -1f, 40f);
 
