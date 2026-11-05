@@ -10,7 +10,7 @@ public class HitStop : MonoBehaviour {
     private bool frozen;
 
     public static void Freeze(float seconds) {
-        if (seconds <= 0f || GameMenus.Paused || Time.timeScale == 0f && !(instance != null && instance.frozen)) {
+        if (seconds <= 0f || CoopWorld.Active || GameMenus.Paused || Time.timeScale == 0f && !(instance != null && instance.frozen)) {
             return;
         }
         if (instance == null) {

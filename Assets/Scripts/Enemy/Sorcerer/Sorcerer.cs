@@ -50,8 +50,9 @@ public class Sorcerer : Enemy {
         UpdatePush(); // Freny's hits shove it back a little like everyone else
         StickToGround(); // stands still, but on the floor (one spawned over a gap floated there)
         ClampToArena();
+        AimInCoop();
         UpdateRival(); // an enemy that hit it gets the hexballs until the fight ends
-        if (Rival == null && (player_t == null || player == null || player.Health <= 0)) {
+        if (Rival == null && (player_t == null || player == null || TargetHealth <= 0)) {
             return;
         }
 
@@ -75,7 +76,7 @@ public class Sorcerer : Enemy {
     }
 
     // Freny's head (crouching dodges a level shot), or the enemy it is fighting
-    private Vector3 AimPoint => Rival != null ? (Vector3)Rival.Center : player != null ? player.HeadPoint : player_t.position;
+    private Vector3 AimPoint => Rival != null ? (Vector3)Rival.Center : targetsPeer ? player_t.position : player != null ? player.HeadPoint : player_t.position;
 
     public void Attack() {
         if (isDead || hexballEffectPrefab == null) {
@@ -97,7 +98,7 @@ public class Sorcerer : Enemy {
                 : 1.4f;
             effect.caster = this; // it hits any other enemy in its way, and they blame this sorcerer
             if (Rival == null && ArenaBounds.Active && IsSupreme) {
-                effect.homingTarget = player;
+                effect.homingTarget = targetsPeer ? null : player;
                 effect.homingTurn = HomingTurn;
             }
         }
@@ -113,6 +114,9 @@ public class Sorcerer : Enemy {
                 }
             }
             effect.SetDirection(target - castPosition);
+            if (Rival == null) {
+                CoopWorld.HexCast(castPosition, effect, targetsPeer && IsSupreme);
+            }
         }
         if (castsBeforeLeaving > 0 && casts >= castsBeforeLeaving) {
             Fx.Portal(Feet + Vector3.up * 0.6f, 0.6f, DeathColor);

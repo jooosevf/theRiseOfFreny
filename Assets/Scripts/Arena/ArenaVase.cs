@@ -22,14 +22,16 @@ public class ArenaVase : MonoBehaviour, IDamageable {
     private SpriteRenderer sprite;
     private Vector3 floorPoint;
 
-    public static ArenaVase Create(Vector3 floorPoint) {
+    // tile: which of the tileset's vases (co-op: the host's pick); -1 picks one
+    public static ArenaVase Create(Vector3 floorPoint, int tile = -1) {
         ArenaAssets assets = ArenaAssets.Instance;
         if (assets == null) {
             return null;
         }
         Sprite standing = null;
         if (assets.vaseTiles != null && assets.vaseTiles.Length > 0) {
-            standing = assets.vaseTiles[Random.Range(0, assets.vaseTiles.Length)];
+            tile = tile >= 0 && tile < assets.vaseTiles.Length ? tile : Random.Range(0, assets.vaseTiles.Length);
+            standing = assets.vaseTiles[tile];
         }
         if (standing == null) {
             return null;
@@ -56,6 +58,7 @@ public class ArenaVase : MonoBehaviour, IDamageable {
         vase.sprite = renderer;
         vase.floorPoint = floorPoint;
         Fx.Dust(floorPoint, 4);
+        CoopShared.VaseSpawned(vase, floorPoint, tile);
         return vase;
     }
 
@@ -75,7 +78,7 @@ public class ArenaVase : MonoBehaviour, IDamageable {
     public Vector3 Center => floorPoint + Vector3.up * (TileSize * 0.3f);
 
     public void Damage() {
-        if (broken) {
+        if (broken || CoopShared.AskToBreak(this)) {
             return;
         }
         broken = true;

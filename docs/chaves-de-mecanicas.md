@@ -24,6 +24,7 @@ Para desligar uma mecânica, troque `true` por `false` na linha dela e salve. A 
 | `Narrator` | Voz do narrador: "Bem-vindo à arena" (as falas dos multi-kills entram quando os áudios chegarem) | O jogo fica sem a voz. |
 | `WeaponBuffs` | Armeira por níveis | As melhorias de arma e o Crítico saem da loja e param de valer, mesmo para quem já comprou. Ficam vida, velocidade, pulo duplo, espada mais rápida e Rede. **As armas não voltam à venda**: esse código foi removido em 2026-11-01. |
 | `InstaKill`, `Nuke`, `Magnet` | Drops raros | Aquele drop para de cair; os outros mantêm as chances. Cada um sai do Guia. |
+| `Coop` | Co-op (Jogar > Co-op) | O botão some do menu. O jogo solo não muda. |
 | `Blessings` | Bênçãos | O baú dourado para de oferecer bênçãos. |
 | `WeeklyMutators` | Mutador da semana (**desligado** desde 2026-11-02, a pedido do José) | Nenhuma regra extra. Some do menu da Arena. |
 | `GoldenChest` | Chave e baú dourado | O Ciclope só deixa o baú prateado. Os visuais exclusivos somem da tela Visual e, como as bênçãos só vêm desse baú, também não há bênçãos. |

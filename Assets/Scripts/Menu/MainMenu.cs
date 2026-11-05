@@ -117,6 +117,10 @@ public class MainMenu : MonoBehaviour {
         MenuPage page = new MenuPage(stack.transform, "Jogar", 520f, new Vector2(0.5f, 0.5f));
         page.Button(CampaignOpen ? "Campanha" : "Campanha (na versão beta)", () => stack.Push(CampaignPage()), CampaignOpen);
         Button arena = page.Button("Arena", () => stack.Push(ArenaPage()), Application.CanStreamedLevelBeLoaded(GameMenus.ArenaScene));
+        if (Features.Coop) {
+            page.Button("Co-op", () => UnityEngine.SceneManagement.SceneManager.LoadScene(CoopNet.LobbyScene),
+                Application.CanStreamedLevelBeLoaded(CoopNet.LobbyScene));
+        }
         page.Button("Inventário", () => stack.Push(InventoryScreens.Inventory(stack)));
         page.Button("Armeira", () => stack.Push(InventoryScreens.Armory(stack)));
         // Freny's looks and Renascer (VarietyScreens)

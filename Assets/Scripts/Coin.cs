@@ -46,6 +46,7 @@ public class Coin : MonoBehaviour {
         tossing = true;
         rb = GetComponent<Rigidbody2D>();
         Expire();
+        CoopShared.CoinSpawned(this, initialVelocity);
     }
 
     // a dropped coin (enemy or chest) disappears after a while, blinking first
@@ -123,6 +124,10 @@ public class Coin : MonoBehaviour {
         }
         Player player = other.GetComponent<Player>();
         if (player != null) {
+            if (CoopShared.AskToPick(this)) {
+                return;
+            }
+            CoopShared.Picked(this);
             player.AddCoins(RunModifiers.ScaleCoins(coins));   // rebirths, "Chuva de moedas"
             Sfx.Play("coin", transform.position);
             Destroy(gameObject);

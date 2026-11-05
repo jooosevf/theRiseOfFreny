@@ -611,10 +611,11 @@ namespace Online {
             _runnerScore = FindAnyObjectByType<ScoreManager>();
             _sawAlive = false;
             // Campaign stages are not runs: a death there just respawns at the checkpoint.
-            _reported = CampaignLevels.IsStage(scene.name);
+            // A co-op room isn't either: until the duo ranking exists, it reports nothing at all.
+            _reported = CampaignLevels.IsStage(scene.name) || CoopNet.InRoom;
             _assisted = false;
             // only arena runs are ranked, on the board of the difficulty picked in the menu
-            _arenaRun = scene.name == GameMenus.ArenaScene;
+            _arenaRun = scene.name == GameMenus.ArenaScene && !CoopNet.InRoom;
             _runLevel = ArenaDifficulty.Current;
             _runAuto = _arenaRun && !ArenaDifficulty.Manual;   // Automático or Manual, as picked in the menu
             _runLog = null;

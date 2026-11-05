@@ -47,13 +47,14 @@ public class Bat : Enemy {
         }
 
         // an enemy that hit it comes first, then Freny
+        AimInCoop();
         UpdateRival();
         Enemy foe = Rival;
         distance = Vector2.Distance(transform.position, player_t.position);
         // in the arena it comes for him from anywhere while there is room among the chasers
         bool nearby = distance <= radius * Tuning.EnemyAggro.Value || isHit;
-        bool chasing = foe != null || (player.Health > 0 && JoinChase(nearby));
-        if (foe != null || player.Health <= 0) {
+        bool chasing = foe != null || (TargetHealth > 0 && JoinChase(nearby));
+        if (foe != null || TargetHealth <= 0) {
             LeaveChase();
         }
         SetInCombat(chasing);

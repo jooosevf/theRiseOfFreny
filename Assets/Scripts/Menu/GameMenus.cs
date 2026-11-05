@@ -211,7 +211,7 @@ public class GameMenus : MonoBehaviour {
     // ---- pause ----
 
     public void Pause() {
-        if (paused) {
+        if (paused || CoopWorld.Active) {   // a room has no pause: the other player is still playing
             return;
         }
         paused = true;
