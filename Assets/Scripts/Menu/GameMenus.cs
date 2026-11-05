@@ -47,6 +47,7 @@ public class GameMenus : MonoBehaviour {
         obj.AddComponent<MusicPlayer>();
         obj.AddComponent<AmbiencePlayer>();
         obj.AddComponent<Online.CloudProgressSync>();
+        obj.AddComponent<Online.GiftInbox>();
     }
 
     public static bool IsGameplayScene(string scene) {

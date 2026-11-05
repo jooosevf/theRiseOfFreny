@@ -122,6 +122,14 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Presents from the admin (alpha testers): coins and looks the server writes (api/admin/presentes,
+    // a service account, which skips these rules). The player only reads them and deletes each one
+    // once the game has added it to the save (Online/GiftInbox).
+    match /presentes/{userId}/itens/{id} {
+      allow read, delete: if isOwner(userId);
+      allow create, update: if false;
+    }
+
     // A message from one account to another: "pedido" (a friend request), "aceito" (the other side
     // accepted: they already list this player) or "removido". The id is <para>_<de>. Only the two
     // can read it, and either one can delete it. The game only lists its own: where para == uid.

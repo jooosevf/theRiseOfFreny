@@ -23,6 +23,17 @@ namespace Online {
         public static event Action Pulled;
 
         private string _syncedUser;
+
+        // the account whose slots already came down from the cloud (null until then), and whether a
+        // pull or a slot waiting for the next scene is still under way: GiftInbox waits for both, so
+        // a present goes into the slot that stays
+        public string SyncedUser => _syncedUser;
+        public bool Settling => _busy || _pendingActive != null;
+
+        // the save changed from outside a run (a present): the main menu redraws its summaries
+        public static void NotifyChanged() {
+            Pulled?.Invoke();
+        }
         private bool _busy;
         private bool _dirty;
         private float _uploadAt;
