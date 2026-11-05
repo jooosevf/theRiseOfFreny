@@ -79,7 +79,7 @@ O que o código mostra hoje (lido em `a2340c2`, sem rodar o jogo):
 | 1 | Como as fases se ligam | Ir e vir: poder entrar em lugares e voltar. Todas as fases serão refeitas. | Cada masmorra é um mapa interligado de cerca de 9 salas. As 18 cenas atuais viram material de partida. Não foi dito se as 9 masmorras formam um mundo único: fica para Ligação entre masmorras. |
 | 2 | Arena e campanha | Usa tudo igual, e os itens caem dentro do jogo. Separar a Armeira da campanha ficou como "talvez". | Armeira única, sem limite. As quedas seguem a ideia da Arena. Pulo duplo não pode ser trava de caminho. |
 | 3 | Morte | Save point e checkpoint. Inimigo morto fica morto, a não ser que o checkpoint volte para antes de ele morrer. Dá para carregar vidas e usar quando quiser. | Regras em `design/gdd/estado-do-mundo.md`. Vidas carregadas entram na Mochila da campanha. |
-| 4 | Masmorra de teste | Não respondida. | Segue a recomendação: Cisternas (masmorra 2), porque as cenas saem do construtor em Python. Fácil de trocar antes do protótipo. |
+| 4 | Masmorra de teste | Pode fazer a masmorra de teste, seguindo a recomendação. | Cisternas (masmorra 2), porque as cenas saem do construtor em Python. |
 
 ---
 
@@ -265,7 +265,7 @@ Nenhum ciclo ficou no mapa. Dois quase existiam e foram quebrados por contrato:
 
 ## Next Steps
 
-- [x] José responde às decisões (a 4 segue com a recomendação)
+- [x] José responde às decisões
 - [ ] Design MVP-tier systems first (`estado-do-mundo` em revisão; o próximo é `mapa-da-masmorra`)
 - [ ] Run `/design-review` on each completed GDD
 - [ ] Run `/gate-check technical-setup` when MVP systems are designed

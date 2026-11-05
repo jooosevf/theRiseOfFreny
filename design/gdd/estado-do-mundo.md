@@ -151,6 +151,6 @@ Testes na Unity, com captura guardada em `production/qa/evidence/`:
 
 ## Open Questions
 
-1. **Atalho aberto depois do checkpoint também volta?** Este documento diz que sim (regra 12), o que estende a regra do José a tudo. Se atalhos forem permanentes, como em Hollow Knight, o jogo fica mais generoso, mas a regra precisa de uma exceção. A confirmar com o José.
-2. **Bolsa perdida ao sair sem salvar.** A regra 13 foi uma proposta para impedir o farm, e não veio do José. A confirmar.
-3. **Tamanho real do estado na nuvem:** medir no protótipo.
+1. **Tamanho real do estado na nuvem:** medir no protótipo.
+
+Decidido pelo José em 2026-11-05: tudo volta junto ao morrer, inclusive atalhos (regra 12), e moedas e XP ficam na bolsa até o save point (regra 13).
