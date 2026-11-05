@@ -29,6 +29,7 @@ namespace Online {
 
         private Canvas _canvas;
         private Text _notice;
+        private RectTransform _panel;
         private float _noticeUntil;
 
         private void Start() {
@@ -149,7 +150,7 @@ namespace Online {
             PlayerPrefs.Save();
         }
 
-        // ---- the notice: a panel at the top of the screen for a few seconds ----
+        // ---- the notice: a panel at the bottom of the screen for a few seconds ----
 
         private void Show(int coins, List<string> looks, string note) {
             List<string> what = new List<string>();
@@ -159,6 +160,8 @@ namespace Online {
             if (note.Length > 0) text += "\n\"" + note + "\"";
             if (_canvas == null) Build();
             _notice.text = text;
+            // grows with the text (a long message, many looks)
+            _panel.sizeDelta = new Vector2(560f, Mathf.Max(76f, _notice.preferredHeight + 24f));
             _noticeUntil = Time.unscaledTime + NoticeSeconds;
             _canvas.gameObject.SetActive(true);
         }
@@ -167,10 +170,11 @@ namespace Online {
             _canvas = MenuKit.CreateCanvas("Gift Notice", 26000, transform);
             Image panel = MenuKit.MakeImage("Panel", _canvas.transform, MenuKit.PanelColor);
             panel.raycastTarget = false;
-            RectTransform rect = panel.rectTransform;
-            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 1f);
-            rect.anchoredPosition = new Vector2(0f, -24f);
-            rect.sizeDelta = new Vector2(560f, 76f);
+            // at the bottom, over the menu buttons' row of hints, clear of the title
+            _panel = panel.rectTransform;
+            _panel.anchorMin = _panel.anchorMax = _panel.pivot = new Vector2(0.5f, 0f);
+            _panel.anchoredPosition = new Vector2(0f, 56f);
+            _panel.sizeDelta = new Vector2(560f, 76f);
             Outline border = panel.gameObject.AddComponent<Outline>();
             border.effectColor = MenuKit.TitleColor;
             border.effectDistance = new Vector2(2f, -2f);
@@ -179,6 +183,8 @@ namespace Online {
             MenuKit.Stretch(_notice.rectTransform);
             _notice.rectTransform.offsetMin = new Vector2(12f, 6f);
             _notice.rectTransform.offsetMax = new Vector2(-12f, -6f);
+            _notice.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _notice.verticalOverflow = VerticalWrapMode.Overflow;
         }
     }
 }
