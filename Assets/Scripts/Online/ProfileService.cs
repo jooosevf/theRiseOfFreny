@@ -51,6 +51,7 @@ namespace Online {
     // The nickname, the friend code and the public profile of an account (not of a guest):
     //   apelidos/{chave} = {uid}   who owns a nickname; only created, and only its owner deletes it
     //   codigos/{FRENY-XXXX} = {uid}   the same for the friend code
+    //   (one of each per account: created only in the commit that puts them on the profile, Publish)
     //   perfis/{uid}               the public profile, written when a run ends and at login
     // firestore.rules has the same rules for what a nickname can be (keep them together: also the
     // site's nickKey in index.html).
@@ -156,76 +157,96 @@ namespace Online {
             else done?.Invoke(null);
         }
 
-        // creates apelidos/{chave} for this account. done(error)
-        private IEnumerator Reserve(string nick, Action<string> done) {
-            string problem = null;
-            yield return CheckFree(nick, e => problem = e);
-            if (problem != null) {
-                done?.Invoke(problem);
-                yield break;
-            }
-            FirestoreFields fields = new FirestoreFields()
-                .Set("uid", _auth.UserId)
-                .Set("apelido", nick.Trim())
-                .SetServerTime("criadoEm");
-            long code = 0;
-            yield return _db.Create("apelidos/" + NickKey(nick), fields, c => code = c);
-            if (code == 200) {
-                done?.Invoke(null);
-                yield break;
-            }
-            // it is his already (CheckFree let it through), or somebody got there first
+        // who owns apelidos/{key} (null when nobody). done(ok, uid)
+        private IEnumerator OwnerOf(string key, Action<bool, string> done) {
+            bool ok = false;
             string owner = null;
-            yield return _db.Get("apelidos/" + NickKey(nick), (_, body) => owner = FsDoc.Parse(body)?.Text("uid"));
-            done?.Invoke(owner == _auth.UserId ? null : code == 0 ? "Sem conexão com o servidor" : "Esse apelido já tem dono");
+            yield return _db.Get("apelidos/" + key, (success, body) => {
+                ok = success;
+                owner = FsDoc.Parse(body)?.Text("uid");
+            });
+            done?.Invoke(ok, string.IsNullOrEmpty(owner) ? null : owner);
         }
 
-        private IEnumerator MakeCode(Action<string> done) {
-            for (int attempt = 0; attempt < 5; attempt++) {
-                StringBuilder code = new StringBuilder("FRENY-");
-                for (int i = 0; i < 4; i++) code.Append(CodeLetters[UnityEngine.Random.Range(0, CodeLetters.Length)]);
-                FirestoreFields fields = new FirestoreFields().Set("uid", _auth.UserId).SetServerTime("criadoEm");
-                long result = 0;
-                yield return _db.Create("codigos/" + code, fields, c => result = c);
-                if (result == 200) {
-                    done?.Invoke(code.ToString());
+        // The nickname, the friend code (the first time) and the public profile in one commit: the
+        // rules only take a new nickname together with the profile that shows it, and a profile
+        // only changes nickname when the same commit frees the old one, so an account holds one
+        // nickname and one code (2026-11-04). done(error)
+        private IEnumerator Publish(string nick, Action<string> done) {
+            nick = nick.Trim();
+            string key = NickKey(nick);
+            string oldKey = HasNick ? NickKey(Nick) : null;
+            bool oldIsMine = false;
+            if (!string.IsNullOrEmpty(oldKey) && oldKey != key) {
+                bool ok = false;
+                string owner = null;
+                yield return OwnerOf(oldKey, (o, u) => { ok = o; owner = u; });
+                if (!ok) {
+                    done?.Invoke("Sem conexão com o servidor");
                     yield break;
                 }
+                oldIsMine = owner == _auth.UserId;
             }
-            done?.Invoke(null);
+            for (int attempt = 0; attempt < 5; attempt++) {
+                bool ok = false;
+                string owner = null;
+                yield return OwnerOf(key, (o, u) => { ok = o; owner = u; });
+                if (!ok) {
+                    done?.Invoke("Sem conexão com o servidor");
+                    yield break;
+                }
+                if (owner != null && owner != _auth.UserId) {
+                    done?.Invoke("Esse apelido já tem dono");
+                    yield break;
+                }
+                List<string> writes = new List<string>();
+                if (owner == null) {
+                    writes.Add(_db.Write("apelidos/" + key, new FirestoreFields()
+                        .Set("uid", _auth.UserId).Set("apelido", nick).SetServerTime("criadoEm"), true));
+                }
+                string code = Code;
+                if (string.IsNullOrEmpty(code)) {
+                    code = NewCode();
+                    writes.Add(_db.Write("codigos/" + code, new FirestoreFields()
+                        .Set("uid", _auth.UserId).SetServerTime("criadoEm"), true));
+                }
+                writes.Add(_db.Write("perfis/" + _auth.UserId, ProfileFields(nick, code)));
+                if (oldIsMine) writes.Add(_db.DeleteWrite("apelidos/" + oldKey));
+
+                yield return WaitForTurn();
+                long result = 0;
+                yield return _db.Commit(writes, c => result = c);
+                if (result == 200) {
+                    Remember(nick, code);
+                    done?.Invoke(null);
+                    yield break;
+                }
+                if (result == 0) {
+                    done?.Invoke("Sem conexão com o servidor");
+                    yield break;
+                }
+                // somebody took the nickname or the new code first: the next try looks again. With
+                // neither new, nothing raced it: the rules refused the profile itself
+                if (owner != null && !string.IsNullOrEmpty(Code)) break;
+            }
+            done?.Invoke("Não deu para salvar o apelido agora");
+        }
+
+        private static string NewCode() {
+            StringBuilder code = new StringBuilder("FRENY-");
+            for (int i = 0; i < 4; i++) code.Append(CodeLetters[UnityEngine.Random.Range(0, CodeLetters.Length)]);
+            return code.ToString();
         }
 
         // the first nickname of an account (just created, or older than the nicknames): the friend
         // code and the public profile come with it. done(error)
         public IEnumerator Claim(string nick, Action<string> done) {
-            string error = null;
-            yield return Reserve(nick, e => error = e);
-            if (error != null) {
-                done?.Invoke(error);
-                yield break;
-            }
-            string code = Code;
-            if (string.IsNullOrEmpty(code)) yield return MakeCode(c => code = c);
-            Remember(nick.Trim(), code);
-            yield return Push(true);
-            done?.Invoke(null);
+            yield return Publish(nick, done);
         }
 
-        // reserve the new one, publish it, then free the old one. done(error)
+        // the new nickname on the profile, the old one freed, all at once. done(error)
         public IEnumerator Rename(string nick, Action<string> done) {
-            string oldKey = NickKey(Nick);
-            string error = null;
-            yield return Reserve(nick, e => error = e);
-            if (error != null) {
-                done?.Invoke(error);
-                yield break;
-            }
-            Remember(nick.Trim(), Code);
-            yield return Push(true);
-            if (!string.IsNullOrEmpty(oldKey) && oldKey != NickKey(nick)) {
-                yield return _db.Delete("apelidos/" + oldKey, null);
-            }
-            done?.Invoke(null);
+            yield return Publish(nick, done);
         }
 
         // ---- the login ----
@@ -260,16 +281,24 @@ namespace Online {
         // (the next run sends it)
         public IEnumerator Push(bool mustGo) {
             if (!_auth.IsSignedIn || _auth.IsAnonymous || !HasNick) yield break;
+            if (!mustGo && Time.realtimeSinceStartup < _lastPush + PushEvery) yield break;
+            yield return WaitForTurn();
+            yield return _db.Patch("perfis/" + _auth.UserId, ProfileFields(Nick, Code ?? ""), null);
+        }
+
+        // firestore.rules takes one profile write every 10 s
+        private IEnumerator WaitForTurn() {
             float wait = _lastPush + PushEvery - Time.realtimeSinceStartup;
-            if (wait > 0f) {
-                if (!mustGo) yield break;
-                yield return new WaitForSecondsRealtime(wait);
-            }
+            if (wait > 0f) yield return new WaitForSecondsRealtime(wait);
             _lastPush = Time.realtimeSinceStartup;
+        }
+
+        // the whole public profile, as firestore.rules checks it (validPerfil)
+        private FirestoreFields ProfileFields(string nick, string code) {
             FirestoreFields fields = new FirestoreFields()
-                .Set("apelido", Nick)
-                .Set("chave", NickKey(Nick))
-                .Set("codigo", Code ?? "")
+                .Set("apelido", nick)
+                .Set("chave", NickKey(nick))
+                .Set("codigo", code ?? "")
                 .Set("helmet", FrenyLook.WornId(LookSlot.Helmet))
                 .Set("cape", FrenyLook.WornId(LookSlot.Cape))
                 .Set("color", FrenyLook.WornId(LookSlot.Color))
@@ -284,7 +313,7 @@ namespace Online {
             foreach (string key in SummaryKeys) {
                 fields.Set(key, PlayerStats.Get(key));
             }
-            yield return _db.Patch("perfis/" + _auth.UserId, fields, null);
+            return fields;
         }
 
         // the stats the site and the friend page show; firestore.rules lists them too
