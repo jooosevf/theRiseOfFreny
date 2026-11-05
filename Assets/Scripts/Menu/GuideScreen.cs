@@ -356,9 +356,10 @@ public static class GuideScreen {
 
     private static void BlessingsTopic(Transform parent) {
         Entry(parent, null, "Bênçãos",
-            "Vêm do baú dourado: ao abrir, o jogo para e mostra 3 bênçãos sorteadas entre as que você ainda não tem. Escolha uma (clique, " +
-            "toque, setas e Enter, ou 1, 2, 3). Ela vale até o fim da corrida, soma com as outras e aparece embaixo das armas. " +
-            "No automático o piloto escolhe sozinho. Nenhuma mexe nos pontos, então a corrida vale para o ranking.");
+            "Vêm do baú dourado: ao abrir, o jogo para e mostra 3 bênçãos sorteadas entre as que você ainda não tem. Escolha uma clicando ou " +
+            "tocando em cima dela (no controle: escolha com o direcional e segure A). Espaço, Enter e 1, 2, 3 não escolhem, " +
+            "para você não pegar uma sem ver no meio da luta. Ela vale até o fim da corrida, soma com as outras e aparece embaixo das armas. " +
+            "Se o piloto automático estiver no controle na hora, ele escolhe sozinho. Nenhuma mexe nos pontos, então a corrida vale para o ranking.");
         // two per row, so the ten fit on a 720p screen
         for (int i = 0; i < Blessings.All.Length; i += 2) {
             Blessings.Info a = Blessings.All[i];
