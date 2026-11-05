@@ -13,6 +13,18 @@ public class CoopMenuTest : MonoBehaviour {
         DontDestroyOnLoad(gameObject);
         string shots = CoopArgs.ShotDir;
         yield return new WaitForSecondsRealtime(StepSeconds);
+        if (CoopArgs.Has("-coopSoloTest")) {
+            // the normal game, no room: anything of Coop's leaking into it shows here
+            PlayerPrefs.SetInt("freny.help.seen", 1);   // or the first-run Help page pauses it
+            GameMenus.StartArena(false);
+            yield return new WaitForSecondsRealtime(CoopArgs.QuitAfter);
+            Player player = FindAnyObjectByType<Player>();
+            Debug.Log($"[Coop] solo: cena {SceneManager.GetActiveScene().name}, sala {CoopNet.InRoom}, pontos {(UIManager.Instance ? UIManager.Instance.Score : -1)}, moedas {(player ? player.coins : -1)}, inimigos {Enemy.Active.Count}");
+            Shot(shots, "solo");
+            yield return new WaitForSecondsRealtime(1f);
+            Application.Quit();
+            yield break;
+        }
         Shot(shots, "1_menu");
         Click("Jogar");
         yield return new WaitForSecondsRealtime(StepSeconds);

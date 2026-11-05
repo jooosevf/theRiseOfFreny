@@ -57,6 +57,9 @@ public static class CoopBuild {
     }
 
     private static void MakeLobby() {
+        if (System.IO.File.Exists(LobbyScene)) {
+            return;
+        }
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         GameObject camera = new GameObject("Camera");
         Camera cam = camera.AddComponent<Camera>();
