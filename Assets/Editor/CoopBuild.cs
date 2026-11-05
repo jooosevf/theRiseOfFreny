@@ -59,7 +59,7 @@ public static class CoopBuild {
     // The arena's camera shows the whole map only at 16:9 (ArenaBounds: the screen is the arena), and
     // Unity's default page is 16:10, which cuts the towers. This one keeps 16:9 at any window size.
     private static string Page(string name) {
-        return @"<!DOCTYPE html>
+        return (@"<!DOCTYPE html>
 <html lang=""pt-BR"">
 <head>
 <meta charset=""utf-8"">
@@ -100,7 +100,7 @@ createUnityInstance(canvas, {
 </script>
 </body>
 </html>
-".Replace("NAME", name);
+").Replace("NAME", name);
     }
 
     private static void SetFontMode(TrueTypeFontImporter font, FontRenderingMode mode) {
