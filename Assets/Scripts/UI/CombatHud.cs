@@ -84,7 +84,7 @@ public class CombatHud : MonoBehaviour {
             rowEnd = ArenaPowerUps.DrawHudIcons(rowEnd, barsBottom + 8f * scale, size, scale, labelStyle);
             // the gun just switched: its name at the end of the row (above are the bars, under the counts)
             if (Time.time - switchedAt < 1.2f) {
-                ShadowLabel(new Rect(rowEnd + 12f * scale, gunLabelY, 160f * scale, 28f * scale), lastShotgun ? "Escopeta" : "Pistola");
+                ShadowLabel(new Rect(rowEnd + 12f * scale, gunLabelY, 160f * scale, 28f * scale), player.IsFlagelante ? (lastShotgun ? "Pavês" : "Escudo") : lastShotgun ? "Escopeta" : "Pistola");
             }
             weaponsRight = rowRight;   // the score keeps clear of the hearts (bought ones and armor too)
         }
@@ -167,7 +167,7 @@ public class CombatHud : MonoBehaviour {
     // returns where the last icon ends, so the score can keep clear of it
     private float DrawWeapons(float x, float y, float size, float scale) {
         float swordX = x;
-        DrawIcon(player.GreatSwordActive ? Icon(greatSwordIcon, a => a.greatSwordIcon) : Icon(swordIcon, a => a.swordIcon), ref x, y, size);
+        DrawIcon(player.GreatSwordActive ? FrenyClasses.Slot("Mangual tres", Icon(greatSwordIcon, a => a.greatSwordIcon)) : FrenyClasses.Slot("Mangual", Icon(swordIcon, a => a.swordIcon)), ref x, y, size);
         if (player.GreatSwordSwings > 0) {
             // swings left with the dropped great sword
             ShadowLabel(new Rect(swordX + size - 14f * scale, y + size + 10f * scale, 60f * scale, 26f * scale), $"x{player.GreatSwordSwings}");
@@ -179,7 +179,7 @@ public class CombatHud : MonoBehaviour {
         if (pistolSelected) {
             DrawFrame(new Rect(revolverX - 4f * scale, y - 4f * scale, size + 8f * scale, size + 8f * scale), scale);
         }
-        DrawIcon(Icon(revolverIcon, a => a.revolverIcon), ref x, y, size, pistolSelected && !player.RevolverDry);
+        DrawIcon(FrenyClasses.Slot("Escudo", Icon(revolverIcon, a => a.revolverIcon)), ref x, y, size, pistolSelected && !player.RevolverDry);
         ShadowLabel(new Rect(revolverX + 2f * scale, y - 2f * scale, 30f * scale, 26f * scale), Key(GameAction.Pistol));
         DrawBullets(revolverX, y + size + 2f, size, scale);
         // spare bullets: the revolver is no longer infinite
@@ -189,13 +189,13 @@ public class CombatHud : MonoBehaviour {
             if (player.UsingShotgun) {
                 DrawFrame(new Rect(sx - 4f * scale, y - 4f * scale, size + 8f * scale, size + 8f * scale), scale);
             }
-            DrawIcon(Icon(shotgunIcon, a => a.shotgunIcon), ref x, y, size, player.UsingShotgun);
+            DrawIcon(FrenyClasses.Slot("Paves", Icon(shotgunIcon, a => a.shotgunIcon)), ref x, y, size, player.UsingShotgun);
             ShadowLabel(new Rect(sx + 2f * scale, y - 2f * scale, 30f * scale, 26f * scale), Key(GameAction.Shotgun));
             ShadowLabel(new Rect(sx + size - 14f * scale, y + size + 10f * scale, 60f * scale, 26f * scale), $"x{player.ShotgunShells}");
         }
         if (player.Grenades > 0) {
             float gx = x;
-            DrawIcon(Icon(grenadeIcon, a => a.grenadeIcon), ref x, y, size);
+            DrawIcon(FrenyClasses.Slot("Incensario", Icon(grenadeIcon, a => a.grenadeIcon)), ref x, y, size);
             ShadowLabel(new Rect(gx + size - 14f * scale, y + size + 10f * scale, 60f * scale, 26f * scale), $"x{player.Grenades}");
             if (player.ChargingGrenade) {
                 // the fuse burning in his hand while the button is held: a bar and the seconds beside

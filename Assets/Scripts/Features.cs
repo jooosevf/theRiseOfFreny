@@ -24,6 +24,7 @@ public static class Features {
     public static readonly bool ComboHype = true;           // the combo on screen grows, heats up and shakes; off, the plain line
     public static readonly bool Narrator = true;            // the voice: "Bem-vindo à arena" (the multi-kills' lines when their audio arrives)
     public static readonly bool MultiKill = true;           // Double/Triple/Quadra/Penta Kill banners; nothing but the banner
+    public static readonly bool ClassFlagelante = true;     // the Flagelante (FrenyClass): mangual and shield; off, he leaves the Armeira and whoever used him is the Sobrevivente again
     public static readonly bool WeaponBuffs = true;         // the Armeira's weapon levels and Crítico; the old weapon sales do not come back
 
     // ---- the rare drops (ArenaPowerUps), one switch each ----
@@ -48,6 +49,7 @@ public static class Features {
     public static bool Sold(FrenyUpgrade upgrade) {
         switch (upgrade) {
             case FrenyUpgrade.Net: return Net;
+            case FrenyUpgrade.ClassFlagelante: return ClassFlagelante;
             case FrenyUpgrade.RageTime: return Fury && WeaponBuffs;
             case FrenyUpgrade.PistolDamage:
             case FrenyUpgrade.PistolDrum:

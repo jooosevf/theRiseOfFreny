@@ -100,6 +100,7 @@ namespace Online {
                     .Append(",\"").Append(_blessings[i].kind).Append("\"]");
             }
             json.Append("],\"mutator\":\"").Append(WeeklyMutators.RunKey).Append('"');
+            json.Append(",\"freny_class\":\"").Append(FrenyClasses.Name(FrenyClasses.Run)).Append('"');
             json.Append(",\"flags\":[");
             for (int i = 0; i < _flags.Count; i++) {
                 if (i > 0) json.Append(',');

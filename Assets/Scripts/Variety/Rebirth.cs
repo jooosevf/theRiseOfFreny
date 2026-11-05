@@ -32,7 +32,7 @@ public static class Rebirth {
     public static List<string> Missing() {
         List<string> missing = new List<string>();
         foreach (FrenyUpgrade upgrade in Enum.GetValues(typeof(FrenyUpgrade))) {
-            if (!FrenyProgress.IsBrain(upgrade) && Features.Sold(upgrade) && !FrenyProgress.IsMaxed(upgrade)) {
+            if (!FrenyProgress.IsBrain(upgrade) && upgrade != FrenyUpgrade.ClassFlagelante && Features.Sold(upgrade) && !FrenyProgress.IsMaxed(upgrade)) {
                 int max = FrenyProgress.MaxLevel(upgrade);
                 missing.Add(FrenyProgress.DisplayName(upgrade) +
                             (max > 1 ? " (" + FrenyProgress.GetLevel(upgrade) + "/" + max + ")" : ""));
@@ -55,6 +55,9 @@ public static class Rebirth {
             return false;
         }
         foreach (FrenyUpgrade upgrade in Enum.GetValues(typeof(FrenyUpgrade))) {
+            if (upgrade == FrenyUpgrade.ClassFlagelante) {
+                continue;   // a class stays bought: it is another way to play, not a bonus
+            }
             PlayerPrefs.DeleteKey(FrenyProgress.LevelKeyPrefix + upgrade);
             PlayerPrefs.DeleteKey(FrenyProgress.UnequippedKeyPrefix + upgrade);
         }

@@ -56,6 +56,8 @@ public class FrenyMotion : MonoBehaviour {
 
     // the great sword in hand: bought at the shop, or dropped for a few swings (Player.GreatSwordActive)
     private bool GreatSword => player && player.GreatSwordActive;
+    private bool Flail => player && player.IsFlagelante;
+    private float ReachScale => GreatSword ? GreatSwordScale : Flail ? FrenyClasses.Kit.reach : 1f;
     private Vector3 rigBase;
     private float bodyCenter = 0.6f;       // height of his middle above the feet
 
@@ -176,6 +178,9 @@ public class FrenyMotion : MonoBehaviour {
         swords.TryGetValue("Freny sword", out normalSword);
         swords.TryGetValue("Freny great sword", out longSword);
         blades = LoadHeads("FrenyPoses/blades");
+        foreach (KeyValuePair<string, Sprite> flail in LoadHeads("FrenyPoses/flails")) {
+            blades[flail.Key] = flail.Value;
+        }
         sword = new GameObject("Sword").AddComponent<SpriteRenderer>();
         sword.transform.SetParent(body.transform, false);
         sword.sharedMaterial = body.sharedMaterial;
@@ -398,7 +403,7 @@ public class FrenyMotion : MonoBehaviour {
             // crouched, the arm can't swing: the old crescent in front of the blade
             if (arcPending && sinceSlash >= windup) {
                 arcPending = false;
-                float scale = GreatSword ? GreatSwordScale : 1f;
+                float scale = ReachScale;
                 SlashArc.Spawn(this, transform, body, hand + new Vector2(ArcAhead * scale, ArcLift), ArcRadius * scale,
                     ArcFrom, ArcTo, GreatSword, false, SlashArc.DefaultLife, 1f);
             }
@@ -409,7 +414,7 @@ public class FrenyMotion : MonoBehaviour {
             if (arcPending) {
                 // the smear follows the tip of the blade, around his shoulder
                 arcPending = false;
-                float radius = (GreatSword ? ArmAndGreatBlade : ArmAndBlade) * (slashStep == 3 ? 1.3f : 1.15f);
+                float radius = (GreatSword ? ArmAndGreatBlade : ArmAndBlade * (Flail ? FrenyClasses.Kit.reach : 1f)) * (slashStep == 3 ? 1.3f : 1.15f);
                 SlashArc.Spawn(this, body.transform, body, Shoulder, radius, CutFrom[slashStep - 1], CutTo[slashStep - 1], GreatSword,
                     slashStep == 3, slashStep == 3 ? 0.22f : SlashArc.DefaultLife, slashStep == 3 ? 1f : 0.9f);
             }
@@ -447,7 +452,7 @@ public class FrenyMotion : MonoBehaviour {
         // shoulder to below the hip. The Melee Attack clip still keys the old box (and switches it
         // on), so its shape is set here, after the Animator, every frame; the great sword reaches 1.8x.
         if (swordBox) {
-            float reach = swordReach * (GreatSword ? GreatSwordScale : 1f) * (slashStep == 3 ? FinisherScale : 1f);
+            float reach = swordReach * ReachScale * (slashStep == 3 ? FinisherScale : 1f);
             swordBox.localPosition = hand;
             swordBox.localRotation = Quaternion.identity;
             swordBox.localScale = Vector3.one;
@@ -510,7 +515,7 @@ public class FrenyMotion : MonoBehaviour {
     // angle; crouched, the icon exactly as drawn, raised forward at 45 degrees
     private void UpdateSword(bool crouching, float sinceSlash, bool cutFrame) {
         bool cutting = crouching ? sinceSlash < CrouchCut : cutFrame;
-        Sprite held = GreatSword ? longSword : normalSword;
+        Sprite held = Flail ? FrenyClasses.Icon(GreatSword ? "Freny great flail" : "Freny flail") : GreatSword ? longSword : normalSword;
         sword.enabled = cutting && body.enabled && held != null;
         if (!sword.enabled) {
             return;
@@ -519,7 +524,7 @@ public class FrenyMotion : MonoBehaviour {
         int arm = Snap(swingArm, SwingMin, SwingMax);
         int bladeAngle = Snap(swingBlade, BladeMin, BladeMax);
         if (!crouching && blades != null
-                && blades.TryGetValue((GreatSword ? "Freny great blade_" : "Freny blade_") + bladeAngle, out Sprite drawn)) {
+                && blades.TryGetValue((Flail ? (GreatSword ? "Freny great flail_" : "Freny flail_") : GreatSword ? "Freny great blade_" : "Freny blade_") + bladeAngle, out Sprite drawn)) {
             // swinging: the sword drawn at this moment's angle, in the fist of this moment's arm
             Vector2 fist = SwingGrips[(arm - SwingMin) / AngleStep];
             if (body.flipX) {

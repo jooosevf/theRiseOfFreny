@@ -26,7 +26,7 @@ public class NetThrower : MonoBehaviour {
     public bool CanThrow => Nets > 0 && Time.time >= readyAt && player != null && !player.IsDead && !player.IsStunned;
 
     private static Sprite ballSprite;
-    public static Sprite Icon => ballSprite != null ? ballSprite : (ballSprite = Resources.Load<Sprite>("Fase4/Net Ball"));
+    public static Sprite Icon => FrenyClasses.Slot("Corrente", ballSprite != null ? ballSprite : (ballSprite = Resources.Load<Sprite>("Fase4/Net Ball")));
 
     public static NetThrower Attach(Player player) {
         NetThrower thrower = player.GetComponent<NetThrower>();

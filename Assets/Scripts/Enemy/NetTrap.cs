@@ -22,6 +22,27 @@ public class NetTrap : MonoBehaviour {
 
     public static Sprite NetSprite => netSprite != null ? netSprite : (netSprite = Resources.Load<Sprite>("Fase4/Net Open"));
 
+    // the Flagelante's Corrente de Açoite: dragged to Freny and held there a moment. The Ciclope and
+    // the red Golem are too heavy to come: they only slow down
+    private Player dragTo;
+
+    public static void Drag(Enemy enemy) {
+        Catch(enemy);
+        NetTrap trap = enemy.GetComponent<NetTrap>();
+        bool heavy = enemy is Cyclops || enemy.gameObject.name.Contains("Red");
+        Player freny = FindAnyObjectByType<Player>();
+        if (heavy) {
+            trap.pinned = false;
+            trap.until = Time.time + CyclopsSeconds;
+            enemy.Netted = false;
+            enemy.NetSpeed = CyclopsSpeed;
+        } else if (freny != null) {
+            trap.until = Time.time + FrenyClasses.Kit.dragSeconds;
+            trap.dragTo = freny;
+        }
+        trap.net.sprite = FrenyClasses.Slot("Corrente", trap.net.sprite);
+    }
+
     public static void Catch(Enemy enemy) {
         NetTrap trap = enemy.GetComponent<NetTrap>();
         if (trap == null) {
@@ -78,7 +99,18 @@ public class NetTrap : MonoBehaviour {
             Release();
             return;
         }
-        if (pinned) {
+        if (pinned && dragTo != null) {
+            // towards his side, standing on his floor (a flyer keeps to the height of his body)
+            float side = Mathf.Sign(enemy.transform.position.x - dragTo.transform.position.x);
+            Vector3 body = enemy.BodyBounds.center;
+            float height = hangs ? dragTo.BodyCenter.y - (body.y - enemy.transform.position.y) : dragTo.Feet.y + (enemy.transform.position.y - enemy.BodyBounds.min.y);
+            Vector3 goal = new Vector3(dragTo.transform.position.x + side * FrenyClasses.Kit.dragGap, height, enemy.transform.position.z);
+            pin = Vector3.MoveTowards(pin, goal, FrenyClasses.Kit.dragSpeed * Time.deltaTime);
+            enemy.transform.position = pin;
+            if ((pin - goal).sqrMagnitude < 0.01f) {
+                dragTo = null;
+            }
+        } else if (pinned) {
             Vector3 p = enemy.transform.position;
             float y = hangs ? pin.y : Mathf.Min(p.y, pin.y);   // walkers still fall
             pin = new Vector3(pin.x, y, p.z);
@@ -105,7 +137,7 @@ public class NetTrap : MonoBehaviour {
         GameObject obj = new GameObject("Net (empty)");
         obj.transform.position = at;
         SpriteRenderer renderer = obj.AddComponent<SpriteRenderer>();
-        renderer.sprite = NetSprite;
+        renderer.sprite = FrenyClasses.Slot("Corrente", NetSprite);
         renderer.sortingOrder = 45;
         if (renderer.sprite != null) {
             obj.transform.localScale = Vector3.one * (1.6f / Mathf.Max(0.01f, renderer.sprite.bounds.size.x));
