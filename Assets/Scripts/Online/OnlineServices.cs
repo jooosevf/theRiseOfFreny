@@ -535,7 +535,7 @@ namespace Online {
             ScoreApi.Signed signed = null;
             string refused = null;
             string board = LeaderboardService.Collection(run.level, run.auto);
-            yield return _api.FinishRun(run.log.ToJson(run.token, board, run.score),
+            yield return _api.FinishRun(run.log.ToJson(run.token, board, run.score, true),
                 (s, error) => { signed = s; refused = error; });
             // still the record the banner shows (no newer run ended since)
             bool current = RecordScore == run.score && RecordLevel == run.level && RecordAuto == run.auto;
@@ -647,6 +647,7 @@ namespace Online {
                 // goes straight to the arena); the ticket is asked for as soon as the game is online
                 if (!_sawAlive && _arenaRun) {
                     _runLog = new RunLog(Time.time);
+                    if (_player != null) _runLog.Recorder = new RunRecorder(Time.time, _player);
                     AntiCheat.Reset();
                     _clockWall = default;
                     _clockOff = 0;
@@ -656,6 +657,7 @@ namespace Online {
                     }
                 }
                 if (_runLog != null) CheckClock();
+                _runLog?.Recorder?.Tick(_player, _input != null && _input.IsAutopilotDriving);
                 if (_runLog != null && !_tokenAsked && State == Status.Online) {
                     StartCoroutine(StartRankedRun(_runLevel, _runAuto));
                 }
@@ -665,6 +667,7 @@ namespace Online {
                 }
             } else if (_sawAlive) {
                 _reported = true;
+                _runLog?.Recorder?.Final(_player, _input != null && _input.IsAutopilotDriving);   // Freny down
                 _runLog?.Seal(AntiCheat.Flags);
                 long coins = _player != null ? Math.Max(0, _player.coins - _coinsAtStart) : 0;
                 ReportRun(CurrentScore(), coins, _assisted);
@@ -747,7 +750,7 @@ namespace Online {
         private IEnumerator EditorCheckRun(long score, RunLog log, string token, bool ranked) {
             string board = LeaderboardService.Collection(_runLevel, _runAuto);
             System.IO.File.WriteAllText(System.IO.Path.Combine(Application.dataPath, "..", "Logs", "arena-run.json"),
-                log.ToJson(token ?? "", board, score));
+                log.ToJson(token ?? "", board, score, true));   // with the replay, to try the viewer
             if (ranked || token == null) yield break;
             yield return _api.FinishRun(log.ToJson(token, board, score), (sig, error) =>
                 Debug.Log("[Online] API check of this run (" + score + " points): " + (sig != null ? "accepted" : "refused, " + error)));

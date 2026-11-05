@@ -58,6 +58,22 @@ namespace Online {
             yield return Send("POST", ":commit", fields.ToCommitJson(_docRoot + "/" + path, true), (code, _) => done?.Invoke(code));
         }
 
+        // Several writes in one commit, all or nothing: each one from Write() or DeleteWrite().
+        // done(code): 200 when every write went in.
+        public IEnumerator Commit(IList<string> writes, Action<long> done) {
+            yield return Send("POST", ":commit", "{\"writes\":[" + string.Join(",", writes) + "]}", (code, _) => done?.Invoke(code));
+        }
+
+        // one write for Commit: updates these fields of the document (mustBeNew: only if it isn't there)
+        public string Write(string path, FirestoreFields fields, bool mustBeNew = false) {
+            return fields.ToWriteJson(_docRoot + "/" + path, mustBeNew);
+        }
+
+        // one write for Commit: deletes the document
+        public string DeleteWrite(string path) {
+            return "{\"delete\":\"" + Json.Escape(_docRoot + "/" + path) + "\"}";
+        }
+
         public IEnumerator Delete(string path, Action<bool> done) {
             yield return Send("DELETE", "/" + path, null, (code, _) => done?.Invoke(code == 200));
         }
@@ -143,7 +159,12 @@ namespace Online {
         // A :commit body with one write that updates only these fields of the document.
         // mustBeNew: it fails if the document already exists.
         public string ToCommitJson(string documentName, bool mustBeNew = false) {
-            StringBuilder sb = new StringBuilder("{\"writes\":[{\"update\":{\"name\":\"");
+            return "{\"writes\":[" + ToWriteJson(documentName, mustBeNew) + "]}";
+        }
+
+        // the same, as one write of a :commit (FirestoreClient.Commit)
+        public string ToWriteJson(string documentName, bool mustBeNew = false) {
+            StringBuilder sb = new StringBuilder("{\"update\":{\"name\":\"");
             sb.Append(Json.Escape(documentName)).Append("\",").Append(ToJson().Substring(1)).Append(',');
             sb.Append("\"updateMask\":{\"fieldPaths\":[");
             bool first = true;
@@ -159,7 +180,7 @@ namespace Online {
             }
             sb.Append(']');
             if (mustBeNew) sb.Append(",\"currentDocument\":{\"exists\":false}");
-            return sb.Append("}]}").ToString();
+            return sb.Append('}').ToString();
         }
 
         public string ToJson() {

@@ -67,6 +67,9 @@ service cloud.firestore {
     // Who owns a nickname. The id is the nickname in plain lowercase ("José_1" -> "jose_1", the
     // game's ProfileService.NickKey and the site's nickKey), so "jose" can't be taken next to "José".
     // Created once, never changed; only its owner frees it (renaming). Anyone can look one up.
+    // One per account (2026-11-04): a nickname is only created in the same commit that puts it on
+    // the account's public profile, and the profile only changes nickname when that commit also
+    // frees the old one (validPerfil), so nobody can hoard nicknames.
     match /apelidos/{key} {
       allow read: if true;
       allow create: if isAccount() && key.matches('[a-z0-9_-]{3,16}')
@@ -74,18 +77,22 @@ service cloud.firestore {
                     && request.resource.data.uid == request.auth.uid
                     && request.resource.data.apelido is string
                     && request.resource.data.apelido.size() >= 3 && request.resource.data.apelido.size() <= 16
-                    && request.resource.data.criadoEm == request.time;
+                    && nickKey(request.resource.data.apelido) == key
+                    && request.resource.data.criadoEm == request.time
+                    && getAfter(/databases/$(database)/documents/perfis/$(request.auth.uid)).data.chave == key;
       allow update: if false;
       allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
     }
 
-    // Who owns a friend code, FRENY-XXXX. Created once, never changed.
+    // Who owns a friend code, FRENY-XXXX. Created once, never changed. One per account: created in
+    // the same commit that puts it on the public profile, whose code never changes once set.
     match /codigos/{code} {
       allow read: if true;
       allow create: if isAccount() && code.matches('FRENY-[2-9A-HJ-NP-Z]{4}')
                     && request.resource.data.keys().hasOnly(['uid', 'criadoEm'])
                     && request.resource.data.uid == request.auth.uid
-                    && request.resource.data.criadoEm == request.time;
+                    && request.resource.data.criadoEm == request.time
+                    && getAfter(/databases/$(database)/documents/perfis/$(request.auth.uid)).data.codigo == code;
       allow update, delete: if false;
     }
 
@@ -106,11 +113,21 @@ service cloud.firestore {
     // The public profile, what the site's Perfil, the friends list and the friends ranking read. No
     // email. The nickname and the code must be the account's own (checked only when they change),
     // and each best carries the signature the ranking API gave it (the same one its board entry has).
+    // The shown nickname must fold to its key ("José_1" -> "jose_1"), so it can't show a name the
+    // account doesn't own, and the counters can't grow faster than the clock (perfilPace).
     match /perfis/{userId} {
       allow read: if true;
       allow create, update: if isOwner(userId) && notBanned() && isAccount() && validPerfil(userId)
                     && (resource == null || request.time > resource.data.lastSeen + duration.value(10, 's'));
       allow delete: if false;
+    }
+
+    // Presents from the admin (alpha testers): coins and looks the server writes (api/admin/presentes,
+    // a service account, which skips these rules). The player only reads them and deletes each one
+    // once the game has added it to the save (Online/GiftInbox).
+    match /presentes/{userId}/itens/{id} {
+      allow read, delete: if isOwner(userId);
+      allow create, update: if false;
     }
 
     // A message from one account to another: "pedido" (a friend request), "aceito" (the other side
@@ -239,34 +256,71 @@ service cloud.firestore {
           && text(d, 'chave', 16) && text(d, 'codigo', 10)
           && text(d, 'helmet', 32) && text(d, 'cape', 32) && text(d, 'color', 32) && text(d, 'suit', 32)
           && d.rebirths is int && d.rebirths >= 0 && d.rebirths <= 999
-          && num(d, 'runsManual')
-          && num(d, 'runsAuto')
-          && num(d, 'secManual')
-          && num(d, 'secAuto')
-          && num(d, 'longestRun')
-          && num(d, 'kills')
-          && num(d, 'deaths')
-          && num(d, 'bestCombo')
-          && num(d, 'k_cyclops')
-          && num(d, 'k_supreme')
-          && num(d, 'nights')
-          && num(d, 'bloodMoons')
-          && num(d, 'chests')
-          && num(d, 'coinsEarned')
+          && d.keys().hasAll(['runsManual', 'runsAuto', 'secManual', 'secAuto', 'longestRun', 'kills', 'deaths', 'bestCombo',
+                              'k_cyclops', 'k_supreme', 'nights', 'bloodMoons', 'chests', 'coinsEarned'])
+          && d.runsManual >= 0 && d.runsAuto >= 0 && d.secManual >= 0 && d.secAuto >= 0 && d.longestRun >= 0
+          && d.kills >= 0 && d.deaths >= 0 && d.bestCombo >= 0 && d.k_cyclops >= 0 && d.k_supreme >= 0
+          && d.nights >= 0 && d.bloodMoons >= 0 && d.chests >= 0 && d.coinsEarned >= 0
+          && d.chave == nickKey(d.apelido)
           && ownsNick(d, userId) && ownsCode(d, userId)
+          && paced(d, userId)
           && bestOk(d, userId, 'bestEasy', 'sigEasy', 'leaderboard_easy')
           && bestOk(d, userId, 'bestMedium', 'sigMedium', 'leaderboard_medium')
           && bestOk(d, userId, 'bestHard', 'sigHard', 'leaderboard_hard');
     }
 
+    // the same key as before, or one this account owns after the commit; a new key also frees the
+    // old one in the same commit (one nickname per account)
     function ownsNick(d, userId) {
       return (resource != null && resource.data.chave == d.chave)
-          || get(/databases/$(database)/documents/apelidos/$(d.chave)).data.uid == userId;
+          || (getAfter(/databases/$(database)/documents/apelidos/$(d.chave)).data.uid == userId
+              && (resource == null || resource.data.chave == ''
+                  || !existsAfter(/databases/$(database)/documents/apelidos/$(resource.data.chave))));
     }
 
+    // no code, the same one as before, or a first one this account owns after the commit; once set
+    // it never changes (one code per account)
     function ownsCode(d, userId) {
       return d.codigo == '' || (resource != null && resource.data.codigo == d.codigo)
-          || get(/databases/$(database)/documents/codigos/$(d.codigo)).data.uid == userId;
+          || ((resource == null || resource.data.codigo == '')
+              && getAfter(/databases/$(database)/documents/codigos/$(d.codigo)).data.uid == userId);
+    }
+
+    // "José_1" -> "jose_1": the game's ProfileService.NickKey (lowercase, accents off). Anything
+    // else stays, and the key's own pattern refuses it.
+    function nickKey(n) {
+      return n.lower().replace('[áàâãä]', 'a').replace('[éèêë]', 'e').replace('[íìîï]', 'i')
+          .replace('[óòôõö]', 'o').replace('[úùûü]', 'u').replace('ç', 'c').replace('ñ', 'n');
+    }
+
+    // How much the public counters may grow in one write, for `a` seconds of play allowed: play
+    // time a; runs and deaths a/5 (+10); kills 10 a second; Ciclopes and Feiticeiros a/5 (+10);
+    // nights, Blood Moons and chests a/3 (+10); coins 200 a second; a new longest run no longer than
+    // twice the play time (game time runs up to 1.5x); a new best combo at most 1000.0x. A peak
+    // that didn't change isn't checked again (older documents). Kept short: the rules stop at 1000
+    // evaluated expressions per commit, and a new nickname commits with its profile.
+    // (stats/ itself can't take this: its 60 fields already use most of that budget.)
+    function perfilPace(d, o, a) {
+      return d.secManual + d.secAuto - o.secManual - o.secAuto <= a
+          && d.runsManual + d.runsAuto + d.deaths - o.runsManual - o.runsAuto - o.deaths <= a / 5 + 10
+          && d.kills - o.kills <= 10 * a
+          && d.k_cyclops + d.k_supreme - o.k_cyclops - o.k_supreme <= a / 5 + 10
+          && d.nights + d.bloodMoons + d.chests - o.nights - o.bloodMoons - o.chests <= a / 3 + 10
+          && d.coinsEarned - o.coinsEarned <= 200 * a
+          && (d.longestRun == o.longestRun || d.longestRun <= 2 * (d.secManual + d.secAuto) + 60)
+          && (d.bestCombo == o.bestCombo || d.bestCombo <= 10000);
+    }
+
+    // an update: twice the real time since the last write (+10 min). A first profile starts from
+    // zero with twice the time since the account's stats/ began, plus 6 h from before the login.
+    function paced(d, userId) {
+      let stats = /databases/$(database)/documents/stats/$(userId);
+      return resource != null
+          ? perfilPace(d, resource.data, 2 * (request.time - resource.data.lastSeen).seconds() + 600)
+          : perfilPace(d, {'secManual': 0, 'secAuto': 0, 'runsManual': 0, 'runsAuto': 0, 'deaths': 0, 'kills': 0,
+                           'k_cyclops': 0, 'k_supreme': 0, 'nights': 0, 'bloodMoons': 0, 'chests': 0,
+                           'coinsEarned': 0, 'longestRun': 0, 'bestCombo': 0},
+                       (exists(stats) ? 2 * (request.time - get(stats).data.createdAt).seconds() : 0) + 21600);
     }
 
     // no best yet, or the signature of the board's score: sha256("<key>|<uid>|<board>|<score>")
