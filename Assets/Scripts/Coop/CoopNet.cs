@@ -19,8 +19,7 @@ using UnityEngine.SceneManagement;
 public static class CoopNet {
 
     public const string ArenaScene = "ZE Arena";
-    public const string LobbyScene = "Coop Lobby";
-    private const ushort ProtocolVersion = 6;
+    private const ushort ProtocolVersion = 7;
     private const int MaxPlayers = 2;
     private const float PingInterval = 0.5f;
     private const int RttWindow = 240;   // the last 2 minutes of pings
@@ -41,6 +40,7 @@ public static class CoopNet {
     public static event Action<ulong, FastBufferReader> HexCast;
     public static event Action<ulong, FastBufferReader> World;
     public static event Action<ulong, FastBufferReader> Effect;
+    public static event Action<ulong, FastBufferReader> PeerName;
 
     // ---- what the overlay and the log report
     public static float LastRtt { get; private set; }
@@ -138,6 +138,7 @@ public static class CoopNet {
     }
 
     private static void CreateManager() {
+        Application.runInBackground = true;   // a room doesn't stop for the other player when this window loses focus
         GameObject go = new GameObject("Coop Net");
         UnityEngine.Object.DontDestroyOnLoad(go);
         Transport = go.AddComponent<UnityTransport>();
@@ -188,6 +189,7 @@ public static class CoopNet {
         messages.RegisterNamedMessageHandler("coop.w", (id, r) => World?.Invoke(id, r));
         messages.RegisterNamedMessageHandler("coop.a", CoopShared.OnAsk);
         messages.RegisterNamedMessageHandler("coop.fx", (id, r) => Effect?.Invoke(id, r));
+        messages.RegisterNamedMessageHandler("coop.name", (id, r) => PeerName?.Invoke(id, r));
         messages.RegisterNamedMessageHandler("coop.restart", (_, __) => LoadArena());
     }
 
@@ -225,12 +227,13 @@ public static class CoopNet {
         }
     }
 
-    // back to the list of rooms, with nothing left of this one
+    // back to the Co-op page of the menu, with nothing left of this room
     public static void Leave() {
         CoopRooms.Close();
         Reset();
         Status = "";
-        SceneManager.LoadScene(LobbyScene);
+        CoopScreens.ReopenOnMenu = true;
+        GameMenus.LoadMainMenu();
     }
 
     // both Frenys have fallen: the host starts the next run on both sides

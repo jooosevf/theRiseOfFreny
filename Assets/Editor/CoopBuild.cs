@@ -1,16 +1,13 @@
 using System;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
-using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
-// Builds the co-op test: only the menu, the lobby and the Arena, without FirebaseConfig.json, so it can't touch
+// Builds the co-op test: only the menu and the Arena, without FirebaseConfig.json, so it can't touch
 // accounts or the ranking.
 // Unity.exe -batchmode -quit -projectPath <proj> -buildTarget <Win64|WebGL> -executeMethod CoopBuild.Build -coopOut <dir>
 public static class CoopBuild {
 
-    private const string LobbyScene = "Assets/Scripts/Coop/Coop Lobby.unity";
     private const string ArenaScene = "Assets/Scenes/ZE Arena.unity";
     private const string MenuScene = "Assets/Scenes/UI - Main Menu.unity";
     private const string MenuFont = "Assets/Sprites/Interface/Resources/Fonts/PressStart2P.ttf";
@@ -20,8 +17,6 @@ public static class CoopBuild {
         int i = Array.IndexOf(args, "-coopOut");
         string outDir = i >= 0 && i + 1 < args.Length ? args[i + 1] : "Builds/Coop";
         BuildTarget target = EditorUserBuildSettings.activeBuildTarget;
-
-        MakeLobby();
         TrueTypeFontImporter font = null;
         FontRenderingMode originalMode = FontRenderingMode.Smooth;
         string location = outDir + "/Freny Coop.exe";
@@ -40,7 +35,7 @@ public static class CoopBuild {
         BuildReport report;
         try {
             report = BuildPipeline.BuildPlayer(new BuildPlayerOptions {
-                scenes = new[] { MenuScene, LobbyScene, ArenaScene },
+                scenes = new[] { MenuScene, ArenaScene },
                 locationPathName = location,
                 target = target,
                 options = BuildOptions.None,
@@ -54,19 +49,6 @@ public static class CoopBuild {
         if (report.summary.result != BuildResult.Succeeded) {
             EditorApplication.Exit(1);
         }
-    }
-
-    private static void MakeLobby() {
-        if (System.IO.File.Exists(LobbyScene)) {
-            return;
-        }
-        Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-        GameObject camera = new GameObject("Camera");
-        Camera cam = camera.AddComponent<Camera>();
-        cam.clearFlags = CameraClearFlags.SolidColor;
-        cam.backgroundColor = new Color(0.04f, 0.03f, 0.05f);
-        new GameObject("Lobby").AddComponent<CoopLobby>();
-        EditorSceneManager.SaveScene(scene, LobbyScene);
     }
 
     private static void SetFontMode(TrueTypeFontImporter font, FontRenderingMode mode) {

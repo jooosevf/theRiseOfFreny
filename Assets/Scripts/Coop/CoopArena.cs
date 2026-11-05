@@ -24,6 +24,10 @@ public class CoopArena : MonoBehaviour {
     private const int MaxEnemyBytes = 1200;
     private const float NameTagHeight = 0.9f;
     private const float RestartDelay = 4f;
+    private const float SpawnGap = 2f;               // each one starts this far to his side of the scene's spawn
+    private const float ReviveGap = 1.2f;            // and comes back this far from the other
+    private const float NameSendSeconds = 3f;
+    private const int MaxNameBytes = 32;
     // José, 2026-11-04: each player has lives. A fall costs one and he comes back beside the other; with
     // none left he watches, until the other picks up a life for him. Both out: the run ends.
     private const int StartingLives = 2;
@@ -78,6 +82,11 @@ public class CoopArena : MonoBehaviour {
     private byte peerReviveIn;
     private float nextTestDeath;
     private bool leaveOpen;
+    private const float FloorProbe = 3f;
+    private string localName;
+    private string peerName;
+    private float nextNameSend;
+    private Canvas leaveCanvas;
     private static bool testDied;
     private static float firstStart = -1f;
     private GUIStyle overlay;
@@ -113,6 +122,7 @@ public class CoopArena : MonoBehaviour {
         CoopNet.HexCast += OnHexCast;
         CoopNet.World += OnWorld;
         CoopNet.Effect += OnEffect;
+        CoopNet.PeerName += OnPeerName;
         CoopWorld.Active = true;
         CoopWorld.GainLife = OnLifeGained;
         GameCursor.ShowWhile(this, () => leaveOpen);
@@ -128,6 +138,7 @@ public class CoopArena : MonoBehaviour {
         CoopNet.HexCast -= OnHexCast;
         CoopNet.World -= OnWorld;
         CoopNet.Effect -= OnEffect;
+        CoopNet.PeerName -= OnPeerName;
         CoopWorld.Active = false;
         CoopWorld.GainLife = null;
         CoopWorld.PeerAlive = false;
@@ -146,6 +157,9 @@ public class CoopArena : MonoBehaviour {
         playerAnim = playerObj.GetComponentInChildren<Animator>();
         CoopWorld.LocalBody = playerCol;
         MakeGhost(playerObj);
+        localName = CoopScreens.PlayerName;
+        PlaceAt(player.transform.position + Vector3.right * (isHost ? -SpawnGap : SpawnGap));
+        Debug.Log($"[Coop] {(isHost ? "host" : "cliente")} nasceu em {player.transform.position}");
         FieldInfo chestField = typeof(ArenaDirector).GetField("chestPrefab", BindingFlags.NonPublic | BindingFlags.Instance);
         CoopShared.Begin(director != null ? (GameObject)chestField.GetValue(director) : null);
         if (!isHost) {
@@ -163,6 +177,29 @@ public class CoopArena : MonoBehaviour {
                 input.SetAutoEnabled(true);
             }
         }
+    }
+
+    // moves him there if there is floor under it; if not, he stays where he is
+    private void PlaceAt(Vector3 point) {
+        if (Physics2D.Raycast(point, Vector2.down, FloorProbe, player.whatIsGround).collider == null) {
+            return;
+        }
+        player.transform.position = point;
+        Rigidbody2D body = player.GetComponent<Rigidbody2D>();
+        if (body != null) {
+            body.position = point;
+        }
+    }
+
+    private void OnPeerName(ulong sender, FastBufferReader reader) {
+        reader.ReadValueSafe(out FixedString64Bytes name);
+        peerName = name.ToString();
+    }
+
+    private void SendName() {
+        using FastBufferWriter writer = new FastBufferWriter(MaxNameBytes * 3, Allocator.Temp);
+        writer.WriteValueSafe(new FixedString64Bytes(localName ?? ""));
+        CoopNet.Send("coop.name", writer, NetworkDelivery.ReliableSequenced);
     }
 
     // a copy of Freny with only his sprites and animator left
@@ -202,9 +239,13 @@ public class CoopArena : MonoBehaviour {
     private void Update() {
         // Esc: a room has no pause, only a way out
         if (Input.GetKeyDown(KeyCode.Escape)) {
-            leaveOpen = !leaveOpen;
+            ShowLeave(!leaveOpen);
         }
         float now = Time.unscaledTime;
+        if (now >= nextNameSend && localName != null) {
+            nextNameSend = now + NameSendSeconds;
+            SendName();
+        }
         if (now >= nextSend && player != null) {
             nextSend = now + SendInterval;
             SendPlayer();
@@ -320,6 +361,23 @@ public class CoopArena : MonoBehaviour {
 
     private float ReviveLeft => reviveAt < 0f ? 0f : Mathf.Max(0f, reviveAt - Time.unscaledTime);
 
+    // Esc: the same kind of page as the pause menu, but the game goes on behind it
+    private void ShowLeave(bool show) {
+        leaveOpen = show;
+        if (leaveCanvas == null) {
+            if (!show) {
+                return;
+            }
+            leaveCanvas = MenuKit.CreateCanvas("Coop Leave", 30000, transform);
+            MenuStack stack = leaveCanvas.gameObject.AddComponent<MenuStack>();
+            MenuPage page = new MenuPage(stack.transform, "Sala", 420f, new Vector2(0.5f, 0.5f));
+            page.Button("Continuar", () => ShowLeave(false));
+            page.Button("Sair da sala", CoopNet.Leave);
+            stack.Push(page);
+        }
+        leaveCanvas.gameObject.SetActive(show);
+    }
+
     private bool LocalOut => player != null && player.IsDead && lives <= 0 && reviveAt < 0f;
     private bool PeerOut => !CoopNet.Connected || (peerDead && peerLives == 0 && peerReviveIn == 0);
 
@@ -341,6 +399,9 @@ public class CoopArena : MonoBehaviour {
             // beside the other if he is up; if not, where he fell
             bool besidePeer = !peerDead && CoopNet.Connected && ghost != null && ghost.gameObject.activeSelf;
             player.Revive(besidePeer ? ghost.position : player.transform.position, player.MaxHealth, ReviveSafeSeconds);
+            if (besidePeer) {
+                PlaceAt(ghost.position + Vector3.right * (isHost ? -ReviveGap : ReviveGap));
+            }
             reviveAt = -1f;
             fallHandled = false;
             Debug.Log($"[Coop] {(isHost ? "host" : "cliente")} voltou, vidas {lives}");
@@ -613,34 +674,45 @@ public class CoopArena : MonoBehaviour {
     // ---- the numbers on screen: this is what the test is for
     private void OnGUI() {
         if (overlay == null) {
-            overlay = new GUIStyle(GUI.skin.box) { fontSize = 13, alignment = TextAnchor.UpperLeft, wordWrap = true };
-            overlay.normal.textColor = new Color(1f, 0.95f, 0.75f);
-            nameTag = new GUIStyle(GUI.skin.label) { fontSize = 14, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
-            nameTag.normal.textColor = GhostTint;
-            reviveStyle = new GUIStyle(GUI.skin.label) { fontSize = 26, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
-            reviveStyle.normal.textColor = new Color(0.85f, 0.2f, 0.18f);
+            int unit = Mathf.Max(9, Mathf.RoundToInt(Screen.height / 60f));
+            overlay = new GUIStyle(GUI.skin.box) { font = MenuKit.Font, fontSize = unit, alignment = TextAnchor.UpperLeft, wordWrap = true };
+            overlay.normal.textColor = MenuKit.TextColor;
+            nameTag = new GUIStyle(GUI.skin.label) { font = MenuKit.Font, fontSize = unit, alignment = TextAnchor.MiddleCenter, wordWrap = false };
+            reviveStyle = new GUIStyle(GUI.skin.label) { font = MenuKit.Font, fontSize = unit * 2, alignment = TextAnchor.MiddleCenter };
+            reviveStyle.normal.textColor = MenuKit.TitleColor;
         }
-        if (ghost != null && ghost.gameObject.activeSelf && Camera.main != null) {
-            Vector3 point = Camera.main.WorldToScreenPoint(ghost.position + Vector3.up * NameTagHeight);
-            GUI.Label(new Rect(point.x - 50f, Screen.height - point.y - 12f, 100f, 24f), isHost ? "Jogador 2" : "Jogador 1", nameTag);
+        if (ghost != null && ghost.gameObject.activeSelf) {
+            DrawName(ghost.position, string.IsNullOrEmpty(peerName) ? "Parceiro" : peerName, GhostTint);
         }
-        string text = (isHost ? $"HOST | código {CoopNet.JoinCode}\n" : "CLIENTE\n") +
-                      $"Ping: {CoopNet.RttSummary()}\n" +
-                      $"Transporte: {CoopNet.TransportRtt} ms | Recebendo {receivedRate} msg/s | Enviando {CoopNet.BytesPerSecond} B/s\n" +
-                      $"Suas vidas: {lives} | Vidas do outro: {peerLives}\n" +
-                      $"Outro Freny: {(CoopNet.Connected ? (peerDead ? (peerReviveIn > 0 ? $"caído, volta em {peerReviveIn} s" : "fora") : $"{peerHealth} corações") : "desconectado")}" +
-                      (isHost ? "" : $" | Pontos do host: {hostScore}");
-        GUI.Box(new Rect(Screen.width - 340f, 72f, 330f, 136f), text, overlay);
-        if (leaveOpen && GUI.Button(new Rect((Screen.width - 260f) / 2f, Screen.height * 0.5f, 260f, 48f), "Sair da sala")) {
-            CoopNet.Leave();
-            return;
+        if (player != null && !player.IsDead) {
+            DrawName(player.transform.position, localName, MenuKit.TextColor);
         }
+        float scale = Screen.height / 720f;
+        Rect panel = new Rect(Screen.width - 330f * scale, 72f * scale, 320f * scale, 76f * scale);
+        string text = $"Ping {CoopNet.LastRtt:0} ms\n" +
+                      $"Suas vidas: {lives}\n" +
+                      $"Vidas do parceiro: {peerLives}" +
+                      (peerDead && CoopNet.Connected ? (peerReviveIn > 0 ? $" (volta em {peerReviveIn} s)" : " (fora)") : "");
+        GUI.Box(panel, text, overlay);
         if (player != null && player.IsDead) {
             string wait = reviveAt >= 0f ? $"Você volta em {Mathf.CeilToInt(ReviveLeft)} s"
                 : PeerOut ? "Os dois caíram"
                 : "Sem vidas. Uma vida pega pelo parceiro traz você de volta";
             GUI.Label(new Rect(0f, Screen.height * 0.4f, Screen.width, 40f), wait, reviveStyle);
         }
+    }
+
+    private void DrawName(Vector3 feetOrHead, string name, Color color) {
+        Camera cam = Camera.main;
+        if (cam == null || string.IsNullOrEmpty(name)) {
+            return;
+        }
+        Vector3 point = cam.WorldToScreenPoint(feetOrHead + Vector3.up * NameTagHeight);
+        Rect rect = new Rect(point.x - 150f, Screen.height - point.y - 14f, 300f, 28f);
+        nameTag.normal.textColor = Color.black;   // readable over the bright sky too
+        GUI.Label(new Rect(rect.x + 1f, rect.y + 1f, rect.width, rect.height), name, nameTag);
+        nameTag.normal.textColor = color;
+        GUI.Label(rect, name, nameTag);
     }
 
     // ---- only for the test binaries, driven from the command line

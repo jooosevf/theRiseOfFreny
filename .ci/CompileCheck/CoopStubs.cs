@@ -36,8 +36,12 @@ public static class CoopShared {
 }
 
 public static class CoopNet {
-    public const string LobbyScene = "Coop Lobby";
     public static bool InRoom => false;
+}
+
+public static class CoopScreens {
+    public static MenuPage Root(MenuStack stack) => null;
+    public static void AfterMenu(MenuStack stack) { }
 }
 
 public class CoopPuppet : MonoBehaviour {
