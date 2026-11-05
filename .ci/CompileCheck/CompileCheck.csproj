@@ -13,6 +13,7 @@
     <PackageReference Include="Unity3D.UnityEngine" Version="2020.3.21" ExcludeAssets="all" />
     <!-- Coop needs Netcode, Relay and Lobby, which aren't here: CoopStubs.cs stands in for it -->
     <Compile Include="../../Assets/Scripts/**/*.cs" Exclude="../../Assets/Scripts/Coop/**/*.cs" />
+    <Compile Include="CoopStubs.cs" />
     <Compile Include="../../Assets/*.cs" />
     <Compile Include="../../Assets/Runner/Scripts/*.cs" />
   </ItemGroup>
