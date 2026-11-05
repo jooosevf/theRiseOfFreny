@@ -123,9 +123,9 @@ def check(mod):
             continue
         if not standable(solid, W, H, x, y):
             print('  not on a floor:', e); ok = False
-        elif kind in ('checkpoint', 'chest') and (x, y) not in seen:
+        elif kind in ('checkpoint', 'chest', 'door', 'lever', 'save', 'item') and (x, y) not in seen:
             print('  unreachable:', e); ok = False
-        if len(e) == 5:
+        if len(e) == 5 and kind != 'gate':
             for px in range(min(e[3], e[4]), max(e[3], e[4]) + 1):
                 if not standable(solid, W, H, px, y):
                     print('  patrol leaves the floor:', e, 'at', px); ok = False; break

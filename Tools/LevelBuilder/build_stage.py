@@ -29,6 +29,7 @@ go_of_tr={t:g for g,t in tr_of.items()}
 # ---------- what to keep ----------
 KEEP_ROOTS={'Main Camera','CM Follow Cam','cm','Global Light 2D','Global Volume','Player','Savepoint','LevelExit','World Boundary','Tilemap','Monitor','Scanlines'}
 KEEP_TILEMAPS={'Ground_Tilemap','Background_Tilemap','Foreground_Tilemap'}
+if getattr(L,'NO_EXIT',False): KEEP_ROOTS.discard('LevelExit')   # a room of the test dungeon, left through its doors
 delete=set()   # doc ids
 moved=set()
 # the global light sits under a parent that gets deleted in some bases: move it to the scene root
@@ -158,11 +159,12 @@ ents=L.ENT
 def ent(kind): return [e for e in ents if e[0]==kind]
 px,py=world(*ent('player')[0][1:3]); set_pos('Player',px+0.5,py+1.02); set_pos('CM Follow Cam',px+0.5,py+2)
 cx,cy=world(*ent('checkpoint')[0][1:3]); set_pos('Savepoint',cx+0.5,cy+0.5)
-ex,ey=world(*ent('exit')[0][1:3])
-press=getattr(L,'EXIT_PRESS_UP',False); boss=getattr(L,'BOSS','')
-set_pos('LevelExit',ex+(0.5 if press else 0.3),ey+1.2)
-door=[d for d in docs if cls(d[0])==114 and go_of(d[1])==[g for g,n in names.items() if n=='LevelExit' and g in alive][0]][0]
-door[1]=re.sub(r'  pressUp: \d\n.*',f'  pressUp: {1 if press else 0}\n  bossName: {boss}\n',door[1],flags=re.S)
+if not getattr(L,'NO_EXIT',False):
+    ex,ey=world(*ent('exit')[0][1:3])
+    press=getattr(L,'EXIT_PRESS_UP',False); boss=getattr(L,'BOSS','')
+    set_pos('LevelExit',ex+(0.5 if press else 0.3),ey+1.2)
+    door=[d for d in docs if cls(d[0])==114 and go_of(d[1])==[g for g,n in names.items() if n=='LevelExit' and g in alive][0]][0]
+    door[1]=re.sub(r'  pressUp: \d\n.*',f'  pressUp: {1 if press else 0}\n  bossName: {boss}\n',door[1],flags=re.S)
 xs=[c[0] for c in solid]; ys=[c[1] for c in solid]
 wb=doc_of_go('World Boundary',60)
 wb[1]=re.sub(r'm_Paths:\n(    - - .*\n(      - .*\n)*)',f'm_Paths:\n    - - {{x: {min(xs)}, y: {max(ys)+1}}}\n      - {{x: {min(xs)}, y: {min(ys)}}}\n      - {{x: {max(xs)+1}, y: {min(ys)}}}\n      - {{x: {max(xs)+1}, y: {max(ys)+1}}}\n',wb[1])
@@ -203,9 +205,16 @@ def instance(kind,x,y,name,extra=()):
 # pivot in the prefab) plus a little, so they don't start inside the ground and fall through it
 OFFSET={'torch':1.15,'walltorch':1.5,'coin':0.5,'chest':0.5,'bat':0.5,'bug':0.6,'golem':0.85,'licker':1.06,'sorcerer':1.06,'supreme':1.06}
 counts={}
+# the test dungeon's objects are named empties that WorldMarkers.cs turns into the real thing;
+# where each stands above its cell
+WORLD={'door':(0.5,1.2),'save':(0.5,1.0),'lever':(0.5,0.8),'gate':(0.5,1.5),'vase':(0.5,0.5),'item':(0.5,0.6)}
 for e in ents:
     k=e[0]
     if k in ('player','exit','checkpoint'): continue
+    if k in WORLD:
+        wx,wy=world(e[1],e[2]); dx,dy=WORLD[k]
+        point('World|'+'|'.join([k]+[str(a) for a in e[3:]]),wx+dx,wy+dy)
+        continue
     counts[k]=counts.get(k,0)+1
     x,y=world(e[1],e[2])
     label={'bat':'Bat_Enemy','supreme':'Sorcerer_Supreme','bug':'Bug_Enemy','golem':'Golem_Enemy','licker':'Licker_Enemy','sorcerer':'Sorcerer_Enemy','coin':'Coin','chest':'Chest','torch':'Standing Torch Point Light 2D','walltorch':'Torch Point Light 2D'}[k]

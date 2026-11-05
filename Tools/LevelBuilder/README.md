@@ -18,6 +18,10 @@ Python 3 + Pillow.
   reachability check. Layout options: `TINT` (tilemap colour per dungeon), `SCENE_DIR`,
   `EXIT_PRESS_UP` and `BOSS` (the exit stays shut while that enemy lives).
 - `openings.py <scene.unity>`: lists the openings at the edges of a stage (where exits go).
+- Test dungeon rooms (`layout_t_*.py`, built on `1-2`): `NO_EXIT` leaves out the level exit, and these
+  entities become named empties that `WorldMarkers.cs` turns into the real thing: `door`
+  (id, scene, door there), `save`, `lever` (id), `gate` (id, levers joined with `+`), `vase` (id) and
+  `item` (id, kind, amount). Ids must stay stable: saves remember them.
 
 Layout rules of thumb (Freny's jump is about 2.6 tiles high and short): steps and ledges at most
 2 tiles up, gaps at most 2 tiles wide, and an entity at (x, y) stands on row y (floor is row y-1).

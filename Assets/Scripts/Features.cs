@@ -37,6 +37,9 @@ public static class Features {
     public static readonly bool GoldenChest = true;         // the Ciclope's key, the golden chest and its exclusive looks
     public static readonly bool AcidPit = false;            // Poço de Ácido (José, 2026-11-02: off for the release, only the main Arena runs)
 
+    // ---- the campaign ----
+    public static readonly bool CampaignWorld = true;       // Masmorra de teste: rooms that remember, save points, carried lives (design/gdd/estado-do-mundo.md); off, its rooms and button are gone
+
     // ---- progress ----
     public static readonly bool DailyMissions = true;       // Missões do dia
     public static readonly bool Rebirth = true;             // Renascer (the button, the bonus and its looks)

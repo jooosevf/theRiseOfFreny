@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Tilemaps;
@@ -11,6 +12,7 @@ public class CampaignRun : MonoBehaviour {
     [SerializeField] private float respawnDelay = 2.5f;
     [SerializeField] private float nextStageDelay = 3f;
     [SerializeField] private float pitMargin = 6f;   // below the lowest ground of the stage
+    [SerializeField] private float worldEndDelay = 5f;   // the end of the test dungeon, then the menu
 
     public static CampaignRun Instance { get; private set; }
 
@@ -60,13 +62,23 @@ public class CampaignRun : MonoBehaviour {
             Deaths = 0;
         }
 
-        Vector3? spawn = DoorPosition(arrivingDoor) ?? checkpoint;
+        Vector3? worldSpawn = CampaignWorld.Active ? CampaignWorld.TakeSpawn() : null;
+        Vector3? spawn = DoorPosition(arrivingDoor) ?? (CampaignWorld.Active ? worldSpawn : checkpoint);
         arrivingDoor = null;
         if (spawn.HasValue) {
             transform.position = spawn.Value;
         }
         lastSafe = transform.position;
         pitY = LowestGround() - pitMargin;
+        if (CampaignWorld.Active) {
+            StartCoroutine(RestoreCarriedNextFrame());
+        }
+    }
+
+    // after every Start of this frame, Player's and NetThrower's, which hand out the usual loadout
+    private IEnumerator RestoreCarriedNextFrame() {
+        yield return null;
+        CampaignWorld.RestoreCarried(player);
     }
 
     private void Update() {
@@ -80,7 +92,11 @@ public class CampaignRun : MonoBehaviour {
                 Deaths++;
             }
             if (SecondsUntilRespawn <= 0f) {
-                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+                if (CampaignWorld.Active) {
+                    CampaignWorld.Respawn();
+                } else {
+                    SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+                }
             }
             return;
         }
@@ -120,6 +136,10 @@ public class CampaignRun : MonoBehaviour {
         Finished = true;
         finishTime = Time.time;
         CampaignProgress.Complete(StageId, Elapsed);
+        if (CampaignWorld.Active) {
+            CampaignWorld.Save(player, transform.position);
+            Invoke(nameof(BackToMenu), worldEndDelay);
+        }
         attemptStage = null; // replaying the stage starts a fresh attempt
 
         // Freny stops at the door while the "stage clear" panel is up
@@ -135,6 +155,10 @@ public class CampaignRun : MonoBehaviour {
         }
     }
 
+    private void BackToMenu() {
+        GameMenus.LoadMainMenu();
+    }
+
     public void LoadNextStage() {
         string next = CampaignLevels.NextOf(StageId);
         if (next != null) {
@@ -145,6 +169,9 @@ public class CampaignRun : MonoBehaviour {
     // a door that leads to another scene and a door in it (side rooms, going back)
     public static void Travel(string scene, string door) {
         arrivingDoor = door;
+        if (CampaignWorld.Active && Instance != null) {
+            CampaignWorld.CaptureCarried(Instance.player);
+        }
         if (scene != attemptStage) {
             checkpoint = null;
         }

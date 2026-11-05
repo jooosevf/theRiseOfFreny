@@ -1456,8 +1456,8 @@ public abstract class Enemy : MonoBehaviour, IDamageable
         }
         ReleaseSpawnerSlot();
         DropCoin();
-        if (ArenaBounds.Active) {
-            ItemPickup.RollEnemyDrop(Center); // now and then a potion or ammo too; in the stages only coins
+        if (ArenaBounds.Active || CampaignWorld.Active) {
+            ItemPickup.RollEnemyDrop(Center); // now and then a potion or ammo too; in the older stages only coins
         }
         Destroy(gameObject, 1f);
     }

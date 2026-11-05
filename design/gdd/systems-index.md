@@ -91,7 +91,7 @@ O que o código mostra hoje (lido em `a2340c2`, sem rodar o jogo):
 | 2 | Terreno e perigos | Core | MVP | Implemented | — | Controle do Freny |
 | 3 | Combate e armas | Gameplay | MVP | Implemented | — | Controle do Freny |
 | 4 | Inimigos | Gameplay | MVP | Implemented | — | Terreno e perigos, Combate e armas |
-| 5 | Estado do mundo (inferred) | Persistence | MVP | In Design | design/gdd/estado-do-mundo.md | — |
+| 5 | Estado do mundo (inferred) | Persistence | MVP | In Review | design/gdd/estado-do-mundo.md | — |
 | 6 | Mapa da masmorra | World | MVP | Not Started | — | Estado do mundo |
 | 7 | Mochila da campanha (inferred) | Economy | MVP | Not Started | — | Estado do mundo, Combate e armas |
 | 8 | Morte e retorno | Gameplay | MVP | Not Started | — | Estado do mundo, Mapa da masmorra, Mochila da campanha |
@@ -266,6 +266,7 @@ Nenhum ciclo ficou no mapa. Dois quase existiam e foram quebrados por contrato:
 ## Next Steps
 
 - [x] José responde às decisões
+- [ ] Jogar a masmorra de teste (salas T-1 a T-4, em Jogar) e ajustar o design com o que aparecer
 - [ ] Design MVP-tier systems first (`estado-do-mundo` em revisão; o próximo é `mapa-da-masmorra`)
 - [ ] Run `/design-review` on each completed GDD
 - [ ] Run `/gate-check technical-setup` when MVP systems are designed

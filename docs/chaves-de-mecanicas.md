@@ -27,6 +27,7 @@ Para desligar uma mecânica, troque `true` por `false` na linha dela e salve. A 
 | `Blessings` | Bênçãos | O baú dourado para de oferecer bênçãos. |
 | `WeeklyMutators` | Mutador da semana (**desligado** desde 2026-11-02, a pedido do José) | Nenhuma regra extra. Some do menu da Arena. |
 | `GoldenChest` | Chave e baú dourado | O Ciclope só deixa o baú prateado. Os visuais exclusivos somem da tela Visual e, como as bênçãos só vêm desse baú, também não há bênçãos. |
+| `CampaignWorld` | Masmorra de teste: salas ligadas, save point, vidas carregadas e mundo que lembra | As salas T-1 a T-4 e o botão em Jogar somem. A campanha antiga não usa nada disto e continua igual. |
 | `AcidPit` | Poço de Ácido (**desligado** desde 2026-11-02, a pedido do José, para o release) | Só existe a arena clássica, mesmo para quem já abriu o Poço. |
 | `DailyMissions` | Missões do dia | Some o botão do menu e nada mais conta nem paga. |
 | `Rebirth` | Renascer | Some o botão, o bônus de 5% para de valer e os visuais de renascer somem. A estrela de quem já renasceu continua no ranking. |

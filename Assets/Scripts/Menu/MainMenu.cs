@@ -113,10 +113,24 @@ public class MainMenu : MonoBehaviour {
     }
 
     // Jogar: everything that starts or prepares a run
+    // the rooms that remember (CampaignWorld): only a save point keeps what was done
+    private MenuPage WorldPage() {
+        MenuPage page = new MenuPage(stack.transform, "Masmorra de teste", 520f, new Vector2(0.5f, 0.5f));
+        if (CampaignWorld.HasSave) {
+            page.Button("Continuar do último save point", () => CampaignWorld.Enter(false));
+        }
+        page.Button(CampaignWorld.HasSave ? "Começar de novo" : "Começar", () => CampaignWorld.Enter(true));
+        page.Button("Voltar", stack.Back);
+        return page;
+    }
+
     private MenuPage PlayPage() {
         MenuPage page = new MenuPage(stack.transform, "Jogar", 520f, new Vector2(0.5f, 0.5f));
         page.Button(CampaignOpen ? "Campanha" : "Campanha (na versão beta)", () => stack.Push(CampaignPage()), CampaignOpen);
         Button arena = page.Button("Arena", () => stack.Push(ArenaPage()), Application.CanStreamedLevelBeLoaded(GameMenus.ArenaScene));
+        if (Features.CampaignWorld) {
+            page.Button("Masmorra de teste", () => stack.Push(WorldPage()));
+        }
         page.Button("Inventário", () => stack.Push(InventoryScreens.Inventory(stack)));
         page.Button("Armeira", () => stack.Push(InventoryScreens.Armory(stack)));
         // Freny's looks and Renascer (VarietyScreens)

@@ -58,6 +58,7 @@ public class ItemPickup : MonoBehaviour {
     private float restLift = 0.25f;  // from the floor to the pivot, so the art's bottom sits just above it
     private float bobPhase;
     private float dieAt;
+    private string worldKey;
     private SpriteRenderer sprite;
     private SpriteRenderer halo;
     private static int groundMask = -1;
@@ -77,6 +78,12 @@ public class ItemPickup : MonoBehaviour {
     }
 
     // ---- making them -------------------------------------------------------------------------
+
+    // placed in a room of the test dungeon: it doesn't fade, and it remembers being taken
+    public void StayForever(string key) {
+        worldKey = key;
+        dieAt = float.PositiveInfinity;
+    }
 
     public static ItemPickup Spawn(Kind kind, int amount, Vector3 position, Vector2 toss) {
         GameObject obj = new GameObject("Item " + kind);
@@ -480,6 +487,9 @@ public class ItemPickup : MonoBehaviour {
         }
         Fx.Burst(transform.position, TintFor(kind) == Color.white ? new Color(1f, 0.95f, 0.7f) : TintFor(kind), 10, 2f, 0.07f, 0.35f);
         Sfx.Play(PickupSound(kind), transform.position);
+        if (worldKey != null) {
+            CampaignWorld.Mark(worldKey);
+        }
         Destroy(gameObject);
     }
 
@@ -492,7 +502,7 @@ public class ItemPickup : MonoBehaviour {
             case Kind.Shotgun: return player.GiveShotgun(amount);
             case Kind.GreatSword: return player.GiveGreatSword();
             case Kind.Armor: return player.GiveArmor();
-            case Kind.Diamond: player.AddCoins(RunModifiers.ScaleCoins(DiamondValue * amount)); return true;
+            case Kind.Diamond: player.AddFoundCoins(RunModifiers.ScaleCoins(DiamondValue * amount)); return true;
             case Kind.Staff: return MageStaff.Give(player);
             case Kind.InstaKill: case Kind.Nuke: case Kind.Magnet: return ArenaPowerUps.Take(kind);
             default: return false;

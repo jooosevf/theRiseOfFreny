@@ -32,6 +32,7 @@ public static class ProgressReset {
             PlayerPrefs.DeleteKey(Loadout.GearKeyPrefix + gear);
             PlayerPrefs.DeleteKey(FrenyProgress.UnequippedKeyPrefix + gear);
         }
+        PlayerPrefs.DeleteKey(CampaignWorld.SavedKey);
         foreach (CampaignLevels.Stage stage in CampaignLevels.All) {
             PlayerPrefs.DeleteKey(CampaignProgress.BestTimeKeyPrefix + stage.id);
         }

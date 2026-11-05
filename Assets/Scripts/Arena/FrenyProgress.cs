@@ -137,7 +137,7 @@ public static class FrenyProgress {
     public static int BrainPoints => Mathf.Max(0, Level - 1 - PlayerPrefs.GetInt(SpentPointsKey, 0));
 
     public static void AddXp(int amount) {
-        if (amount <= 0) {
+        if (amount <= 0 || CampaignWorld.TakeXp(amount)) {
             return;
         }
         int levelBefore = Level;
