@@ -1,11 +1,9 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 // Feeds the Arena's runs to the Estatísticas (AccountStats, every run) and to the Missões do dia
 // (DailyMissions, manual runs only: AchievementTracker.Counts, the Conquistas' rule), from the same
-// events the Conquistas listen to. Shows the "Missão cumprida!" banner, under the Conquistas' one.
+// events the Conquistas listen to. Shows the "Missão cumprida" notice (CornerBanner).
 // Self-bootstrapping, like AchievementTracker.
 public class ProgressTracker : MonoBehaviour {
 
@@ -73,7 +71,6 @@ public class ProgressTracker : MonoBehaviour {
                 DailyMissions.RunTick(score, run != null ? run.RunSeconds : 0f, comboTenths, healed);
             }
         }
-        UpdateBanner();
     }
 
     // every kill that scores, with the combo it was scored at
@@ -110,79 +107,11 @@ public class ProgressTracker : MonoBehaviour {
         }
     }
 
-    // ---- the banner: under the Conquistas' one, one mission at a time ----
-
-    private const float BannerSeconds = 4f;
-    private const float BannerY = -256f;
-    private readonly Queue<DailyMissions.Mission> waiting = new Queue<DailyMissions.Mission>();
-    private Canvas canvas;
-    private Image icon;
-    private Text title;
-    private float shownUntil;
-
+    // the same small notice as the Conquistas', under the coins (José, 2026-11-05: in the middle of
+    // the screen it got in the way). The coins go to the same counter right above it.
     private void Show(DailyMissions.Mission m) {
-        waiting.Enqueue(m);
-    }
-
-    private void UpdateBanner() {
-        if (canvas != null && GameMenus.Paused) {
-            canvas.gameObject.SetActive(false);
-            if (shownUntil > Time.unscaledTime) shownUntil += Time.unscaledDeltaTime;
-            return;
-        }
-        if (canvas != null && Time.unscaledTime < shownUntil) {
-            canvas.gameObject.SetActive(true);
-            float t = shownUntil - Time.unscaledTime;
-            float slide = Mathf.Clamp01(Mathf.Min(BannerSeconds - t, t) * 4f);
-            ((RectTransform)canvas.transform.GetChild(0)).anchoredPosition = new Vector2(0f, Mathf.Lerp(120f, BannerY, slide));
-            return;
-        }
-        if (waiting.Count == 0) {
-            if (canvas != null) canvas.gameObject.SetActive(false);
-            return;
-        }
-        DailyMissions.Mission next = waiting.Dequeue();
-        Build();
-        canvas.gameObject.SetActive(true);
-        title.text = "<size=12><color=#7CFC8A>MISSÃO DO DIA CUMPRIDA!</color></size>\n" + next.text +
-                     "\n<size=10><color=#FFD84A>+" + next.Reward + " moedas</color></size>";
-        shownUntil = Time.unscaledTime + BannerSeconds;
-        Sfx.Play("coin");
-    }
-
-    private void Build() {
-        if (canvas != null) {
-            return;
-        }
-        canvas = MenuKit.CreateCanvas("Mission Banner", 24990, transform);
-        Image panel = MenuKit.MakeImage("Panel", canvas.transform, MenuKit.PanelColor);
-        RectTransform rect = panel.rectTransform;
-        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 1f);
-        rect.sizeDelta = new Vector2(520f, 84f);
-        Outline edge = panel.gameObject.AddComponent<Outline>();
-        edge.effectColor = new Color(0.3f, 0.75f, 0.35f, 1f);
-        edge.effectDistance = new Vector2(3f, -3f);
-        panel.raycastTarget = false;
-
-        icon = MenuKit.MakeImage("Icon", panel.transform, Color.white);
-        icon.raycastTarget = false;
-        icon.preserveAspect = true;
         MenuArt art = MenuArt.Get;
-        icon.sprite = art != null ? MenuArt.Trim(art.coin) : null;
-        icon.enabled = icon.sprite != null;
-        RectTransform iconRect = icon.rectTransform;
-        iconRect.anchorMin = iconRect.anchorMax = iconRect.pivot = new Vector2(0f, 0.5f);
-        iconRect.anchoredPosition = new Vector2(16f, 0f);
-        iconRect.sizeDelta = new Vector2(56f, 56f);
-
-        title = MenuKit.MakeText(panel.transform, "", MenuKit.TextSize, MenuKit.TextColor, TextAnchor.MiddleLeft);
-        title.supportRichText = true;
-        title.raycastTarget = false;
-        title.lineSpacing = 1.3f;
-        RectTransform textRect = title.rectTransform;
-        textRect.anchorMin = new Vector2(0f, 0f);
-        textRect.anchorMax = new Vector2(1f, 1f);
-        textRect.offsetMin = new Vector2(86f, 6f);
-        textRect.offsetMax = new Vector2(-12f, -6f);
+        CornerBanner.Show(art != null ? MenuArt.Trim(art.coin) : null,
+            "Missão cumprida!  <color=#7CFC8A>+" + m.Reward + "</color>\n<size=10>" + m.text + "</size>", "coin");
     }
 }
