@@ -58,6 +58,7 @@ public class CoopArena : MonoBehaviour {
         public ulong Id;
         public Transform Ghost;
         public Animator Anim;
+        public FrenyMotion Motion;
         public readonly Track Track = new Track();
         public int State;
         public bool Dead;
@@ -85,9 +86,12 @@ public class CoopArena : MonoBehaviour {
     private int peerShots;
     private int peerGrenades;
     private int peerPortals;
+    private int peerSlashes;
+    private static readonly int MeleeState = Animator.StringToHash("Base Layer.Melee Attack");
     private static bool testSpawned;
     private static bool testGift;
     private static bool testBoss;
+    private static bool testGrenade;
     private float bothDownAt = -1f;
     private float reviveAt = -1f;
     private bool fallHandled;
@@ -215,7 +219,14 @@ public class CoopArena : MonoBehaviour {
         GameObject source = ghostSource;
         Peer peer = new Peer { Id = id };
         GameObject copy = Instantiate(source, puppetHolder.transform);
-        CoopStrip.ToVisuals(copy);
+        CoopStrip.ToVisuals(copy, keepMotion: true);
+        // the source's own Head and Sword layers: FrenyMotion makes this copy's when it starts
+        foreach (SpriteRenderer layer in copy.GetComponentsInChildren<SpriteRenderer>(true)) {
+            if (layer.name == "Head" || layer.name == "Sword") {
+                Destroy(layer.gameObject);
+            }
+        }
+        peer.Motion = copy.GetComponent<FrenyMotion>();
         copy.name = "Coop Ghost " + id;
         copy.tag = "Untagged";
         copy.transform.SetParent(null);
@@ -272,7 +283,7 @@ public class CoopArena : MonoBehaviour {
         }
         if (now >= nextLog) {
             nextLog = now + 5f;
-            Debug.Log($"[Coop] {(isHost ? "host" : "cliente")} RTT {CoopNet.RttSummary()} | parceiros {peers.Count}, dificuldade {CoopWorld.DifficultyFactor}x, inimigos {(isHost ? Enemy.Active.Count : puppets.Count)}, vidas {lives} | {receivedRate} msg/s recebidas | {CoopNet.BytesPerSecond} B/s enviados | {puppets.Count} bonecos | golpes do cliente {remoteHits}, mortes {remoteKills} | golpes recebidos {hurtsTaken}, feitiços {hexesSeen} | visando o outro {TargetingPeer()} | {CoopShared.Counts()} | ganhou {CoopShared.CoinsGranted} moedas, {CoopShared.ItemsGranted} itens, quebrou {CoopShared.PropsBrokenByAsk} a pedido | do outro: {peerShots} tiros, {peerGrenades} granadas, {peerPortals} portais | power-ups {ArenaPowerUps.InstaKillOn}");
+            Debug.Log($"[Coop] {(isHost ? "host" : "cliente")} RTT {CoopNet.RttSummary()} | parceiros {peers.Count}, dificuldade {CoopWorld.DifficultyFactor}x, inimigos {(isHost ? Enemy.Active.Count : puppets.Count)}, vidas {lives} | {receivedRate} msg/s recebidas | {CoopNet.BytesPerSecond} B/s enviados | {puppets.Count} bonecos | golpes do cliente {remoteHits}, mortes {remoteKills} | golpes recebidos {hurtsTaken}, feitiços {hexesSeen} | visando o outro {TargetingPeer()} | {CoopShared.Counts()} | ganhou {CoopShared.CoinsGranted} moedas, {CoopShared.ItemsGranted} itens, quebrou {CoopShared.PropsBrokenByAsk} a pedido | dos outros: {peerShots} tiros, {peerGrenades} granadas, {peerPortals} portais, {peerSlashes} espadadas | escopeta {(player != null && player.ShotgunOwned)} | power-ups {ArenaPowerUps.InstaKillOn}");
         }
         TestRunner(now);
     }
@@ -368,8 +379,9 @@ public class CoopArena : MonoBehaviour {
         switch ((CoopWorld.Fx)raw) {
             case CoopWorld.Fx.Shot:
                 reader.ReadValueSafe(out Vector2 direction);
+                reader.ReadValueSafe(out byte shotgun);
                 if (player != null) {
-                    player.DrawPeerShot(position, direction);
+                    player.DrawPeerShot(position, direction, shotgun != 0);
                     peerShots++;
                 }
                 break;
@@ -387,7 +399,34 @@ public class CoopArena : MonoBehaviour {
                 Fx.Portal(position, duration, color);
                 peerPortals++;
                 break;
+            case CoopWorld.Fx.Slash:
+                reader.ReadValueSafe(out ulong slasher);
+                reader.ReadValueSafe(out byte step);
+                if (peers.TryGetValue(slasher, out Peer peer) && peer.Ghost.gameObject.activeSelf) {
+                    if (peer.Anim != null && peer.Anim.isActiveAndEnabled) {
+                        peer.Anim.Play(MeleeState, 0, 0f);
+                        peer.State = MeleeState;
+                    }
+                    if (peer.Motion != null) {
+                        peer.Motion.Slash(step);
+                    }
+                    peerSlashes++;
+                    if (peerSlashes % 3 == 1 && !string.IsNullOrEmpty(CoopArgs.ShotDir)) {
+                        StartCoroutine(SlashShot());   // test binaries: a picture in the middle of a cut
+                    }
+                }
+                break;
         }
+    }
+
+    private IEnumerator GrenadeResult(int before) {
+        yield return new WaitForSecondsRealtime(1f);
+        Debug.Log($"[Coop] teste: granada do outro, vida+armadura {before} -> {player.Health + player.Armor}");
+    }
+
+    private IEnumerator SlashShot() {
+        yield return new WaitForSecondsRealtime(0.08f);
+        ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(CoopArgs.ShotDir, $"slash_{(isHost ? "host" : "client")}_{peerSlashes}.png"));
     }
 
     private float ReviveLeft => reviveAt < 0f ? 0f : Mathf.Max(0f, reviveAt - Time.unscaledTime);
@@ -828,6 +867,7 @@ public class CoopArena : MonoBehaviour {
             }
             ItemPickup.Spawn(ItemPickup.Kind.InstaKill, 1, ghost.position + Vector3.up, Vector2.zero);
             ItemPickup.Spawn(ItemPickup.Kind.Life, 1, ghost.position + Vector3.right + Vector3.up, Vector2.zero);
+            ItemPickup.Spawn(ItemPickup.Kind.Shells, 3, ghost.position + Vector3.left + Vector3.up, Vector2.zero);
             Debug.Log($"[Coop] teste: feiticeiro {(prefab != null ? "criado" : "não existe na lista")} e Insta-kill ao lado do cliente");
         }
         if (CoopArgs.Has("-coopSpawnTest") && isHost && !testGift && elapsed >= 30f && ghost != null) {
@@ -839,6 +879,13 @@ public class CoopArena : MonoBehaviour {
             testBoss = true;
             director.StartCoroutine("SpawnBoss");
             Debug.Log("[Coop] teste: Ciclope chamado");
+        }
+        // test only: another player's grenade going off beside this Freny
+        if (CoopArgs.Has("-coopAutopilot") && !isHost && !testGrenade && elapsed >= 15f && player != null && !player.IsDead) {
+            testGrenade = true;
+            int before = player.Health + player.Armor;
+            player.DrawPeerGrenade(player.transform.position, Vector2.zero, 0.3f);
+            StartCoroutine(GrenadeResult(before));
         }
         float dieEvery = CoopArgs.DieEvery;
         if (dieEvery > 0f && player != null && !player.IsDead && elapsed >= nextTestDeath && elapsed >= dieEvery) {
@@ -995,13 +1042,16 @@ public class CoopPuppetPart : MonoBehaviour, IDamageable {
 
 public static class CoopStrip {
     // removes everything except what draws it; the object must be inactive, so nothing has woken up
-    public static void ToVisuals(GameObject root, bool keepColliders = false) {
+    public static void ToVisuals(GameObject root, bool keepColliders = false, bool keepMotion = false) {
         for (int pass = 0; pass < 3; pass++) {   // a component required by another goes on a later pass
             foreach (Component component in root.GetComponentsInChildren<Component>(true)) {
                 if (component is Transform || component is SpriteRenderer || component is Animator || component is SpriteSkin) {
                     continue;
                 }
                 if (keepColliders && (component is Collider2D || component is Rigidbody2D)) {
+                    continue;
+                }
+                if (keepMotion && component is FrenyMotion) {
                     continue;
                 }
                 Object.DestroyImmediate(component);

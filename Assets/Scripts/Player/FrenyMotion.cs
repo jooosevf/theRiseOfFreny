@@ -151,7 +151,9 @@ public class FrenyMotion : MonoBehaviour {
                 swordCollider = child.GetComponent<BoxCollider2D>();
             }
         }
-        MeleeAttack.FrenyHit += OnSwordHit;
+        if (player != null) {   // a co-op partner's copy only draws: his hits shake nobody's screen here
+            MeleeAttack.FrenyHit += OnSwordHit;
+        }
         wasFacingRight = transform.localScale.x > 0f;
     }
 
@@ -259,7 +261,9 @@ public class FrenyMotion : MonoBehaviour {
             default:
                 lunge.v += 5.5f;
                 squash.v -= 3.5f;
-                ScreenKick.Kick(0.07f, 0.16f);
+                if (player) {
+                    ScreenKick.Kick(0.07f, 0.16f);
+                }
                 if (player && player.IsGrounded) {
                     Vector3 feet = player.feetPos ? player.feetPos.position : transform.position;
                     Fx.Dust(feet + Vector3.right * (0.4f * Mathf.Sign(transform.localScale.x)), 6);
@@ -320,7 +324,9 @@ public class FrenyMotion : MonoBehaviour {
         if (rig == null || dead) {
             return;
         }
-        FrenyLook.Dress(body);   // first of all: the afterimages copy this frame
+        if (player != null) {
+            FrenyLook.Dress(body);   // first of all: the afterimages copy this frame
+        }
         float dt = Mathf.Min(Time.deltaTime, 0.05f);
         if (dt <= 0f) {
             return;
@@ -504,7 +510,9 @@ public class FrenyMotion : MonoBehaviour {
         }
         if (pose != null && poses.TryGetValue(pose, out Sprite sprite)) {
             body.sprite = sprite;
-            FrenyLook.Dress(body);
+            if (player != null) {
+                FrenyLook.Dress(body);
+            }
         }
     }
 

@@ -692,6 +692,7 @@ public class Player : MonoBehaviour, IDamageable {
         meleePressedTime = -10f;
         ComboStep = ComboContinues ? ComboStep + 1 : 1;
         SwingCount++;
+        CoopWorld.Slashed(ComboStep);
         _playerAnim.Melee(ComboStep);
         Sfx.Play("sword_combo" + ComboStep, transform.position);
         swingCooldown = attackCooldown * (ComboStep == 3 ? FinisherRecovery : ComboGapFactor);
@@ -769,13 +770,13 @@ public class Player : MonoBehaviour, IDamageable {
     private const float RevolverPush = 0f; // the revolver only hurts: no shove
 
     // co-op: the other player's shot, drawn here; it does no damage (his side has the real one)
-    public void DrawPeerShot(Vector3 from, Vector3 direction) {
+    public void DrawPeerShot(Vector3 from, Vector3 direction, bool shotgun) {
         RangedAttack shot = Instantiate(revolverBulletPrefab, from, Quaternion.identity).GetComponent<RangedAttack>();
         if (shot) {
             shot.Cosmetic = true;
             shot.SetDirection(direction);
         }
-        Sfx.Play("pistol_shot", from);
+        Sfx.Play(shotgun ? "shotgun_shot" : "pistol_shot", from);
     }
 
     // co-op: the same for a grenade
@@ -784,7 +785,7 @@ public class Player : MonoBehaviour, IDamageable {
     }
 
     private void FireBullet(Vector3 from, Vector3 direction, float push = 1f, int shotgunShot = 0, bool fromShotgun = false) {
-        CoopWorld.ShotFired(from, direction, push);
+        CoopWorld.ShotFired(from, direction, fromShotgun);
         GameObject bullet = Instantiate(revolverBulletPrefab, from, Quaternion.identity);
         RangedAttack shot = bullet.GetComponent<RangedAttack>();
         if (shot) {

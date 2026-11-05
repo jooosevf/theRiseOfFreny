@@ -15,7 +15,8 @@ public static class CoopWorld {
     public static Collider2D LocalBody { get; set; }
     public static CoopBody PickTarget(Player local, Vector3 from, CoopBody current) => null;
     public static void HitPeer(ulong owner, int amount, Vector2 knockback, bool heavy, string source) { }
-    public static void ShotFired(Vector3 from, Vector3 direction, float push) { }
+    public static void ShotFired(Vector3 from, Vector3 direction, bool shotgun) { }
+    public static void Slashed(int step) { }
     public static void GrenadeThrown(Vector3 from, Vector2 velocity, float fuse) { }
     public static void PortalOpened(Vector3 position, float duration, Color color) { }
     public static void HexCast(Vector3 position, HexballEffect effect, CoopBody homingAt, bool homing) { }

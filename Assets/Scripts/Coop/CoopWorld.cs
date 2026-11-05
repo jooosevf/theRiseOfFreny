@@ -80,9 +80,22 @@ public static class CoopWorld {
     }
 
     // ---- what one side draws and the other has to draw too; the copies do no damage
-    public enum Fx : byte { Shot, Grenade, Portal }
+    public enum Fx : byte { Shot, Grenade, Portal, Slash }
 
-    public static void ShotFired(Vector3 from, Vector3 direction, float push) {
+    // this player swung the sword: the others draw it on his Freny
+    public static void Slashed(int step) {
+        if (!Active) {
+            return;
+        }
+        using FastBufferWriter writer = new FastBufferWriter(32, Allocator.Temp);
+        writer.WriteValueSafe((byte)Fx.Slash);
+        writer.WriteValueSafe(Vector2.zero);
+        writer.WriteValueSafe(CoopNet.LocalId);
+        writer.WriteValueSafe((byte)step);
+        CoopNet.Send("coop.fx", writer, NetworkDelivery.ReliableSequenced);
+    }
+
+    public static void ShotFired(Vector3 from, Vector3 direction, bool shotgun) {
         if (!Active) {
             return;
         }
@@ -90,6 +103,7 @@ public static class CoopWorld {
         writer.WriteValueSafe((byte)Fx.Shot);
         writer.WriteValueSafe((Vector2)from);
         writer.WriteValueSafe((Vector2)direction);
+        writer.WriteValueSafe((byte)(shotgun ? 1 : 0));
         CoopNet.Send("coop.fx", writer, NetworkDelivery.ReliableSequenced);
     }
 
