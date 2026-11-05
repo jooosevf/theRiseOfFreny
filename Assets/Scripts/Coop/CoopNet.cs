@@ -11,26 +11,35 @@ using Unity.Services.Relay.Models;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// Throwaway co-op prototype (branch proto/coop-relay): the connection and the latency numbers.
-// Netcode for GameObjects carries named messages only, with no NetworkObjects, so nothing in the
-// game's scenes or prefabs changes. In WebGL the Relay connection has to be WebSockets ("wss"),
-// which runs over TCP: an "unreliable" message is delivered anyway, and a lost packet delays the
-// ones behind it. The test measures that.
+// The room's connection: up to 4 players, one of them the host. Clients only talk to the host, which
+// forwards what the others need. Netcode for GameObjects carries named messages only, with no
+// NetworkObjects, so nothing in the game's scenes or prefabs changes. In WebGL the Relay connection
+// has to be WebSockets ("wss"), which runs over TCP: an "unreliable" message is delivered anyway, and
+// a lost packet delays the ones behind it.
 public static class CoopNet {
 
     public const string ArenaScene = "ZE Arena";
-    public const string LobbyScene = "Coop Lobby";
-    private const ushort ProtocolVersion = 6;
-    private const int MaxPlayers = 2;
+    private const ushort ProtocolVersion = 10;
+    public const int MinRoomSize = 2;
+    public const int MaxRoomSize = 4;
     private const float PingInterval = 0.5f;
+    private const float RosterInterval = 1f;
+    private const float NameInterval = 2f;
     private const int RttWindow = 240;   // the last 2 minutes of pings
+    private const int RosterBytes = 512;
+    // José, 2026-11-05: with 2 or 3 players the arena is 2x harder, with 4 it is 4x
+    public static int DifficultyFor(int players) => players >= MaxRoomSize ? 4 : 2;
 
     public static NetworkManager Net { get; private set; }
     public static UnityTransport Transport { get; private set; }
     public static bool IsHost => Net != null && Net.IsHost;
     public static bool InRoom => Net != null && Net.IsListening;
     public static bool Connected { get; private set; }
-    public static ulong PeerId { get; private set; }
+    public static bool Started { get; private set; }
+    public static int RoomSize { get; set; } = MinRoomSize;
+    public static int Difficulty { get; private set; } = 1;
+    public static ulong LocalId => Net != null ? Net.LocalClientId : 0;
+    public static readonly List<CoopMember> Roster = new List<CoopMember>();
     public static string JoinCode { get; private set; }
     public static string Status { get; private set; } = "";
 
@@ -41,6 +50,7 @@ public static class CoopNet {
     public static event Action<ulong, FastBufferReader> HexCast;
     public static event Action<ulong, FastBufferReader> World;
     public static event Action<ulong, FastBufferReader> Effect;
+    public static event Action LifeGift;
 
     // ---- what the overlay and the log report
     public static float LastRtt { get; private set; }
@@ -49,6 +59,12 @@ public static class CoopNet {
     private static int bytesThisSecond;
     private static float secondStart;
     private static float nextPing;
+    private static float nextRoster;
+    private static float nextName;
+    private static string hostName;
+    private static readonly List<ulong> clients = new List<ulong>();
+    private static readonly Dictionary<ulong, string> names = new Dictionary<ulong, string>();
+    private static readonly Dictionary<ulong, float> pings = new Dictionary<ulong, float>();
 
     public static string RttSummary() {
         if (rtts.Count == 0) {
@@ -64,7 +80,26 @@ public static class CoopNet {
                $"p95 {sorted[(int)(sorted.Count * 0.95f)]:0}, máx {sorted[sorted.Count - 1]:0} ({sorted.Count} pings)";
     }
 
-    public static int TransportRtt => Connected && Transport != null ? (int)Transport.GetCurrentRtt(PeerId) : 0;
+    public static string NameOf(ulong id) {
+        foreach (CoopMember member in Roster) {
+            if (member.Id == id) {
+                return member.Name;
+            }
+        }
+        return null;
+    }
+
+    public static bool InRoster(ulong id) => NameOf(id) != null;
+
+    // this player's place among the room's, for where he starts
+    public static int Slot(ulong id) {
+        List<ulong> ids = new List<ulong>();
+        foreach (CoopMember member in Roster) {
+            ids.Add(member.Id);
+        }
+        ids.Sort();
+        return Mathf.Max(0, ids.IndexOf(id));
+    }
 
     // ---- starting: Relay in the real test, plain UDP on this machine with -coopDirect
     public static async Task Host(bool direct) {
@@ -77,7 +112,8 @@ public static class CoopNet {
             } else {
                 Status = "Conectando ao Unity Relay...";
                 await SignIn();
-                Allocation allocation = await RelayService.Instance.CreateAllocationAsync(MaxPlayers - 1);
+                // always the most it can hold: the host may change the room's size in the lobby
+                Allocation allocation = await RelayService.Instance.CreateAllocationAsync(MaxRoomSize - 1);
                 JoinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
                 Transport.SetRelayServerData(AllocationUtils.ToRelayServerData(allocation, CoopArgs.RelayConnection));
                 Transport.UseWebSockets = CoopArgs.UseWebSockets;
@@ -86,7 +122,9 @@ public static class CoopNet {
                 throw new Exception("o host não iniciou");
             }
             Listen();
-            Status = "Sala criada. Passe o código para o outro jogador.";
+            Connected = true;
+            hostName = CoopScreens.PlayerName;
+            Status = "";
             Debug.Log($"[Coop] host pronto, código {JoinCode}");
             CoopArgs.WriteCode(JoinCode);
         } catch (Exception e) {
@@ -111,7 +149,6 @@ public static class CoopNet {
                 throw new Exception("o cliente não iniciou");
             }
             Listen();
-            PeerId = NetworkManager.ServerClientId;
             Status = "Entrando na sala...";
         } catch (Exception e) {
             Fail(e);
@@ -138,6 +175,7 @@ public static class CoopNet {
     }
 
     private static void CreateManager() {
+        Application.runInBackground = true;   // a room doesn't stop for the other player when this window loses focus
         GameObject go = new GameObject("Coop Net");
         UnityEngine.Object.DontDestroyOnLoad(go);
         Transport = go.AddComponent<UnityTransport>();
@@ -145,13 +183,23 @@ public static class CoopNet {
         Net.NetworkConfig = new NetworkConfig {
             NetworkTransport = Transport,
             EnableSceneManagement = false,
-            ConnectionApproval = false,
+            ConnectionApproval = true,
             ProtocolVersion = ProtocolVersion,   // a build with other messages can't join by mistake
         };
+        Net.ConnectionApprovalCallback = Approve;
         go.AddComponent<CoopPump>();
     }
 
+    // the room is closed once the run began, and holds no more than the host picked
+    private static void Approve(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response) {
+        bool full = clients.Count + 1 >= RoomSize;
+        response.Approved = !Started && !full;
+        response.CreatePlayerObject = false;
+        response.Reason = Started ? "A partida já começou." : "A sala está cheia.";
+    }
+
     public static void Shutdown() {
+        CoopRooms.Close();
         Reset();
         Status = "";
     }
@@ -163,7 +211,13 @@ public static class CoopNet {
         Net = null;
         Transport = null;
         Connected = false;
+        Started = false;
         JoinCode = null;
+        Difficulty = 1;
+        Roster.Clear();
+        clients.Clear();
+        names.Clear();
+        pings.Clear();
         rtts.Clear();
         LastRtt = 0f;
     }
@@ -177,17 +231,26 @@ public static class CoopNet {
         Net.OnClientConnectedCallback += OnConnected;
         Net.OnClientDisconnectCallback += OnDisconnected;
         CustomMessagingManager messages = Net.CustomMessagingManager;
-        messages.RegisterNamedMessageHandler("coop.start", (_, __) => LoadArena());
+        messages.RegisterNamedMessageHandler("coop.start", OnStart);
+        messages.RegisterNamedMessageHandler("coop.r", OnRoster);
+        messages.RegisterNamedMessageHandler("coop.gift", OnGift);
         messages.RegisterNamedMessageHandler("coop.ping", OnPing);
         messages.RegisterNamedMessageHandler("coop.pong", OnPong);
-        messages.RegisterNamedMessageHandler("coop.p", (id, r) => PlayerState?.Invoke(id, r));
+        messages.RegisterNamedMessageHandler("coop.p", (id, r) => {
+            Forward("coop.p", id, r, NetworkDelivery.UnreliableSequenced);
+            PlayerState?.Invoke(id, r);
+        });
         messages.RegisterNamedMessageHandler("coop.e", (id, r) => EnemyState?.Invoke(id, r));
         messages.RegisterNamedMessageHandler("coop.h", (id, r) => EnemyHit?.Invoke(id, r));
         messages.RegisterNamedMessageHandler("coop.hurt", (id, r) => Hurt?.Invoke(id, r));
         messages.RegisterNamedMessageHandler("coop.hex", (id, r) => HexCast?.Invoke(id, r));
         messages.RegisterNamedMessageHandler("coop.w", (id, r) => World?.Invoke(id, r));
         messages.RegisterNamedMessageHandler("coop.a", CoopShared.OnAsk);
-        messages.RegisterNamedMessageHandler("coop.fx", (id, r) => Effect?.Invoke(id, r));
+        messages.RegisterNamedMessageHandler("coop.fx", (id, r) => {
+            Forward("coop.fx", id, r, NetworkDelivery.ReliableSequenced);
+            Effect?.Invoke(id, r);
+        });
+        messages.RegisterNamedMessageHandler("coop.name", OnName);
         messages.RegisterNamedMessageHandler("coop.restart", (_, __) => LoadArena());
     }
 
@@ -203,37 +266,62 @@ public static class CoopNet {
         if (id == NetworkManager.ServerClientId) {
             return;
         }
-        PeerId = id;
-        Connected = true;
+        clients.Add(id);
+        nextRoster = 0f;
+        Debug.Log($"[Coop] jogador {id} entrou, {clients.Count + 1} na sala");
+    }
+
+    // the host pressed Começar
+    public static void StartRun() {
+        if (!IsHost || Started) {
+            return;
+        }
+        Started = true;
         CoopRooms.Close();
-        Debug.Log($"[Coop] jogador {id} entrou");
-        using FastBufferWriter writer = new FastBufferWriter(4, Allocator.Temp);
+        SendRoster();
+        Difficulty = DifficultyFor(clients.Count + 1);
+        using FastBufferWriter writer = new FastBufferWriter(8, Allocator.Temp);
+        writer.WriteValueSafe((byte)Difficulty);
         Send("coop.start", writer, NetworkDelivery.ReliableSequenced);
+        Debug.Log($"[Coop] começou com {clients.Count + 1} jogadores, dificuldade {Difficulty}x");
+        LoadArena();
+    }
+
+    private static void OnStart(ulong sender, FastBufferReader reader) {
+        reader.ReadValueSafe(out byte difficulty);
+        Difficulty = difficulty;
+        Started = true;
+        Debug.Log($"[Coop] começou, dificuldade {Difficulty}x");
         LoadArena();
     }
 
     private static void OnDisconnected(ulong id) {
-        Debug.Log($"[Coop] desconectou: {id} ({Net.DisconnectReason})");
-        if (IsHost && id != PeerId) {
+        string reason = Net.DisconnectReason;
+        Debug.Log($"[Coop] desconectou: {id} ({reason})");
+        if (IsHost) {
+            clients.Remove(id);
+            names.Remove(id);
+            pings.Remove(id);
+            nextRoster = 0f;
             return;
         }
         Connected = false;
-        Status = "O outro jogador saiu.";
-        if (!IsHost) {
-            Leave();
-            Status = "O host saiu, a sala acabou.";
-        }
+        bool neverIn = !Started && Roster.Count == 0;
+        Leave();
+        Status = neverIn && !string.IsNullOrEmpty(reason) ? reason : "O host saiu, a sala acabou.";
     }
 
-    // back to the list of rooms, with nothing left of this one
+    // back to the Co-op page of the menu, with nothing left of this room
     public static void Leave() {
         CoopRooms.Close();
         Reset();
         Status = "";
-        SceneManager.LoadScene(LobbyScene);
+        Time.timeScale = 1f;
+        CoopScreens.ReopenOnMenu = true;
+        GameMenus.LoadMainMenu();
     }
 
-    // both Frenys have fallen: the host starts the next run on both sides
+    // everyone is out of lives: the host starts the next run on all sides
     public static void RestartRun() {
         using FastBufferWriter writer = new FastBufferWriter(4, Allocator.Temp);
         Send("coop.restart", writer, NetworkDelivery.ReliableSequenced);
@@ -243,7 +331,7 @@ public static class CoopNet {
     private static void LoadArena() {
         // no first-run help page or menu state in the way: both players go straight in
         PlayerPrefs.SetInt("freny.help.seen", 1);
-        ArenaDifficulty.Manual = !CoopArgs.Autopilot;
+        ArenaDifficulty.Manual = !CoopArgs.Autopilot;   // no autopilot in a room; only the test binaries have it
         SceneManager.LoadScene(ArenaScene);
     }
 
@@ -251,8 +339,108 @@ public static class CoopNet {
         if (!Connected || Net == null || !Net.IsListening) {
             return;
         }
+        if (IsHost) {
+            if (clients.Count > 0) {
+                bytesThisSecond += writer.Length * clients.Count;
+                Net.CustomMessagingManager.SendNamedMessage(name, clients, writer, delivery);
+            }
+            return;
+        }
         bytesThisSecond += writer.Length;
-        Net.CustomMessagingManager.SendNamedMessage(name, PeerId, writer, delivery);
+        Net.CustomMessagingManager.SendNamedMessage(name, NetworkManager.ServerClientId, writer, delivery);
+    }
+
+    public static void SendTo(ulong id, string name, FastBufferWriter writer, NetworkDelivery delivery) {
+        if (!Connected || Net == null || !Net.IsListening) {
+            return;
+        }
+        bytesThisSecond += writer.Length;
+        Net.CustomMessagingManager.SendNamedMessage(name, id, writer, delivery);
+    }
+
+    public static void SendExcept(ulong id, string name, FastBufferWriter writer, NetworkDelivery delivery) {
+        foreach (ulong client in clients) {
+            if (client != id) {
+                SendTo(client, name, writer, delivery);
+            }
+        }
+    }
+
+    // on the host: what one client sent goes on to the others, and the reader stays where it was
+    private static void Forward(string name, ulong sender, FastBufferReader reader, NetworkDelivery delivery) {
+        if (!IsHost || clients.Count < 2) {
+            return;
+        }
+        int start = reader.Position;
+        int length = reader.Length - start;
+        byte[] data = new byte[length];
+        reader.ReadBytesSafe(ref data, length);
+        reader.Seek(start);
+        using FastBufferWriter writer = new FastBufferWriter(length + 8, Allocator.Temp);
+        writer.WriteBytesSafe(data, length);
+        SendExcept(sender, name, writer, delivery);
+    }
+
+    // a life for someone who has none left: the host hands it over
+    public static void SendGift(ulong target) {
+        if (IsHost && target == LocalId) {
+            LifeGift?.Invoke();
+            return;
+        }
+        using FastBufferWriter writer = new FastBufferWriter(8, Allocator.Temp);
+        writer.WriteValueSafe(target);
+        if (IsHost) {
+            SendTo(target, "coop.gift", writer, NetworkDelivery.ReliableSequenced);
+        } else {
+            SendTo(NetworkManager.ServerClientId, "coop.gift", writer, NetworkDelivery.ReliableSequenced);
+        }
+    }
+
+    private static void OnGift(ulong sender, FastBufferReader reader) {
+        reader.ReadValueSafe(out ulong target);
+        if (target == LocalId) {
+            LifeGift?.Invoke();
+        } else if (IsHost) {
+            SendGift(target);
+        }
+    }
+
+    // ---- who is in the room: the host keeps it and tells the others
+    private static void OnName(ulong sender, FastBufferReader reader) {
+        reader.ReadValueSafe(out FixedString64Bytes name);
+        names[sender] = name.ToString();
+    }
+
+    private static void SendRoster() {
+        Roster.Clear();
+        Roster.Add(new CoopMember { Id = LocalId, Name = hostName, Ping = 0, IsHost = true });
+        foreach (ulong client in clients) {
+            names.TryGetValue(client, out string name);
+            pings.TryGetValue(client, out float ping);
+            Roster.Add(new CoopMember { Id = client, Name = string.IsNullOrEmpty(name) ? "Jogador" : name, Ping = Mathf.RoundToInt(ping) });
+        }
+        using FastBufferWriter writer = new FastBufferWriter(RosterBytes, Allocator.Temp);
+        writer.WriteValueSafe((byte)RoomSize);
+        writer.WriteValueSafe((byte)Roster.Count);
+        foreach (CoopMember member in Roster) {
+            writer.WriteValueSafe(member.Id);
+            writer.WriteValueSafe(new FixedString64Bytes(member.Name));
+            writer.WriteValueSafe((ushort)Mathf.Clamp(member.Ping, 0, ushort.MaxValue));
+        }
+        Send("coop.r", writer, NetworkDelivery.ReliableSequenced);
+    }
+
+    private static void OnRoster(ulong sender, FastBufferReader reader) {
+        reader.ReadValueSafe(out byte size);
+        reader.ReadValueSafe(out byte count);
+        RoomSize = size;
+        Roster.Clear();
+        for (int i = 0; i < count; i++) {
+            reader.ReadValueSafe(out ulong id);
+            reader.ReadValueSafe(out FixedString64Bytes name);
+            reader.ReadValueSafe(out ushort ping);
+            Roster.Add(new CoopMember { Id = id, Name = name.ToString(), Ping = ping, IsHost = id == NetworkManager.ServerClientId });
+        }
     }
 
     // ---- ping: a message of ours through the same path as the game's, so the time a frame takes
@@ -265,7 +453,21 @@ public static class CoopNet {
             bytesThisSecond = 0;
             secondStart = now;
         }
-        if (!Connected || now < nextPing) {
+        if (!Connected) {
+            return;
+        }
+        if (IsHost) {
+            if (now >= nextRoster) {
+                nextRoster = now + RosterInterval;
+                SendRoster();
+            }
+        } else if (now >= nextName) {
+            nextName = now + NameInterval;
+            using FastBufferWriter nameWriter = new FastBufferWriter(80, Allocator.Temp);
+            nameWriter.WriteValueSafe(new FixedString64Bytes(CoopScreens.PlayerName));
+            SendTo(NetworkManager.ServerClientId, "coop.name", nameWriter, NetworkDelivery.ReliableSequenced);
+        }
+        if (now < nextPing) {
             return;
         }
         nextPing = now + PingInterval;
@@ -278,17 +480,30 @@ public static class CoopNet {
         reader.ReadValueSafe(out double sent);
         using FastBufferWriter writer = new FastBufferWriter(8, Allocator.Temp);
         writer.WriteValueSafe(sent);
-        Send("coop.pong", writer, NetworkDelivery.UnreliableSequenced);
+        SendTo(sender, "coop.pong", writer, NetworkDelivery.UnreliableSequenced);
     }
 
     private static void OnPong(ulong sender, FastBufferReader reader) {
         reader.ReadValueSafe(out double sent);
-        LastRtt = (float)((Time.realtimeSinceStartupAsDouble - sent) * 1000.0);
+        float rtt = (float)((Time.realtimeSinceStartupAsDouble - sent) * 1000.0);
+        if (IsHost) {
+            pings[sender] = rtt;   // each client's, for the lobby
+            return;
+        }
+        LastRtt = rtt;
         rtts.Add(LastRtt);
         if (rtts.Count > RttWindow) {
             rtts.RemoveAt(0);
         }
     }
+}
+
+// One player in the room, as the lobby and the name tags show him.
+public class CoopMember {
+    public ulong Id;
+    public string Name;
+    public int Ping;
+    public bool IsHost;
 }
 
 // Update for the static CoopNet: the pings and the bytes counter keep going in any scene.

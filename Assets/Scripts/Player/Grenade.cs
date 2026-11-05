@@ -100,6 +100,19 @@ public class Grenade : MonoBehaviour {
         GUI.Label(rect, text, countStyle);
     }
 
+    private static bool HurtFreny(Player freny, Vector3 at) {
+        Player.NextDamageSource = PlayerStats.CauseGrenade;
+        if (freny.IsDead || !freny.TryDamage(SelfDamage)) {
+            return false;
+        }
+        float side = Mathf.Sign(freny.transform.position.x - at.x);
+        if (side == 0f) {
+            side = freny.FacingRight ? -1f : 1f;
+        }
+        freny.Knockback(new Vector2(side * SelfKnockback, SelfKnockback * 0.6f));
+        return true;
+    }
+
     private void Explode() {
         if (exploded) {
             return;
@@ -114,6 +127,13 @@ public class Grenade : MonoBehaviour {
         Sfx.Play("grenade_explode", at);
         Fx.Burst(at, new Color(0.3f, 0.3f, 0.3f, 0.8f), 36, radius * 1.2f, 0.32f, 1.2f);
         if (Cosmetic) {
+            // co-op: another player's grenade hurts this player's Freny, on this side, like his own
+            foreach (Collider2D col in Physics2D.OverlapCircleAll(at, radius)) {
+                if (col.GetComponentInParent<Player>() is Player local) {
+                    HurtFreny(local, at);
+                    break;
+                }
+            }
             Destroy(gameObject);
             return;
         }
@@ -142,16 +162,8 @@ public class Grenade : MonoBehaviour {
         Achievements.GrenadeBlast(kills);
         MultiKill.BlastKills(kills);
         // Freny caught in his own blast: hurt and thrown away from it
-        Player.NextDamageSource = PlayerStats.CauseGrenade;
-        if (freny != null && !freny.IsDead && freny.TryDamage(SelfDamage)) {
-            float side = Mathf.Sign(freny.transform.position.x - at.x);
-            if (side == 0f) {
-                side = freny.FacingRight ? -1f : 1f;
-            }
-            freny.Knockback(new Vector2(side * SelfKnockback, SelfKnockback * 0.6f));
-            if (freny.IsDead) {
-                Achievements.OwnGrenade();
-            }
+        if (freny != null && HurtFreny(freny, at) && freny.IsDead) {
+            Achievements.OwnGrenade();
         }
         // chests, vases and the stages' props break too
         foreach (Collider2D col in caught) {

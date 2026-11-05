@@ -39,6 +39,7 @@ public class MainMenu : MonoBehaviour {
         stack.ShadeSubPages = true;
         stack.OnRootCancel = () => { };
         stack.ResetTo(MainPage());
+        CoopScreens.AfterMenu(stack);
         // the first time the game opens: Entrar, Criar conta or Jogar como convidado
         Online.OnlineServices online = Online.OnlineServices.Instance;
         if (online != null) {
@@ -118,8 +119,7 @@ public class MainMenu : MonoBehaviour {
         page.Button(CampaignOpen ? "Campanha" : "Campanha (na versão beta)", () => stack.Push(CampaignPage()), CampaignOpen);
         Button arena = page.Button("Arena", () => stack.Push(ArenaPage()), Application.CanStreamedLevelBeLoaded(GameMenus.ArenaScene));
         if (Features.Coop) {
-            page.Button("Co-op", () => UnityEngine.SceneManagement.SceneManager.LoadScene(CoopNet.LobbyScene),
-                Application.CanStreamedLevelBeLoaded(CoopNet.LobbyScene));
+            page.Button("Co-op", () => stack.Push(CoopScreens.Root(stack)), Application.CanStreamedLevelBeLoaded(GameMenus.ArenaScene));
         }
         page.Button("Inventário", () => stack.Push(InventoryScreens.Inventory(stack)));
         page.Button("Armeira", () => stack.Push(InventoryScreens.Armory(stack)));

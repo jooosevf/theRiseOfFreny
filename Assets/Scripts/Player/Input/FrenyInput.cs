@@ -58,6 +58,9 @@ public class FrenyInput : MonoBehaviour {
     }
 
     public void ToggleAuto() {
+        if (CoopWorld.Active) {
+            return;   // a room has no autopilot
+        }
         autoEnabled = !autoEnabled;
     }
 

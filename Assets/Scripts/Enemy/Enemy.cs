@@ -1118,17 +1118,18 @@ public abstract class Enemy : MonoBehaviour, IDamageable
 
     // co-op, on the host: each enemy goes after the nearer Freny, and the other player's body takes
     // the place of player_t and playerCol. Off in a normal game (CoopWorld.HostActive is false).
-    protected bool targetsPeer;
+    protected CoopBody peerTarget;
+    protected bool targetsPeer => peerTarget != null;
     public bool AimsAtPeer => targetsPeer;
-    protected int TargetHealth => targetsPeer ? CoopWorld.PeerHealth : player != null ? player.Health : 0;
+    protected int TargetHealth => targetsPeer ? peerTarget.Health : player != null ? player.Health : 0;
 
     protected void AimInCoop() {
         if (!CoopWorld.HostActive || player == null) {
             return;
         }
-        targetsPeer = CoopWorld.AimAtPeer(player, transform.position, targetsPeer);
-        player_t = targetsPeer ? CoopWorld.PeerTransform : player.transform;
-        playerCol = targetsPeer ? CoopWorld.PeerBody : CoopWorld.LocalBody;
+        peerTarget = CoopWorld.PickTarget(player, transform.position, peerTarget);
+        player_t = targetsPeer ? peerTarget.Transform : player.transform;
+        playerCol = targetsPeer ? peerTarget.Collider : CoopWorld.LocalBody;
     }
 
     private void HitPeer() {
@@ -1137,7 +1138,7 @@ public abstract class Enemy : MonoBehaviour, IDamageable
         Vector2 push = heavy
             ? new Vector2(side * knockback, knockback * KnockbackLift)
             : new Vector2(side * LightKnockback, LightKnockback * 0.4f);
-        CoopWorld.HitPeer(HitDamage + BloodDamage + RunModifiers.SlainDamage, push, heavy, Online.RunLog.PrefabName(gameObject.name));
+        CoopWorld.HitPeer(peerTarget.Owner, HitDamage + BloodDamage + RunModifiers.SlainDamage, push, heavy, Online.RunLog.PrefabName(gameObject.name));
     }
 
     protected void HitPlayer() {

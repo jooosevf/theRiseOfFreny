@@ -451,7 +451,8 @@ public class ItemPickup : MonoBehaviour {
         switch (kind) {
             case Kind.Potion: return player.WantsPotion;
             case Kind.Bullets: return player.WantsBullets;
-            case Kind.Shells: return player.WantsShells;
+            // co-op: the host rolls drops by what he needs, so shells can reach someone with no shotgun yet
+            case Kind.Shells: return player.WantsShells || (CoopWorld.Active && !player.ShotgunOwned);
             case Kind.Grenades: return player.WantsGrenades;
             case Kind.Shotgun: return !player.ShotgunOwned || player.WantsShells;
             case Kind.GreatSword: return player.WantsGreatSword;
@@ -513,7 +514,11 @@ public class ItemPickup : MonoBehaviour {
         switch (kind) {
             case Kind.Potion: return player.CollectPotion(amount);
             case Kind.Bullets: return player.AddBullets(amount);
-            case Kind.Shells: if (!player.WantsShells) return false; player.AddShells(amount); return true;
+            case Kind.Shells:
+                if (CoopWorld.Active && !player.ShotgunOwned) return player.GiveShotgun(amount);
+                if (!player.WantsShells) return false;
+                player.AddShells(amount);
+                return true;
             case Kind.Grenades: return player.AddGrenades(amount);
             case Kind.Shotgun: return player.GiveShotgun(amount);
             case Kind.GreatSword: return player.GiveGreatSword();

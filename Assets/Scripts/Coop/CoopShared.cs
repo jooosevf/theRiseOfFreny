@@ -218,7 +218,10 @@ public static class CoopShared {
         Object.Destroy(pickup.gameObject);
         using FastBufferWriter writer = Writer(Op.Granted);
         writer.WriteValueSafe(id);
-        CoopNet.Send("coop.w", writer, NetworkDelivery.ReliableSequenced);
+        CoopNet.SendTo(sender, "coop.w", writer, NetworkDelivery.ReliableSequenced);
+        using FastBufferWriter others = Writer(Op.Gone);
+        others.WriteValueSafe(id);
+        CoopNet.SendExcept(sender, "coop.w", others, NetworkDelivery.ReliableSequenced);
     }
 
     // ---- the client carries out what the host decided

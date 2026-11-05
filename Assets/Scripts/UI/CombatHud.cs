@@ -68,9 +68,11 @@ public class CombatHud : MonoBehaviour {
             if (input == null) {
                 input = player.GetComponent<FrenyInput>();
             }
-            if (input != null && input.AutoEnabled) {
+            if (CoopWorld.Active) {
+                DrawBadge(head, scale, CoopWorld.Lives.ToString());   // a room's lives, where the "A" goes
+            } else if (input != null && input.AutoEnabled) {
                 DrawAutoFrame(scale);
-                DrawAutoBadge(head, scale);
+                DrawBadge(head, scale, "A");
             }
             // the weapons in a row under the Corrida and Fúria bars (José, 2026-10-29: beside the
             // hearts they pushed the score onto the coins once he had bought hearts)
@@ -108,7 +110,7 @@ public class CombatHud : MonoBehaviour {
 
     // a big "A" left of Freny's head while the autopilot is on, gently pulsing (José, 2026-10-29:
     // it has to be obvious that the autopilot is playing)
-    private void DrawAutoBadge(Rect head, float scale) {
+    private void DrawBadge(Rect head, float scale, string text) {
         if (badgeStyle == null) {
             badgeStyle = new GUIStyle(labelStyle) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
         }
@@ -124,7 +126,7 @@ public class CombatHud : MonoBehaviour {
         Fill(new Rect(badge.x + edge, badge.y + edge, badge.width - 2f * edge, badge.height - 2f * edge), MeterBack);
         Color old = badgeStyle.normal.textColor;
         badgeStyle.normal.textColor = MenuKit.TitleColor;
-        GUI.Label(badge, "A", badgeStyle);
+        GUI.Label(badge, text, badgeStyle);
         badgeStyle.normal.textColor = old;
     }
 

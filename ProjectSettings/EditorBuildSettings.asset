@@ -71,7 +71,4 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/ZE Arena.unity
     guid: 3778513a50514754fa9bce243a77923a
-  - enabled: 1
-    path: Assets/Scripts/Coop/Coop Lobby.unity
-    guid: 0eaf228dccab6894f81865ceb326bccb
   m_configObjects: {}

@@ -10,17 +10,24 @@ public static class CoopWorld {
     public static bool Active { get; set; }
     public static bool HostActive => false;
     public static bool IsClient => false;
-    public static Transform PeerTransform { get; set; }
-    public static Collider2D PeerBody { get; set; }
-    public static bool PeerAlive { get; set; }
-    public static int PeerHealth { get; set; }
+    public static int Lives { get; set; }
+    public static int DifficultyFactor { get; set; } = 1;
     public static Collider2D LocalBody { get; set; }
-    public static bool AimAtPeer(Player local, Vector3 from, bool current) => false;
-    public static void HitPeer(int amount, Vector2 knockback, bool heavy, string source) { }
-    public static void ShotFired(Vector3 from, Vector3 direction, float push) { }
+    public static CoopBody PickTarget(Player local, Vector3 from, CoopBody current) => null;
+    public static void HitPeer(ulong owner, int amount, Vector2 knockback, bool heavy, string source) { }
+    public static void ShotFired(Vector3 from, Vector3 direction, bool shotgun) { }
+    public static void Slashed(int step) { }
     public static void GrenadeThrown(Vector3 from, Vector2 velocity, float fuse) { }
     public static void PortalOpened(Vector3 position, float duration, Color color) { }
-    public static void HexCast(Vector3 position, HexballEffect effect, bool homing) { }
+    public static void HexCast(Vector3 position, HexballEffect effect, CoopBody homingAt, bool homing) { }
+}
+
+public class CoopBody {
+    public ulong Owner;
+    public Transform Transform;
+    public Collider2D Collider;
+    public bool Alive;
+    public int Health;
 }
 
 public static class CoopShared {
@@ -36,8 +43,12 @@ public static class CoopShared {
 }
 
 public static class CoopNet {
-    public const string LobbyScene = "Coop Lobby";
     public static bool InRoom => false;
+}
+
+public static class CoopScreens {
+    public static MenuPage Root(MenuStack stack) => null;
+    public static void AfterMenu(MenuStack stack) { }
 }
 
 public class CoopPuppet : MonoBehaviour {
