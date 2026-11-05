@@ -72,14 +72,16 @@ public class ArenaDirector : MonoBehaviour {
     // a busy arena from the start (3), the peak at the end of the curve, then one more per
     // minute of overtime, up to MaxEnemies
     private const int MaxEnemies = 24;
-    public int MaxAlive => Mathf.Min(MaxEnemies, Mathf.Max(1, Mathf.RoundToInt(
+    // a co-op room (CoopWorld.DifficultyFactor) has more of them, sooner; a message holds about this many
+    private const int MaxEnemiesCoop = 48;
+    public int MaxAlive => Mathf.Min(CoopWorld.DifficultyFactor > 1 ? MaxEnemiesCoop : MaxEnemies, CoopWorld.DifficultyFactor * Mathf.Max(1, Mathf.RoundToInt(
         Mathf.Lerp(3f * Mathf.Min(1f, ArenaDifficulty.PeakFactor), Tuning.PeakEnemies.Value * ArenaDifficulty.PeakFactor, Difficulty)
         + Overtime + RunModifiers.CyclopsSlain)));
-    public float SpawnInterval => Mathf.Lerp(3f, 0.8f, Difficulty) * ArenaDifficulty.SpawnIntervalFactor / (1f + 0.15f * Overtime);
+    public float SpawnInterval => Mathf.Lerp(3f, 0.8f, Difficulty) * ArenaDifficulty.SpawnIntervalFactor / (1f + 0.15f * Overtime) / CoopWorld.DifficultyFactor;
 
     // how many enemies go after Freny from anywhere in the arena (Enemy.JoinChase); the ones that
     // see him up close always fight, the rest patrol until a place frees up
-    public static int MaxChasers => Mathf.RoundToInt(Mathf.Lerp(4f, 6f, CurrentDifficulty) + Mathf.Min(3f, CurrentOvertime * 0.5f));
+    public static int MaxChasers => CoopWorld.DifficultyFactor * Mathf.RoundToInt(Mathf.Lerp(4f, 6f, CurrentDifficulty) + Mathf.Min(3f, CurrentOvertime * 0.5f));
     // enemy pace over the run, on top of the menu level (ArenaDifficulty): slower at the start,
     // faster at the peak and still faster in overtime
     public static float SpeedRamp => Mathf.Lerp(0.95f, 1.15f, CurrentDifficulty) * Mathf.Min(1.4f, 1f + 0.04f * CurrentOvertime);

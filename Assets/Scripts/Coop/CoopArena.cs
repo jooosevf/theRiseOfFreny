@@ -6,8 +6,8 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// Throwaway co-op prototype: what the two players see of each other in the Arena.
-// Each one runs his own Freny and sends where he is; the other draws a ghost a little in the past,
+// What the players in a room see of each other in the Arena.
+// Each one runs his own Freny and sends where he is; the others draw a ghost a little in the past,
 // between the last two positions received. The host runs the enemies and sends them too; the
 // client's ArenaDirector stays off and it draws puppets, and a puppet hit asks the host for the hit.
 //
@@ -24,14 +24,13 @@ public class CoopArena : MonoBehaviour {
     private const int MaxEnemyBytes = 1200;
     private const float NameTagHeight = 0.9f;
     private const float RestartDelay = 4f;
-    private const float SpawnGap = 2f;               // each one starts this far to his side of the scene's spawn
-    private const float ReviveGap = 1.2f;            // and comes back this far from the other
-    private const float NameSendSeconds = 3f;
-    private const int MaxNameBytes = 32;
+    private const float SpawnGap = 2f;               // how far apart they start, around the scene's spawn
+    private const float ReviveGap = 1.2f;            // and how far from the other one comes back
+    private const int MaxSnapshotEnemies = 50;
     private const byte CyclopsKind = 254;            // it isn't in the director's list: it has a field of its own
     private const float CyclopsBodyLift = 1.6f;      // Cyclops.Init: the art grows from its middle, its feet are at the bottom
     // José, 2026-11-04: each player has lives. A fall costs one and he comes back beside the other; with
-    // none left he watches, until the other picks up a life for him. Both out: the run ends.
+    // none left he watches, until another picks up a life for him. All out: the run ends.
     private const int StartingLives = 2;
     private const float ReviveSeconds = 3f;
     private const float ReviveSafeSeconds = 2f;
@@ -54,13 +53,22 @@ public class CoopArena : MonoBehaviour {
     private int receivedRate;
     private float rateStart;
 
-    private Transform ghost;
-    private Animator ghostAnim;
-    private SpriteRenderer[] ghostSprites;
-    private readonly Track ghostTrack = new Track();
-    private int ghostState;
-    private bool peerDead;
-    private int peerHealth;
+    // one per other player in the room: his body on this screen
+    private class Peer {
+        public ulong Id;
+        public Transform Ghost;
+        public Animator Anim;
+        public readonly Track Track = new Track();
+        public int State;
+        public bool Dead;
+        public int Lives = StartingLives;
+        public byte ReviveIn;
+        public CoopBody Body;
+        public bool Out => Dead && Lives == 0 && ReviveIn == 0;
+    }
+    private readonly Dictionary<ulong, Peer> peers = new Dictionary<ulong, Peer>();
+    private readonly List<ulong> left = new List<ulong>();
+    private GameObject ghostSource;
 
     private readonly Dictionary<Enemy, ushort> enemyIds = new Dictionary<Enemy, ushort>();
     private readonly Dictionary<ushort, Enemy> enemiesById = new Dictionary<ushort, Enemy>();
@@ -80,21 +88,14 @@ public class CoopArena : MonoBehaviour {
     private static bool testSpawned;
     private static bool testGift;
     private static bool testBoss;
-    private int ghostFrames;
-    private int ghostFramesInState;
-    private int ghostStates;
     private float bothDownAt = -1f;
     private float reviveAt = -1f;
     private bool fallHandled;
     private int lives = StartingLives;
-    private byte peerLives = StartingLives;
-    private byte peerReviveIn;
     private float nextTestDeath;
     private bool leaveOpen;
     private const float FloorProbe = 3f;
     private string localName;
-    private string peerName;
-    private float nextNameSend;
     private Canvas leaveCanvas;
     private static bool testDied;
     private static float firstStart = -1f;
@@ -135,8 +136,10 @@ public class CoopArena : MonoBehaviour {
         CoopNet.HexCast += OnHexCast;
         CoopNet.World += OnWorld;
         CoopNet.Effect += OnEffect;
-        CoopNet.PeerName += OnPeerName;
+        CoopNet.LifeGift += OnLifeGift;
         CoopWorld.Active = true;
+        CoopWorld.DifficultyFactor = CoopNet.Difficulty;
+        CoopWorld.Bodies.Clear();
         CoopWorld.GainLife = OnLifeGained;
         GameCursor.ShowWhile(this, () => leaveOpen);
         puppetHolder = new GameObject("Coop Puppets (inactive)");
@@ -151,10 +154,11 @@ public class CoopArena : MonoBehaviour {
         CoopNet.HexCast -= OnHexCast;
         CoopNet.World -= OnWorld;
         CoopNet.Effect -= OnEffect;
-        CoopNet.PeerName -= OnPeerName;
+        CoopNet.LifeGift -= OnLifeGift;
         CoopWorld.Active = false;
         CoopWorld.GainLife = null;
-        CoopWorld.PeerAlive = false;
+        CoopWorld.DifficultyFactor = 1;
+        CoopWorld.Bodies.Clear();
     }
 
     private IEnumerator Start() {
@@ -169,9 +173,11 @@ public class CoopArena : MonoBehaviour {
         playerCol = playerObj.GetComponent<Collider2D>();
         playerAnim = playerObj.GetComponentInChildren<Animator>();
         CoopWorld.LocalBody = playerCol;
-        MakeGhost(playerObj);
+        ghostSource = playerObj;
         localName = CoopScreens.PlayerName;
-        PlaceAt(player.transform.position + Vector3.right * (isHost ? -SpawnGap : SpawnGap));
+        int players = Mathf.Max(1, CoopNet.Roster.Count);
+        float slot = CoopNet.Slot(CoopNet.LocalId) - (players - 1) * 0.5f;
+        PlaceAt(player.transform.position + Vector3.right * (slot * SpawnGap));
         Debug.Log($"[Coop] {(isHost ? "host" : "cliente")} nasceu em {player.transform.position}");
         FieldInfo chestField = typeof(ArenaDirector).GetField("chestPrefab", BindingFlags.NonPublic | BindingFlags.Instance);
         CoopShared.Begin(director != null ? (GameObject)chestField.GetValue(director) : null);
@@ -204,31 +210,21 @@ public class CoopArena : MonoBehaviour {
         }
     }
 
-    private void OnPeerName(ulong sender, FastBufferReader reader) {
-        reader.ReadValueSafe(out FixedString64Bytes name);
-        peerName = name.ToString();
-    }
-
-    private void SendName() {
-        using FastBufferWriter writer = new FastBufferWriter(MaxNameBytes * 3, Allocator.Temp);
-        writer.WriteValueSafe(new FixedString64Bytes(localName ?? ""));
-        CoopNet.Send("coop.name", writer, NetworkDelivery.ReliableSequenced);
-    }
-
     // a copy of Freny with only his sprites and animator left
-    private void MakeGhost(GameObject source) {
+    private Peer MakeGhost(ulong id) {
+        GameObject source = ghostSource;
+        Peer peer = new Peer { Id = id };
         GameObject copy = Instantiate(source, puppetHolder.transform);
         CoopStrip.ToVisuals(copy);
-        copy.name = "Coop Ghost";
+        copy.name = "Coop Ghost " + id;
         copy.tag = "Untagged";
         copy.transform.SetParent(null);
-        ghost = copy.transform;
-        ghostAnim = copy.GetComponentInChildren<Animator>();
-        if (ghostAnim != null) {
-            ghostAnim.fireEvents = false;   // the clips call the sword's hitbox, which the ghost doesn't have
+        peer.Ghost = copy.transform;
+        peer.Anim = copy.GetComponentInChildren<Animator>();
+        if (peer.Anim != null) {
+            peer.Anim.fireEvents = false;   // the clips call the sword's hitbox, which the ghost doesn't have
         }
-        ghostSprites = copy.GetComponentsInChildren<SpriteRenderer>(true);
-        foreach (SpriteRenderer sprite in ghostSprites) {
+        foreach (SpriteRenderer sprite in copy.GetComponentsInChildren<SpriteRenderer>(true)) {
             sprite.color = GhostTint;
             // these layers show this player's own look, not the other's
             if (sprite.name.StartsWith("Look ")) {
@@ -242,11 +238,13 @@ public class CoopArena : MonoBehaviour {
             box.isTrigger = true;
             box.size = bounds.size;
             box.offset = bounds.center - source.transform.position;
-            CoopWorld.PeerBody = box;
-            CoopWorld.PeerTransform = copy.transform;
+            peer.Body = new CoopBody { Owner = id, Transform = copy.transform, Collider = box };
+            CoopWorld.Bodies.Add(peer.Body);
         }
         copy.SetActive(false);
         SceneManager.MoveGameObjectToScene(copy, gameObject.scene);
+        peers[id] = peer;
+        return peer;
     }
 
     private void Update() {
@@ -255,10 +253,7 @@ public class CoopArena : MonoBehaviour {
             ShowLeave(!leaveOpen);
         }
         float now = Time.unscaledTime;
-        if (now >= nextNameSend && localName != null) {
-            nextNameSend = now + NameSendSeconds;
-            SendName();
-        }
+        CoopWorld.Lives = lives;
         if (now >= nextSend && player != null) {
             nextSend = now + SendInterval;
             SendPlayer();
@@ -266,7 +261,7 @@ public class CoopArena : MonoBehaviour {
                 SendEnemies();
             }
         }
-        DrawGhost(now);
+        DrawGhosts(now);
         DrawPuppets(now);
         WatchRevive(now);
         WatchRunEnd(now);
@@ -275,23 +270,17 @@ public class CoopArena : MonoBehaviour {
             received = 0;
             rateStart = now;
         }
-        if (ghostAnim != null && ghostAnim.isActiveAndEnabled) {
-            ghostFrames++;
-            if (ghostAnim.GetCurrentAnimatorStateInfo(0).fullPathHash == ghostState) {
-                ghostFramesInState++;
-            }
-        }
         if (now >= nextLog) {
             nextLog = now + 5f;
-            Debug.Log($"[Coop] parceiro: animação igual em {(ghostFrames > 0 ? 100 * ghostFramesInState / ghostFrames : 0)}% dos quadros, Moving {(ghostAnim != null && ghostAnim.isActiveAndEnabled && ghostAnim.GetBool("Moving"))}, estados vistos {ghostStates}");
-            Debug.Log($"[Coop] {(isHost ? "host" : "cliente")} RTT {CoopNet.RttSummary()} | transporte {CoopNet.TransportRtt} ms | {receivedRate} msg/s recebidas | {CoopNet.BytesPerSecond} B/s enviados | {puppets.Count} bonecos | golpes do cliente {remoteHits}, mortes {remoteKills} | golpes recebidos {hurtsTaken}, feitiços {hexesSeen} | visando o outro {TargetingPeer()} | {CoopShared.Counts()} | ganhou {CoopShared.CoinsGranted} moedas, {CoopShared.ItemsGranted} itens, quebrou {CoopShared.PropsBrokenByAsk} a pedido | do outro: {peerShots} tiros, {peerGrenades} granadas, {peerPortals} portais | power-ups {ArenaPowerUps.InstaKillOn}");
+            Debug.Log($"[Coop] {(isHost ? "host" : "cliente")} RTT {CoopNet.RttSummary()} | parceiros {peers.Count}, dificuldade {CoopWorld.DifficultyFactor}x, inimigos {(isHost ? Enemy.Active.Count : puppets.Count)}, vidas {lives} | {receivedRate} msg/s recebidas | {CoopNet.BytesPerSecond} B/s enviados | {puppets.Count} bonecos | golpes do cliente {remoteHits}, mortes {remoteKills} | golpes recebidos {hurtsTaken}, feitiços {hexesSeen} | visando o outro {TargetingPeer()} | {CoopShared.Counts()} | ganhou {CoopShared.CoinsGranted} moedas, {CoopShared.ItemsGranted} itens, quebrou {CoopShared.PropsBrokenByAsk} a pedido | do outro: {peerShots} tiros, {peerGrenades} granadas, {peerPortals} portais | power-ups {ArenaPowerUps.InstaKillOn}");
         }
         TestRunner(now);
     }
 
-    // ---- Freny's state, both ways
+    // ---- Freny's state: each one sends his, and the host passes it on
     private void SendPlayer() {
-        using FastBufferWriter writer = new FastBufferWriter(32, Allocator.Temp);
+        using FastBufferWriter writer = new FastBufferWriter(40, Allocator.Temp);
+        writer.WriteValueSafe(CoopNet.LocalId);
         Vector2 position = player.transform.position;
         writer.WriteValueSafe(position);
         writer.WriteValueSafe((sbyte)(player.FacingRight ? 1 : -1));
@@ -307,6 +296,7 @@ public class CoopArena : MonoBehaviour {
     }
 
     private void OnPlayerState(ulong sender, FastBufferReader reader) {
+        reader.ReadValueSafe(out ulong owner);
         reader.ReadValueSafe(out Vector2 position);
         reader.ReadValueSafe(out sbyte facing);
         reader.ReadValueSafe(out int state);
@@ -314,38 +304,58 @@ public class CoopArena : MonoBehaviour {
         reader.ReadValueSafe(out byte bools);
         reader.ReadValueSafe(out byte dead);
         reader.ReadValueSafe(out byte health);
-        reader.ReadValueSafe(out peerReviveIn);
-        reader.ReadValueSafe(out peerLives);
+        reader.ReadValueSafe(out byte reviveIn);
+        reader.ReadValueSafe(out byte peerLives);
         received++;
-        ghostTrack.Add(Time.unscaledTime, position);
-        peerDead = dead != 0;
-        peerHealth = health;
-        if (ghost == null) {
+        if (owner == CoopNet.LocalId || ghostSource == null) {
             return;
         }
-        Vector3 scale = ghost.localScale;
+        if (!peers.TryGetValue(owner, out Peer peer)) {
+            peer = MakeGhost(owner);
+        }
+        peer.Track.Add(Time.unscaledTime, position);
+        peer.Dead = dead != 0;
+        peer.ReviveIn = reviveIn;
+        peer.Lives = peerLives;
+        if (peer.Body != null) {
+            peer.Body.Health = health;
+        }
+        Vector3 scale = peer.Ghost.localScale;
         scale.x = Mathf.Abs(scale.x) * facing;
-        ghost.localScale = scale;
-        CoopAnim.SetBools(ghostAnim, bools);   // or the state machine leaves the state for lack of them
-        if (ghostAnim != null && state != 0 && state != ghostState && ghostAnim.isActiveAndEnabled) {
-            ghostState = state;
-            ghostStates++;
-            ghostAnim.Play(state, 0, Mathf.Repeat(time, 1f));
+        peer.Ghost.localScale = scale;
+        CoopAnim.SetBools(peer.Anim, bools);   // or the state machine leaves the state for lack of them
+        if (peer.Anim != null && state != 0 && state != peer.State && peer.Anim.isActiveAndEnabled) {
+            peer.State = state;
+            peer.Anim.Play(state, 0, Mathf.Repeat(time, 1f));
         }
     }
 
-    private void DrawGhost(float now) {
-        if (ghost == null || !ghostTrack.HasData) {
-            return;
+    private void DrawGhosts(float now) {
+        left.Clear();
+        foreach (Peer peer in peers.Values) {
+            // someone who left the room: his Freny goes too
+            if (CoopNet.Roster.Count > 0 && !CoopNet.InRoster(peer.Id)) {
+                left.Add(peer.Id);
+                continue;
+            }
+            bool visible = !peer.Dead;
+            if (peer.Ghost.gameObject.activeSelf != visible) {
+                peer.Ghost.gameObject.SetActive(visible);
+                peer.State = 0;
+            }
+            peer.Ghost.position = peer.Track.At(now - RenderDelay);
+            if (peer.Body != null) {
+                peer.Body.Alive = visible;
+            }
         }
-        bool visible = CoopNet.Connected && !peerDead;
-        if (ghost.gameObject.activeSelf != visible) {
-            ghost.gameObject.SetActive(visible);
-            ghostState = 0;
+        foreach (ulong id in left) {
+            Peer peer = peers[id];
+            if (peer.Body != null) {
+                CoopWorld.Bodies.Remove(peer.Body);
+            }
+            Destroy(peer.Ghost.gameObject);
+            peers.Remove(id);
         }
-        ghost.position = ghostTrack.At(now - RenderDelay);
-        CoopWorld.PeerAlive = visible;
-        CoopWorld.PeerHealth = peerHealth;
     }
 
     private void OnWorld(ulong sender, FastBufferReader reader) {
@@ -377,9 +387,6 @@ public class CoopArena : MonoBehaviour {
                 Fx.Portal(position, duration, color);
                 peerPortals++;
                 break;
-            case CoopWorld.Fx.LifeGift:
-                OnLifeGift();
-                break;
         }
     }
 
@@ -403,7 +410,34 @@ public class CoopArena : MonoBehaviour {
     }
 
     private bool LocalOut => player != null && player.IsDead && lives <= 0 && reviveAt < 0f;
-    private bool PeerOut => !CoopNet.Connected || (peerDead && peerLives == 0 && peerReviveIn == 0);
+    private bool AllPeersOut {
+        get {
+            foreach (Peer peer in peers.Values) {
+                if (!peer.Out) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+
+    private Peer FirstStanding() {
+        foreach (Peer peer in peers.Values) {
+            if (!peer.Dead && peer.Ghost.gameObject.activeSelf) {
+                return peer;
+            }
+        }
+        return null;
+    }
+
+    private Peer FirstOut() {
+        foreach (Peer peer in peers.Values) {
+            if (peer.Out) {
+                return peer;
+            }
+        }
+        return null;
+    }
 
     private void WatchRevive(float now) {
         if (player == null) {
@@ -420,11 +454,11 @@ public class CoopArena : MonoBehaviour {
             Debug.Log($"[Coop] {(isHost ? "host" : "cliente")} caiu, vidas {lives}, {(reviveAt >= 0f ? "volta logo" : "fora")}");
         }
         if (reviveAt >= 0f && now >= reviveAt) {
-            // beside the other if he is up; if not, where he fell
-            bool besidePeer = !peerDead && CoopNet.Connected && ghost != null && ghost.gameObject.activeSelf;
-            player.Revive(besidePeer ? ghost.position : player.transform.position, player.MaxHealth, ReviveSafeSeconds);
-            if (besidePeer) {
-                PlaceAt(ghost.position + Vector3.right * (isHost ? -ReviveGap : ReviveGap));
+            // beside someone who is up; if nobody is, where he fell
+            Peer standing = FirstStanding();
+            player.Revive(standing != null ? standing.Ghost.position : player.transform.position, player.MaxHealth, ReviveSafeSeconds);
+            if (standing != null) {
+                PlaceAt(standing.Ghost.position + Vector3.right * (isHost ? -ReviveGap : ReviveGap));
             }
             reviveAt = -1f;
             fallHandled = false;
@@ -441,9 +475,10 @@ public class CoopArena : MonoBehaviour {
 
     // this player picked up a life (ItemPickup)
     private bool OnLifeGained() {
-        if (PeerOut && CoopNet.Connected) {
-            CoopWorld.GiveLifeToPeer();
-            Debug.Log("[Coop] vida entregue ao parceiro, que estava fora");
+        Peer outOfLives = FirstOut();
+        if (outOfLives != null) {
+            CoopNet.SendGift(outOfLives.Id);
+            Debug.Log("[Coop] vida entregue a um parceiro que estava fora");
             return true;
         }
         lives++;
@@ -459,18 +494,18 @@ public class CoopArena : MonoBehaviour {
         Debug.Log($"[Coop] {(isHost ? "host" : "cliente")} ganhou a vida do parceiro");
     }
 
-    // the host decides when the run is over, so both sides restart together
+    // the host decides when the run is over, so everyone restarts together
     private void WatchRunEnd(float now) {
         if (!isHost || player == null) {
             return;
         }
-        if (!LocalOut || !PeerOut) {
+        if (!LocalOut || !AllPeersOut) {
             bothDownAt = -1f;
             return;
         }
         if (bothDownAt < 0f) {
             bothDownAt = now;
-            Debug.Log($"[Coop] os dois caíram, {(UIManager.Instance ? UIManager.Instance.Score : 0)} pontos");
+            Debug.Log($"[Coop] todos caíram, {(UIManager.Instance ? UIManager.Instance.Score : 0)} pontos");
         } else if (now - bothDownAt >= RestartDelay) {
             bothDownAt = float.MaxValue;
             CoopNet.RestartRun();
@@ -500,6 +535,7 @@ public class CoopArena : MonoBehaviour {
         reader.ReadValueSafe(out byte damage);
         reader.ReadValueSafe(out float push);
         reader.ReadValueSafe(out float homingTurn);
+        reader.ReadValueSafe(out ulong homingAt);
         GameObject prefab = HexballPrefab();
         if (prefab == null) {
             return;
@@ -510,7 +546,7 @@ public class CoopArena : MonoBehaviour {
             effect.damage = damage;
             effect.knockback = push;
             effect.SetDirection(direction);
-            if (homingTurn > 0f && player != null) {
+            if (homingTurn > 0f && homingAt == CoopNet.LocalId && player != null) {
                 effect.homingTarget = player;
                 effect.homingTurn = homingTurn;
             }
@@ -546,11 +582,13 @@ public class CoopArena : MonoBehaviour {
         ComboManager comboNow = Combo;
         writer.WriteValueSafe(comboNow != null ? comboNow.GetCombo() : 1f);
         writer.WriteValueSafe(comboNow != null ? comboNow.TimeLeft : 0f);
-        writer.WriteValueSafe((ushort)count);
+        writer.WriteValueSafe((ushort)Mathf.Min(count, MaxSnapshotEnemies));
+        int written = 0;
         foreach (Enemy enemy in alive) {
-            if (enemy == null || enemy.IsDead) {
+            if (enemy == null || enemy.IsDead || written >= MaxSnapshotEnemies) {
                 continue;
             }
+            written++;
             if (!enemyIds.TryGetValue(enemy, out ushort id)) {
                 id = nextEnemyId++;
                 enemyIds[enemy] = id;
@@ -728,23 +766,29 @@ public class CoopArena : MonoBehaviour {
             reviveStyle = new GUIStyle(GUI.skin.label) { font = MenuKit.Font, fontSize = unit * 2, alignment = TextAnchor.MiddleCenter };
             reviveStyle.normal.textColor = MenuKit.TitleColor;
         }
-        if (ghost != null && ghost.gameObject.activeSelf) {
-            DrawName(ghost.position, string.IsNullOrEmpty(peerName) ? "Parceiro" : peerName, GhostTint);
+        foreach (Peer peer in peers.Values) {
+            if (peer.Ghost.gameObject.activeSelf) {
+                DrawName(peer.Ghost.position, CoopNet.NameOf(peer.Id) ?? "Parceiro", GhostTint);
+            }
         }
         if (player != null && !player.IsDead) {
             DrawName(player.transform.position, localName, MenuKit.TextColor);
         }
         float scale = Screen.height / 720f;
-        Rect panel = new Rect(Screen.width - 330f * scale, 72f * scale, 320f * scale, 76f * scale);
-        string text = $"Ping {CoopNet.LastRtt:0} ms\n" +
-                      $"Suas vidas: {lives}\n" +
-                      $"Vidas do parceiro: {peerLives}" +
-                      (peerDead && CoopNet.Connected ? (peerReviveIn > 0 ? $" (volta em {peerReviveIn} s)" : " (fora)") : "");
-        GUI.Box(panel, text, overlay);
+        System.Text.StringBuilder text = new System.Text.StringBuilder();
+        if (!isHost) {
+            text.Append($"Ping {CoopNet.LastRtt:0} ms\n");
+        }
+        foreach (Peer peer in peers.Values) {
+            string state = peer.Out ? "fora" : peer.Dead && peer.ReviveIn > 0 ? $"volta em {peer.ReviveIn} s" : $"{peer.Lives} vidas";
+            text.Append($"{CoopNet.NameOf(peer.Id) ?? "Parceiro"}: {state}\n");
+        }
+        Rect panel = new Rect(Screen.width - 330f * scale, 72f * scale, 320f * scale, (text.ToString().Split('\n').Length * 20f + 8f) * scale);
+        GUI.Box(panel, text.ToString().TrimEnd(), overlay);
         if (player != null && player.IsDead) {
             string wait = reviveAt >= 0f ? $"Você volta em {Mathf.CeilToInt(ReviveLeft)} s"
-                : PeerOut ? "Os dois caíram"
-                : "Sem vidas. Uma vida pega pelo parceiro traz você de volta";
+                : AllPeersOut ? "Todos caíram"
+                : "Sem vidas. Uma vida pega por um parceiro traz você de volta";
             GUI.Label(new Rect(0f, Screen.height * 0.4f, Screen.width, 40f), wait, reviveStyle);
         }
     }
@@ -770,6 +814,7 @@ public class CoopArena : MonoBehaviour {
         }
         float elapsed = now - firstStart;
         // test only: a Sorcerer next to the client's Freny, and an Insta-kill for him to pick up
+        Transform ghost = FirstStanding()?.Ghost;
         if (CoopArgs.Has("-coopSpawnTest") && isHost && !testSpawned && elapsed >= 12f && ghost != null) {
             testSpawned = true;
             GameObject prefab = null;

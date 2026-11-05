@@ -3,8 +3,9 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-// Only for the test binaries, driven from the command line: goes into a room without clicks, or walks
-// the real menu like a player and takes a picture of each step, or runs the normal Arena.
+// Only for the test binaries, driven from the command line: goes into a room without clicks and starts
+// the run when enough players came, or walks the real menu like a player and takes a picture of each
+// step, or runs the normal Arena.
 public class CoopMenuTest : MonoBehaviour {
 
     private const float StepSeconds = 2.5f;
@@ -23,12 +24,27 @@ public class CoopMenuTest : MonoBehaviour {
         DontDestroyOnLoad(gameObject);
         string shots = CoopArgs.ShotDir;
         yield return new WaitForSecondsRealtime(StepSeconds);
+        if (int.TryParse(CoopArgs.Value("-coopPlayers"), out int players)) {
+            CoopNet.RoomSize = players;
+        }
         if (CoopArgs.AutoHost) {
+            Click("Jogar");
+            yield return new WaitForSecondsRealtime(0.5f);
+            MenuStack stack = FindAnyObjectByType<MenuStack>();
+            stack.Push(CoopScreens.Root(stack));
+            yield return new WaitForSecondsRealtime(0.5f);
             if (CoopArgs.Direct) {
                 _ = CoopNet.Host(true);
             } else {
                 _ = CoopRooms.Create("Sala de teste", CoopArgs.Value("-coopPass") ?? "");
             }
+            while (CoopNet.Roster.Count < players) {
+                yield return null;
+            }
+            yield return new WaitForSecondsRealtime(StepSeconds);
+            Shot(shots, "lobby_lista");
+            yield return new WaitForSecondsRealtime(0.5f);
+            CoopNet.StartRun();
             yield break;
         }
         if (CoopArgs.AutoJoin != null) {
@@ -52,15 +68,27 @@ public class CoopMenuTest : MonoBehaviour {
             Application.Quit();
             yield break;
         }
-        foreach (string step in new[] { "Jogar", "Co-op", "Criar sala", "Voltar", "Entrar com código", "Voltar", "Salas abertas" }) {
+        // the real lobby page, as a player reaches it
+        foreach (string step in new[] { "Jogar", "Co-op", "Criar sala" }) {
             Click(step);
             yield return new WaitForSecondsRealtime(StepSeconds);
-            Shot(shots, step.Replace(" ", "_").Replace("ó", "o") + "_" + Time.frameCount);
+            Shot(shots, step.Replace(" ", "_"));
             yield return new WaitForSecondsRealtime(0.3f);
         }
-        yield return new WaitForSecondsRealtime(StepSeconds * 2f);
-        Shot(shots, "Salas_fim");
+        Click("Criar");
+        float until = Time.unscaledTime + 40f;
+        while (CoopNet.Roster.Count < Mathf.Max(1, players) && Time.unscaledTime < until) {
+            yield return null;
+        }
+        yield return new WaitForSecondsRealtime(StepSeconds * 3f);
+        Shot(shots, "Lobby");
         yield return new WaitForSecondsRealtime(1f);
+        if (CoopNet.Roster.Count >= CoopNet.MinRoomSize) {
+            Click("Começar");
+            yield break;
+        }
+        CoopRooms.Close();
+        yield return new WaitForSecondsRealtime(1.5f);
         Application.Quit();
     }
 

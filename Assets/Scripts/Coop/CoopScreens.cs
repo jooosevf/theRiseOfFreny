@@ -6,17 +6,30 @@ using UnityEngine.UI;
 using Online;
 
 // Jogar > Co-op, in the main menu like the other pages: the player's name, the open rooms, making a
-// room (password optional) and entering by code.
+// room (password optional) and entering by code. Whoever is in a room waits in its lobby, with who
+// else is there and their ping, until the host starts the run.
 public static class CoopScreens {
 
     private const float Width = 680f;
     private const float RefreshSeconds = 4f;   // Lobby allows about one query a second per player
+    private const float LobbySeconds = 1f;
     private const int CodeLength = 6;
     private const int MaxNameLength = 16;
     private const int MaxRoomNameLength = 24;
     private const string NamePref = "freny.coop.name";
     private const string DefaultName = "Jogador";
     private static readonly Vector2 Middle = new Vector2(0.5f, 0.5f);
+    private static readonly string[] SizeNames = { "2", "3", "4" };
+
+    // ping bars: how many light up, from the lowest
+    private const int PingBars = 4;
+    private const int GoodPing = 60;
+    private const int FairPing = 120;
+    private const int PoorPing = 200;
+    private static readonly Color GoodColor = new Color(0.45f, 0.85f, 0.45f);
+    private static readonly Color FairColor = new Color(0.95f, 0.8f, 0.3f);
+    private static readonly Color BadColor = new Color(0.9f, 0.3f, 0.25f);
+    private static readonly Color OffColor = new Color(1f, 1f, 1f, 0.12f);
 
     // the player left a room: the menu opens on this page again
     public static bool ReopenOnMenu { get; set; }
@@ -60,7 +73,6 @@ public static class CoopScreens {
         Text status = page.Label(CoopNet.Status);
         page.Button("Voltar", stack.Back);
         CoopNet.SetStatus("");
-        Tick(page, () => { }, null);
         status.gameObject.SetActive(!string.IsNullOrEmpty(status.text));
         return page;
     }
@@ -73,11 +85,11 @@ public static class CoopScreens {
         if (known != null) {
             foreach (Lobby room in known) {
                 Lobby target = room;
-                page.Button(room.Name + (room.HasPassword ? "  (senha)" : ""), () => {
+                page.Button($"{room.Name} ({room.Players.Count}/{room.MaxPlayers}){(room.HasPassword ? " senha" : "")}", () => {
                     if (target.HasPassword) {
                         stack.Push(Password(stack, target));
                     } else {
-                        Enter(target, "", status, null);
+                        Enter(stack, target, "", status, null);
                     }
                 });
             }
@@ -117,7 +129,7 @@ public static class CoopScreens {
             return false;
         }
         for (int i = 0; i < a.Count; i++) {
-            if (a[i].Id != b[i].Id) {
+            if (a[i].Id != b[i].Id || a[i].Players.Count != b[i].Players.Count || a[i].MaxPlayers != b[i].MaxPlayers) {
                 return false;
             }
         }
@@ -129,17 +141,24 @@ public static class CoopScreens {
         InputField password = page.Input("Senha", "", true, 32);
         Text status = page.Label("");
         Button enter = null;
-        enter = page.Button("Entrar", () => Enter(room, password.text, status, enter));
+        enter = page.Button("Entrar", () => Enter(stack, room, password.text, status, enter));
         page.Button("Voltar", stack.Back);
         return page;
     }
 
-    private static async void Enter(Lobby room, string password, Text status, Button button) {
+    private static async void Enter(MenuStack stack, Lobby room, string password, Text status, Button button) {
         status.text = "Entrando na sala...";
         if (button != null) {
             button.interactable = false;
         }
-        await CoopRooms.Join(room.Id, password);
+        bool entered = await CoopRooms.Join(room.Id, password);
+        if (stack == null) {
+            return;
+        }
+        if (entered && CoopNet.InRoom) {
+            stack.ReplaceTop(RoomLobby(stack));
+            return;
+        }
         if (status != null) {
             status.text = CoopNet.Status;
         }
@@ -154,6 +173,7 @@ public static class CoopScreens {
         MenuPage page = new MenuPage(stack.transform, "Criar sala", Width, Middle, 6f);
         InputField roomName = page.Input("Nome da sala", "Sala de " + PlayerName, false, MaxRoomNameLength);
         InputField password = page.Input("Senha (opcional)", "", true, 32);
+        page.Choice("Jogadores", SizeNames, CoopNet.RoomSize - CoopNet.MinRoomSize, i => CoopNet.RoomSize = CoopNet.MinRoomSize + i);
         Text status = page.Label($"Com senha, use pelo menos {CoopRooms.MinPasswordLength} caracteres");
         Button create = null;
         create = page.Button("Criar", async () => {
@@ -169,7 +189,7 @@ public static class CoopScreens {
                 return;
             }
             if (CoopNet.JoinCode != null) {
-                stack.ReplaceTop(Waiting(stack));
+                stack.ReplaceTop(RoomLobby(stack));
             } else {
                 status.text = CoopNet.Status;
                 create.interactable = true;
@@ -179,22 +199,101 @@ public static class CoopScreens {
         return page;
     }
 
-    private static MenuPage Waiting(MenuStack stack) {
-        MenuPage page = new MenuPage(stack.transform, "Sala criada", Width, Middle, 6f);
-        page.Label("A Arena começa quando o outro jogador entrar", MenuKit.TextSize);
-        page.Space(4f);
-        page.Label("Código, para entrar sem a lista:");
-        Text code = MenuKit.MakeText(page.Content, CoopNet.JoinCode, MenuKit.TitleSize, MenuKit.TitleColor, TextAnchor.MiddleCenter);
-        MenuKit.Size(code, -1f, 56f);
-        page.Button("Fechar a sala", stack.Back);
-        // Esc and the button both land here: leaving this page closes the room, unless the game began
-        Tick(page, () => { }, () => {
-            if (CoopNet.InRoom && !CoopNet.Connected) {
-                CoopRooms.Close();
+    // ---- the lobby: everyone waits here for the host ----
+
+    private static MenuPage RoomLobby(MenuStack stack) {
+        bool host = CoopNet.IsHost;
+        MenuPage page = new MenuPage(stack.transform, "Lobby", Width, Middle, 6f);
+        if (host && CoopNet.JoinCode != null) {
+            page.Label("Código da sala: " + CoopNet.JoinCode, MenuKit.TextSize);
+        }
+
+        RectTransform list = MenuKit.MakeRect("Players", page.Content);
+        VerticalLayoutGroup column = list.gameObject.AddComponent<VerticalLayoutGroup>();
+        column.spacing = 4f;
+        column.childControlWidth = true;
+        column.childControlHeight = true;
+        column.childForceExpandWidth = true;
+        column.childForceExpandHeight = false;
+        DrawPlayers(list);
+
+        Text note = page.Label("");
+        Button start = null;
+        if (host) {
+            page.Choice("Jogadores", SizeNames, CoopNet.RoomSize - CoopNet.MinRoomSize, i => {
+                CoopNet.RoomSize = Mathf.Max(CoopNet.MinRoomSize + i, CoopNet.Roster.Count);
+                CoopRooms.Resize();
+            });
+            start = page.Button("Começar", CoopNet.StartRun, false);
+        }
+        page.Button(host ? "Fechar a sala" : "Sair da sala", stack.Back);
+
+        float next = Time.unscaledTime + LobbySeconds;
+        Tick(page, () => {
+            if (start != null) {
+                start.interactable = CoopNet.Roster.Count >= CoopNet.MinRoomSize;
+            }
+            note.text = host
+                ? (CoopNet.Roster.Count < CoopNet.MinRoomSize
+                    ? "Esperando outro jogador entrar"
+                    : $"Com {CoopNet.Roster.Count} jogadores, a Arena fica {CoopNet.DifficultyFor(CoopNet.Roster.Count)}x mais difícil")
+                : CoopNet.Connected ? "Esperando o host começar" : "Entrando na sala...";
+            if (Time.unscaledTime >= next) {
+                next = Time.unscaledTime + LobbySeconds;
+                DrawPlayers(list);
+            }
+        }, () => {
+            // leaving this page leaves the room, unless the run began
+            if (CoopNet.InRoom && !CoopNet.Started) {
                 CoopNet.Shutdown();
             }
         });
         return page;
+    }
+
+    private static void DrawPlayers(RectTransform list) {
+        for (int i = list.childCount - 1; i >= 0; i--) {
+            UnityEngine.Object.Destroy(list.GetChild(i).gameObject);
+        }
+        foreach (CoopMember member in CoopNet.Roster) {
+            bool me = member.Id == CoopNet.LocalId;
+            Image row = MenuKit.MakeRow(list, member.Name + (me ? " (você)" : ""), out Text label);
+            row.color = new Color(1f, 1f, 1f, 0.06f);
+            label.fontSize = MenuKit.SmallTextSize;
+            if (member.IsHost) {
+                Text tag = MenuKit.MakeText(row.transform, "host", MenuKit.SmallTextSize, MenuKit.TitleColor, TextAnchor.MiddleRight);
+                MenuKit.Size(tag, 92f, -1f);
+            } else {
+                int ping = me ? Mathf.RoundToInt(CoopNet.LastRtt) : member.Ping;
+                Bars(row.transform, ping);
+                Text ms = MenuKit.MakeText(row.transform, ping > 0 ? ping + " ms" : "...", MenuKit.SmallTextSize, MenuKit.DimTextColor, TextAnchor.MiddleRight);
+                MenuKit.Size(ms, 92f, -1f);
+            }
+        }
+        for (int i = CoopNet.Roster.Count; i < CoopNet.RoomSize; i++) {
+            Image row = MenuKit.MakeRow(list, "Vaga livre", out Text label);
+            row.color = new Color(1f, 1f, 1f, 0.02f);
+            label.fontSize = MenuKit.SmallTextSize;
+            label.color = MenuKit.DimTextColor;
+        }
+    }
+
+    private static void Bars(Transform parent, int ping) {
+        int lit = ping <= 0 ? 0 : ping < GoodPing ? 4 : ping < FairPing ? 3 : ping < PoorPing ? 2 : 1;
+        Color color = lit >= 3 ? GoodColor : lit == 2 ? FairColor : BadColor;
+        RectTransform box = MenuKit.MakeRect("Ping", parent);
+        MenuKit.Size(box, 44f, -1f);
+        HorizontalLayoutGroup layout = box.gameObject.AddComponent<HorizontalLayoutGroup>();
+        layout.spacing = 3f;
+        layout.childAlignment = TextAnchor.LowerCenter;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = false;
+        layout.childForceExpandHeight = false;
+        for (int i = 0; i < PingBars; i++) {
+            Image bar = MenuKit.MakeImage("Bar", box, i < lit ? color : OffColor);
+            MenuKit.Size(bar, 8f, 8f + i * 6f);
+        }
     }
 
     // ---- by code ----
@@ -212,7 +311,12 @@ public static class CoopScreens {
             enter.interactable = false;
             status.text = "Procurando a sala...";
             await CoopNet.Join(code.text, false);
-            if (page.Root != null) {
+            if (page.Root == null) {
+                return;
+            }
+            if (CoopNet.InRoom) {
+                stack.ReplaceTop(RoomLobby(stack));
+            } else {
                 status.text = CoopNet.Status;
                 enter.interactable = true;
             }

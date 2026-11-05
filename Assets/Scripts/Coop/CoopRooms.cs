@@ -5,16 +5,16 @@ using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
 
-// The list of rooms (Unity Lobby). A room only lives in the list until the second player arrives:
-// it carries the Relay code, and the game itself goes over Relay.
+// The list of rooms (Unity Lobby). A room lives in the list until the host starts the run: it carries
+// the Relay code, and the game itself goes over Relay.
 public static class CoopRooms {
 
     public const int MinPasswordLength = 8;   // Lobby refuses a shorter one
     private const string RelayKey = "relay";
-    private const int RoomSize = 2;
     private const float HeartbeatSeconds = 15f;   // Lobby drops a room that stops sending these
 
     private static string openRoom;
+    private static string joinedRoom;
     private static float nextHeartbeat;
 
     public static async Task Create(string name, string password) {
@@ -32,7 +32,7 @@ public static class CoopRooms {
             if (!string.IsNullOrEmpty(password)) {
                 options.Password = password;
             }
-            Lobby room = await LobbyService.Instance.CreateLobbyAsync(name, RoomSize, options);
+            Lobby room = await LobbyService.Instance.CreateLobbyAsync(name, CoopNet.RoomSize, options);
             openRoom = room.Id;
             nextHeartbeat = Time.unscaledTime + HeartbeatSeconds;
             Debug.Log($"[Coop] sala \"{room.Name}\" criada{(room.HasPassword ? " com senha" : "")}");
@@ -57,6 +57,7 @@ public static class CoopRooms {
                 options.Password = password;
             }
             Lobby room = await LobbyService.Instance.JoinLobbyByIdAsync(roomId, options);
+            joinedRoom = room.Id;
             await CoopNet.Join(room.Data[RelayKey].Value, false);
             return true;
         } catch (LobbyServiceException e) {
@@ -85,14 +86,42 @@ public static class CoopRooms {
         }
     }
 
-    // the second player is in: the room leaves the list
+    // the host changed the room's size in the lobby
+    public static void Resize() {
+        if (openRoom != null) {
+            _ = Update(openRoom, CoopNet.RoomSize);
+        }
+    }
+
+    private static async Task Update(string room, int size) {
+        try {
+            await LobbyService.Instance.UpdateLobbyAsync(room, new UpdateLobbyOptions { MaxPlayers = size });
+        } catch (Exception e) {
+            Debug.LogWarning($"[Coop] a sala não mudou de tamanho: {e.Message}");
+        }
+    }
+
+    // the run began or the room closed: it leaves the list; a guest gives up his place
     public static void Close() {
+        if (joinedRoom != null) {
+            string joined = joinedRoom;
+            joinedRoom = null;
+            _ = LeaveRoom(joined);
+        }
         if (openRoom == null) {
             return;
         }
         string room = openRoom;
         openRoom = null;
         _ = Delete(room);
+    }
+
+    private static async Task LeaveRoom(string room) {
+        try {
+            await LobbyService.Instance.RemovePlayerAsync(room, Unity.Services.Authentication.AuthenticationService.Instance.PlayerId);
+        } catch (Exception e) {
+            Debug.LogWarning($"[Coop] não saiu da lista da sala: {e.Message}");
+        }
     }
 
     private static async Task Delete(string room) {

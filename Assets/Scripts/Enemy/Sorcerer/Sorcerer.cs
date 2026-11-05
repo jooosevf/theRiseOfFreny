@@ -115,7 +115,7 @@ public class Sorcerer : Enemy {
             }
             effect.SetDirection(target - castPosition);
             if (Rival == null) {
-                CoopWorld.HexCast(castPosition, effect, targetsPeer && IsSupreme);
+                CoopWorld.HexCast(castPosition, effect, peerTarget, IsSupreme);
             }
         }
         if (castsBeforeLeaving > 0 && casts >= castsBeforeLeaving) {
