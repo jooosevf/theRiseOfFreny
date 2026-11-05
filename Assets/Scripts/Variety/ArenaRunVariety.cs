@@ -80,7 +80,9 @@ public class ArenaRunVariety : MonoBehaviour {
         if (offered.Length == 0 || player == null || player.IsDead) {
             return;
         }
-        if (input != null && input.AutoEnabled) {
+        // only while the autopilot is really driving: with Auto on and the player at the keys
+        // (his input takes over for 3 s), the cards come up as in a manual run
+        if (input != null && input.IsAutopilotDriving) {
             foreach (Blessing blessing in Blessings.AutopilotOrder) {
                 if (System.Array.IndexOf(offered, blessing) >= 0) {
                     Choose(blessing);
