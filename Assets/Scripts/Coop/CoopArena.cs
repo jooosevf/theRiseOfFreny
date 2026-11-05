@@ -28,6 +28,8 @@ public class CoopArena : MonoBehaviour {
     private const float ReviveGap = 1.2f;            // and comes back this far from the other
     private const float NameSendSeconds = 3f;
     private const int MaxNameBytes = 32;
+    private const byte CyclopsKind = 254;            // it isn't in the director's list: it has a field of its own
+    private const float CyclopsBodyLift = 1.6f;      // Cyclops.Init: the art grows from its middle, its feet are at the bottom
     // José, 2026-11-04: each player has lives. A fall costs one and he comes back beside the other; with
     // none left he watches, until the other picks up a life for him. Both out: the run ends.
     private const int StartingLives = 2;
@@ -40,6 +42,9 @@ public class CoopArena : MonoBehaviour {
     private Animator playerAnim;
     private ArenaDirector director;
     private FieldInfo enemiesField;
+    private FieldInfo cyclopsField;
+    private ComboManager combo;
+    private ComboManager Combo => combo != null ? combo : (combo = FindAnyObjectByType<ComboManager>());
     private bool isHost;
     private float nextSend;
     private float startedAt;
@@ -74,6 +79,10 @@ public class CoopArena : MonoBehaviour {
     private int peerPortals;
     private static bool testSpawned;
     private static bool testGift;
+    private static bool testBoss;
+    private int ghostFrames;
+    private int ghostFramesInState;
+    private int ghostStates;
     private float bothDownAt = -1f;
     private float reviveAt = -1f;
     private bool fallHandled;
@@ -107,9 +116,13 @@ public class CoopArena : MonoBehaviour {
         isHost = CoopNet.IsHost;
         director = FindAnyObjectByType<ArenaDirector>();
         enemiesField = typeof(ArenaDirector).GetField("enemies", BindingFlags.NonPublic | BindingFlags.Instance);
+        cyclopsField = typeof(ArenaDirector).GetField("cyclopsTemplate", BindingFlags.NonPublic | BindingFlags.Instance);
         if (!isHost) {
             if (director != null) {
                 director.enabled = false;
+                // the Escudeiro, the Mina-aranha and the Ciclope are built at runtime: the same list
+                // and the same templates as the host, without the director running
+                typeof(ArenaDirector).GetMethod("AddRuntimeEnemies", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(director, null);
             }
             foreach (EnemySpawner spawner in FindObjectsByType<EnemySpawner>(FindObjectsInactive.Include)) {
                 spawner.enabled = false;
@@ -262,8 +275,15 @@ public class CoopArena : MonoBehaviour {
             received = 0;
             rateStart = now;
         }
+        if (ghostAnim != null && ghostAnim.isActiveAndEnabled) {
+            ghostFrames++;
+            if (ghostAnim.GetCurrentAnimatorStateInfo(0).fullPathHash == ghostState) {
+                ghostFramesInState++;
+            }
+        }
         if (now >= nextLog) {
             nextLog = now + 5f;
+            Debug.Log($"[Coop] parceiro: animação igual em {(ghostFrames > 0 ? 100 * ghostFramesInState / ghostFrames : 0)}% dos quadros, Moving {(ghostAnim != null && ghostAnim.isActiveAndEnabled && ghostAnim.GetBool("Moving"))}, estados vistos {ghostStates}");
             Debug.Log($"[Coop] {(isHost ? "host" : "cliente")} RTT {CoopNet.RttSummary()} | transporte {CoopNet.TransportRtt} ms | {receivedRate} msg/s recebidas | {CoopNet.BytesPerSecond} B/s enviados | {puppets.Count} bonecos | golpes do cliente {remoteHits}, mortes {remoteKills} | golpes recebidos {hurtsTaken}, feitiços {hexesSeen} | visando o outro {TargetingPeer()} | {CoopShared.Counts()} | ganhou {CoopShared.CoinsGranted} moedas, {CoopShared.ItemsGranted} itens, quebrou {CoopShared.PropsBrokenByAsk} a pedido | do outro: {peerShots} tiros, {peerGrenades} granadas, {peerPortals} portais | power-ups {ArenaPowerUps.InstaKillOn}");
         }
         TestRunner(now);
@@ -278,6 +298,7 @@ public class CoopArena : MonoBehaviour {
         AnimatorStateInfo state = playerAnim != null ? playerAnim.GetCurrentAnimatorStateInfo(0) : default;
         writer.WriteValueSafe(state.fullPathHash);
         writer.WriteValueSafe(state.normalizedTime);
+        writer.WriteValueSafe(CoopAnim.Bools(playerAnim));
         writer.WriteValueSafe((byte)(player.IsDead ? 1 : 0));
         writer.WriteValueSafe((byte)Mathf.Max(0, player.Health));
         writer.WriteValueSafe((byte)Mathf.CeilToInt(ReviveLeft));
@@ -290,6 +311,7 @@ public class CoopArena : MonoBehaviour {
         reader.ReadValueSafe(out sbyte facing);
         reader.ReadValueSafe(out int state);
         reader.ReadValueSafe(out float time);
+        reader.ReadValueSafe(out byte bools);
         reader.ReadValueSafe(out byte dead);
         reader.ReadValueSafe(out byte health);
         reader.ReadValueSafe(out peerReviveIn);
@@ -304,8 +326,10 @@ public class CoopArena : MonoBehaviour {
         Vector3 scale = ghost.localScale;
         scale.x = Mathf.Abs(scale.x) * facing;
         ghost.localScale = scale;
+        CoopAnim.SetBools(ghostAnim, bools);   // or the state machine leaves the state for lack of them
         if (ghostAnim != null && state != 0 && state != ghostState && ghostAnim.isActiveAndEnabled) {
             ghostState = state;
+            ghostStates++;
             ghostAnim.Play(state, 0, Mathf.Repeat(time, 1f));
         }
     }
@@ -519,6 +543,9 @@ public class CoopArena : MonoBehaviour {
             }
         }
         writer.WriteValueSafe(score);
+        ComboManager comboNow = Combo;
+        writer.WriteValueSafe(comboNow != null ? comboNow.GetCombo() : 1f);
+        writer.WriteValueSafe(comboNow != null ? comboNow.TimeLeft : 0f);
         writer.WriteValueSafe((ushort)count);
         foreach (Enemy enemy in alive) {
             if (enemy == null || enemy.IsDead) {
@@ -538,6 +565,8 @@ public class CoopArena : MonoBehaviour {
             writer.WriteValueSafe((Vector2)enemy.transform.position);
             writer.WriteValueSafe(facing);
             writer.WriteValueSafe(state.fullPathHash);
+            writer.WriteValueSafe(CoopAnim.Bools(anim));
+            writer.WriteValueSafe(anim == null ? CoopAnim.FrameHash(sprite) : 0);
             writer.WriteValueSafe((byte)Mathf.Clamp(enemy.Health, 0, 255));
         }
         CoopNet.Send("coop.e", writer, NetworkDelivery.UnreliableSequenced);
@@ -546,6 +575,9 @@ public class CoopArena : MonoBehaviour {
     // the prefab's place in the director's list, which starts the same on both sides; an enemy the
     // director only builds at runtime (Escudeiro, Mina-aranha, Ciclope) has none and shows as a Golem
     private byte KindOf(Enemy enemy) {
+        if (enemy is Cyclops) {
+            return CyclopsKind;
+        }
         ArenaDirector.Entry[] entries = Entries();
         if (entries != null) {
             string name = enemy.name.Replace("(Clone)", "").Trim();
@@ -567,6 +599,11 @@ public class CoopArena : MonoBehaviour {
         if (UIManager.Instance && UIManager.Instance.Score != hostScore) {
             UIManager.Instance.UpdateScore(hostScore - UIManager.Instance.Score, true);   // one score for the room
         }
+        reader.ReadValueSafe(out float comboValue);
+        reader.ReadValueSafe(out float comboLeft);
+        if (Combo != null) {
+            Combo.ShowFromHost(comboValue, comboLeft);   // and one combo
+        }
         reader.ReadValueSafe(out ushort count);
         float now = Time.unscaledTime;
         seen.Clear();
@@ -576,6 +613,8 @@ public class CoopArena : MonoBehaviour {
             reader.ReadValueSafe(out Vector2 position);
             reader.ReadValueSafe(out sbyte facing);
             reader.ReadValueSafe(out int state);
+            reader.ReadValueSafe(out byte bools);
+            reader.ReadValueSafe(out int frame);
             reader.ReadValueSafe(out byte health);
             seen.Add(id);
             if (!puppets.TryGetValue(id, out CoopPuppet puppet)) {
@@ -585,7 +624,7 @@ public class CoopArena : MonoBehaviour {
                 }
                 puppets[id] = puppet;
             }
-            puppet.Receive(now, position, facing, state, health);
+            puppet.Receive(now, position, facing, state, bools, frame, health);
         }
         gone.Clear();
         foreach (KeyValuePair<ushort, CoopPuppet> pair in puppets) {
@@ -604,9 +643,9 @@ public class CoopArena : MonoBehaviour {
 
     private CoopPuppet MakePuppet(ushort id, byte kind, Vector2 position) {
         ArenaDirector.Entry[] entries = Entries();
-        GameObject prefab = null;
+        GameObject prefab = kind == CyclopsKind && cyclopsField != null && director != null ? (GameObject)cyclopsField.GetValue(director) : null;
         if (entries != null) {
-            if (kind < entries.Length) {
+            if (prefab == null && kind < entries.Length) {
                 prefab = entries[kind].prefab;
             }
             for (int i = 0; prefab == null && i < entries.Length; i++) {
@@ -620,6 +659,14 @@ public class CoopArena : MonoBehaviour {
         }
         GameObject copy = Instantiate(prefab, position, Quaternion.identity, puppetHolder.transform);
         CoopStrip.ToVisuals(copy, keepColliders: true);
+        // what these two set on their sprite in Init, which a puppet never runs
+        SpriteRenderer body = copy.GetComponentInChildren<SpriteRenderer>(true);
+        if (kind == CyclopsKind && body != null) {
+            body.transform.localScale = Vector3.one * Cyclops.Size;
+            body.transform.localPosition = new Vector3(0f, CyclopsBodyLift * (Cyclops.Size - 1f), 0f);
+        } else if (prefab.GetComponent<SpiderMine>() != null && body != null) {
+            body.transform.localScale = Vector3.one;
+        }
         copy.tag = "Untagged";
         CoopPuppet puppet = copy.AddComponent<CoopPuppet>();
         puppet.Init(this, id);
@@ -743,6 +790,11 @@ public class CoopArena : MonoBehaviour {
             ItemPickup.Spawn(ItemPickup.Kind.Life, 1, ghost.position + Vector3.up, Vector2.zero);
             Debug.Log($"[Coop] teste: segunda vida ao lado do cliente, host {(LocalOut ? "fora" : "de pé")}");
         }
+        if (CoopArgs.Has("-coopBossTest") && isHost && !testBoss && elapsed >= 10f && director != null) {
+            testBoss = true;
+            director.StartCoroutine("SpawnBoss");
+            Debug.Log("[Coop] teste: Ciclope chamado");
+        }
         float dieEvery = CoopArgs.DieEvery;
         if (dieEvery > 0f && player != null && !player.IsDead && elapsed >= nextTestDeath && elapsed >= dieEvery) {
             nextTestDeath = elapsed + dieEvery;
@@ -774,6 +826,7 @@ public class CoopArena : MonoBehaviour {
 // The two positions around the moment being drawn; a position older than the buffer holds still.
 public class Track {
     private const int Size = 12;
+    private const float JumpDistance = 4f;   // farther than this between two messages: he crossed the wrap, not the map
     private readonly float[] times = new float[Size];
     private readonly Vector2[] points = new Vector2[Size];
     private int count;
@@ -800,6 +853,9 @@ public class Track {
                 int newer = (older + 1) % Size;
                 float span = times[newer] - times[older];
                 float t = span > 0f ? (time - times[older]) / span : 1f;
+                if ((points[newer] - points[older]).sqrMagnitude > JumpDistance * JumpDistance) {
+                    return points[newer];   // it never flies across the screen
+                }
                 return Vector2.Lerp(points[older], points[newer], t);
             }
         }
@@ -815,6 +871,7 @@ public class CoopPuppet : MonoBehaviour, IDamageable {
     private readonly Track track = new Track();
     private Animator anim;
     private SpriteRenderer[] sprites;
+    private SpriteRenderer body;
     private int animState;
     private float flashUntil;
     private int health = 1;
@@ -829,6 +886,7 @@ public class CoopPuppet : MonoBehaviour, IDamageable {
             anim.fireEvents = false;
         }
         sprites = GetComponentsInChildren<SpriteRenderer>(true);
+        body = GetComponentInChildren<SpriteRenderer>(true);
         foreach (Collider2D col in GetComponentsInChildren<Collider2D>(true)) {
             col.isTrigger = true;
             if (col.gameObject != gameObject && col.GetComponent<IDamageable>() == null) {
@@ -842,7 +900,7 @@ public class CoopPuppet : MonoBehaviour, IDamageable {
         }
     }
 
-    public void Receive(float time, Vector2 position, sbyte facing, int state, byte newHealth) {
+    public void Receive(float time, Vector2 position, sbyte facing, int state, byte bools, int frame, byte newHealth) {
         track.Add(time, position);
         if (newHealth < health) {
             flashUntil = Time.unscaledTime + CoopArena.FlashSeconds;
@@ -851,9 +909,13 @@ public class CoopPuppet : MonoBehaviour, IDamageable {
         Vector3 scale = transform.localScale;
         scale.x = Mathf.Abs(scale.x) * facing;
         transform.localScale = scale;
+        CoopAnim.SetBools(anim, bools);
         if (anim != null && state != 0 && state != animState && anim.isActiveAndEnabled) {
             animState = state;
             anim.Play(state, 0, 0f);
+        }
+        if (anim == null && frame != 0 && body != null && CoopAnim.Frame(frame) is Sprite sprite) {
+            body.sprite = sprite;   // the ones drawn by FrameAnimator have no Animator to follow
         }
     }
 
@@ -891,7 +953,7 @@ public static class CoopStrip {
     public static void ToVisuals(GameObject root, bool keepColliders = false) {
         for (int pass = 0; pass < 3; pass++) {   // a component required by another goes on a later pass
             foreach (Component component in root.GetComponentsInChildren<Component>(true)) {
-                if (component is Transform || component is SpriteRenderer || component is Animator) {
+                if (component is Transform || component is SpriteRenderer || component is Animator || component is SpriteSkin) {
                     continue;
                 }
                 if (keepColliders && (component is Collider2D || component is Rigidbody2D)) {
@@ -900,5 +962,82 @@ public static class CoopStrip {
                 Object.DestroyImmediate(component);
             }
         }
+    }
+}
+
+// What an enemy's or Freny's Animator is doing, in a form that fits a message. Both sides have the same
+// controllers, so the Nth bool is the same bool, and a sprite's name is the same frame.
+public static class CoopAnim {
+    private const int MaxBools = 8;
+    private static readonly string[] FrameFolders = { "Cyclops", "Shielded", "SpiderMine" };
+
+    private static readonly Dictionary<RuntimeAnimatorController, int[]> boolsByController = new Dictionary<RuntimeAnimatorController, int[]>();
+    private static readonly Dictionary<Sprite, int> hashes = new Dictionary<Sprite, int>();
+    private static Dictionary<int, Sprite> frames;
+
+    private static int[] BoolsOf(Animator animator) {
+        RuntimeAnimatorController controller = animator.runtimeAnimatorController;
+        if (controller == null) {
+            return System.Array.Empty<int>();
+        }
+        if (!boolsByController.TryGetValue(controller, out int[] bools)) {
+            List<int> found = new List<int>();
+            foreach (AnimatorControllerParameter parameter in animator.parameters) {
+                if (parameter.type == AnimatorControllerParameterType.Bool && found.Count < MaxBools) {
+                    found.Add(parameter.nameHash);
+                }
+            }
+            bools = found.ToArray();
+            boolsByController[controller] = bools;
+        }
+        return bools;
+    }
+
+    public static byte Bools(Animator animator) {
+        if (animator == null || !animator.isActiveAndEnabled) {
+            return 0;
+        }
+        int[] bools = BoolsOf(animator);
+        int mask = 0;
+        for (int i = 0; i < bools.Length; i++) {
+            if (animator.GetBool(bools[i])) {
+                mask |= 1 << i;
+            }
+        }
+        return (byte)mask;
+    }
+
+    public static void SetBools(Animator animator, byte mask) {
+        if (animator == null || !animator.isActiveAndEnabled) {
+            return;
+        }
+        int[] bools = BoolsOf(animator);
+        for (int i = 0; i < bools.Length; i++) {
+            animator.SetBool(bools[i], (mask & (1 << i)) != 0);
+        }
+    }
+
+    public static int FrameHash(SpriteRenderer renderer) {
+        Sprite sprite = renderer != null ? renderer.sprite : null;
+        if (sprite == null) {
+            return 0;
+        }
+        if (!hashes.TryGetValue(sprite, out int hash)) {
+            hash = Animator.StringToHash(sprite.name);
+            hashes[sprite] = hash;
+        }
+        return hash;
+    }
+
+    public static Sprite Frame(int hash) {
+        if (frames == null) {
+            frames = new Dictionary<int, Sprite>();
+            foreach (string folder in FrameFolders) {
+                foreach (Sprite sprite in Resources.LoadAll<Sprite>(folder)) {
+                    frames[Animator.StringToHash(sprite.name)] = sprite;
+                }
+            }
+        }
+        return frames.TryGetValue(hash, out Sprite found) ? found : null;
     }
 }

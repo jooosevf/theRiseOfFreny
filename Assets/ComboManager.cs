@@ -89,6 +89,16 @@ public class ComboManager : MonoBehaviour
 
     public float TimeLeft => timeRemaining;
 
+    // co-op: the room has one combo, and the host keeps it
+    public void ShowFromHost(float value, float timeLeft) {
+        if (value > combo + 0.01f) {
+            LastRise = Time.unscaledTime;
+            Sfx.Play("combo", 1f, Mathf.Min(1f + (value - 1f) * 0.5f, 1.8f));
+        }
+        combo = value;
+        timeRemaining = timeLeft;
+    }
+
     public float GetCombo() {
         return combo;
     }
