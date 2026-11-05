@@ -7,6 +7,7 @@ public class Coin : MonoBehaviour {
 
     public int coins = 1;
     public GameObject coinCount;
+    public string worldKey;   // placed in a room of the test dungeon: it remembers being taken (CampaignWorld)
 
     private const float TossGravity = -18f;
     private static int groundMask = -1;
@@ -123,7 +124,10 @@ public class Coin : MonoBehaviour {
         }
         Player player = other.GetComponent<Player>();
         if (player != null) {
-            player.AddCoins(RunModifiers.ScaleCoins(coins));   // rebirths, "Chuva de moedas"
+            player.AddFoundCoins(RunModifiers.ScaleCoins(coins));   // rebirths, "Chuva de moedas"
+            if (worldKey != null) {
+                CampaignWorld.Mark(worldKey);
+            }
             Sfx.Play("coin", transform.position);
             Destroy(gameObject);
         }

@@ -3,6 +3,7 @@
 > **Status**: In Design
 > **Author**: José + Claude
 > **Last Updated**: 2026-11-05
+> **Protótipo**: as salas T-1 a T-4 (`Assets/Scripts/Campaign/World`). A campanha antiga não usa este sistema.
 > **Last Verified**: 2026-11-05
 > **Implements Pillar**: campanha de Hollow Knight + Resident Evil: um mundo que lembra o que o jogador fez
 
@@ -44,7 +45,7 @@ Hoje cada cena recarregada volta do zero, então nada do que o jogador faz dura.
 
 12. A volta vale para tudo o que está no estado, não só para inimigos: vaso quebrado, item pego, alavanca e atalho aberto depois do checkpoint também voltam. Assim um estado nunca fica pela metade, com um atalho aberto por uma alavanca que voltou atrás.
 13. **Bolsa da campanha:** moedas e XP ganhos na campanha ficam numa bolsa que faz parte do estado, e só entram na conta do jogador no save point. Sem isso, dava para matar um inimigo, pegar as moedas, morrer e repetir sem fim, porque o inimigo volta. Morrer devolve a bolsa ao valor do checkpoint, e sair sem salvar perde o que estava nela.
-14. A Mochila da campanha guarda seus dados neste estado e segue as mesmas cópias. Quanto de vida o Freny tem ao reaparecer é decisão do GDD de Morte e retorno.
+14. A Mochila da campanha guarda seus dados neste estado e segue as mesmas cópias. No protótipo o Freny reaparece com a vida cheia, e o resto volta como estava no checkpoint. A decisão final é do GDD de Morte e retorno.
 
 **Interface**
 
@@ -131,7 +132,7 @@ O HUD mostra a bolsa separada do saldo da conta. O menu avisa ao sair sem salvar
 
 ## Acceptance Criteria
 
-Testes automáticos da classe, sem Unity:
+Testes automáticos da classe, sem Unity (ainda não existem: o projeto não tem pasta de testes, e o protótipo foi conferido pelo teste na Unity):
 
 - [ ] Depois de `MarkCheckpoint`, um `Set` seguido de `RestoreCheckpoint` devolve o valor anterior.
 - [ ] Um `Set` feito antes de `MarkCheckpoint` continua valendo depois de `RestoreCheckpoint`.

@@ -26,6 +26,7 @@ public class Breakable : MonoBehaviour, IDamageable {
     private Color tileColor;
     private Vector3 tilePosition;
     private float regrowAfter;   // 0: gone for good once broken (the campaign)
+    private string worldKey;     // the test dungeon remembers it was broken (CampaignWorld)
 
     private static Kind? KindOf(Sprite sprite) {
         if (sprite == null) {
@@ -69,7 +70,17 @@ public class Breakable : MonoBehaviour, IDamageable {
         return made;
     }
 
-    private static void Create(Kind kind, Sprite tileSprite, Vector3 position, Color color, bool flip, TilemapRenderer layer, float regrowAfter) {
+    // a vase placed in a room of the test dungeon, which has no painted props
+    public static void PlaceVase(Vector3 position, TilemapRenderer layer, string worldKey) {
+        Sprite[] tiles = ArenaAssets.Instance ? ArenaAssets.Instance.vaseTiles : null;
+        if (tiles == null || tiles.Length == 0) {
+            return;
+        }
+        Breakable vase = Create(Kind.Vase, tiles[Random.Range(0, tiles.Length)], position, Color.white, false, layer, 0f);
+        vase.worldKey = worldKey;
+    }
+
+    private static Breakable Create(Kind kind, Sprite tileSprite, Vector3 position, Color color, bool flip, TilemapRenderer layer, float regrowAfter) {
         GameObject obj = new GameObject(kind.ToString());
         obj.transform.position = position;
         SpriteRenderer renderer = obj.AddComponent<SpriteRenderer>();
@@ -97,6 +108,7 @@ public class Breakable : MonoBehaviour, IDamageable {
         breakable.tileColor = color;
         breakable.tilePosition = position;
         breakable.regrowAfter = regrowAfter;
+        return breakable;
     }
 
     private void OnEnable() {
@@ -134,6 +146,9 @@ public class Breakable : MonoBehaviour, IDamageable {
         }
         broken = true;
         Health = 0;
+        if (worldKey != null) {
+            CampaignWorld.Mark(worldKey);
+        }
         Active.Remove(this);
         Vector3 center = Center;
         foreach (Collider2D c in GetComponents<Collider2D>()) {

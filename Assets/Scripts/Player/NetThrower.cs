@@ -33,6 +33,11 @@ public class NetThrower : MonoBehaviour {
         return thrower != null ? thrower : player.gameObject.AddComponent<NetThrower>();
     }
 
+    // what he carried into this room of the test dungeon (CampaignWorld)
+    public void SetNets(int count) {
+        Nets = Mathf.Clamp(count, 0, MaxNets);
+    }
+
     private void Start() {
         player = GetComponent<Player>();
         input = GetComponent<FrenyInput>();

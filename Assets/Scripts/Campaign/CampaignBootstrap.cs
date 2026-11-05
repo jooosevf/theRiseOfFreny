@@ -12,10 +12,14 @@ public static class CampaignBootstrap {
         SceneManager.sceneLoaded -= OnSceneLoaded;
         SceneManager.sceneLoaded += OnSceneLoaded;
         // the first scene is already loaded when this runs
+        CampaignWorld.OnSceneChanged(SceneManager.GetActiveScene());
         SetUp(SceneManager.GetActiveScene());
     }
 
     private static void OnSceneLoaded(Scene scene, LoadSceneMode mode) {
+        if (mode == LoadSceneMode.Single) {
+            CampaignWorld.OnSceneChanged(scene);
+        }
         SetUp(scene);
     }
 
@@ -71,6 +75,9 @@ public static class CampaignBootstrap {
         }
 
         Breakable.FromTilemaps();
+        if (CampaignWorld.Active) {
+            CampaignWorld.SetUpRoom(scene);
+        }
     }
 
     private static void MakeCheckpoint(GameObject obj) {

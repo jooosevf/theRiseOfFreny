@@ -13,7 +13,10 @@ public class Checkpoint : MonoBehaviour {
         if (!other.CompareTag("Player")) {
             return;
         }
-        if (CampaignRun.SetCheckpoint(transform.position)) {
+        bool isNew = CampaignWorld.Active
+            ? CampaignWorld.TouchCheckpoint(other.GetComponent<Player>(), transform.position)
+            : CampaignRun.SetCheckpoint(transform.position);
+        if (isNew) {
             Fx.Burst(transform.position + Vector3.up * 0.5f, new Color(0.3f, 0.8f, 1f), 14, 2f, 0.08f, 0.5f);
             Sfx.Play("checkpoint", transform.position);
         }

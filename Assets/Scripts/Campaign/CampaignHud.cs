@@ -76,6 +76,14 @@ public class CampaignHud : MonoBehaviour {
             GUI.Label(new Rect(0, Screen.height * 0.7f, Screen.width, 40), what, bigStyle);
         }
 
+        if (WorldInteract.Current && !player.IsDead) {
+            GUI.Label(new Rect(0, Screen.height * 0.7f, Screen.width, 40), WorldInteract.Current.Hint, bigStyle);
+        }
+
+        if (CampaignWorld.Active && Time.time < CampaignWorld.ToastUntil) {
+            GUI.Label(new Rect(0, Screen.height * 0.2f, Screen.width, 60), CampaignWorld.Toast, bigStyle);
+        }
+
         if (player.IsDead) {
             GUI.Label(new Rect(0, Screen.height * 0.4f, Screen.width, 60),
                 $"Freny caiu. Voltando em {run.SecondsUntilRespawn:0.0}s", bigStyle);
@@ -98,6 +106,14 @@ public class CampaignHud : MonoBehaviour {
         GUILayout.BeginVertical(boxStyle);
         int index = CampaignLevels.IndexOf(run.StageId);
         CampaignLevels.Stage stage = CampaignLevels.All[index];
+        if (stage.world) {
+            GUILayout.Label($"Masmorra de teste · Sala {stage.id}");
+            GUILayout.Label($"Vidas guardadas {CampaignWorld.Lives}/{CampaignWorld.MaxLives} (Q)");
+            GUILayout.Label($"Não salvo: {CampaignWorld.State.BagCoins} moedas, {CampaignWorld.State.BagXp} XP");
+            GUILayout.EndVertical();
+            GUILayout.EndArea();
+            return;
+        }
         GUILayout.Label($"Masmorra {stage.dungeon} · Fase {stage.DisplayName}");
         GUILayout.Label($"Tempo {run.Elapsed:0.0}s  Quedas {CampaignRun.Deaths}");
         if (UIManager.Instance == null) {
@@ -109,6 +125,10 @@ public class CampaignHud : MonoBehaviour {
     }
 
     private void DrawStageClear() {
+        if (CampaignWorld.Active) {
+            GUI.Label(new Rect(0, Screen.height * 0.3f, Screen.width, 160), "Você saiu da masmorra de teste!", bigStyle);
+            return;
+        }
         float best = CampaignProgress.BestTime(run.StageId);
         string text = $"Fase {run.StageId} concluída!\n{run.Elapsed:0.0}s (recorde {best:0.0}s)";
         if (run.IsLastStage) {
@@ -124,6 +144,9 @@ public class CampaignHud : MonoBehaviour {
         GUILayout.BeginVertical(boxStyle);
         GUILayout.Label("Fases (Tab fecha)");
         foreach (CampaignLevels.Stage stage in CampaignLevels.All) {
+            if (stage.world) {
+                continue;
+            }
             // in the Editor every stage is open, to test without playing through
             bool open = Application.isEditor || CampaignProgress.IsUnlocked(stage.id);
             float best = CampaignProgress.BestTime(stage.id);

@@ -22,6 +22,7 @@ public class SaveData {
     public List<string> gear = new List<string>();         // Armeira items that aren't upgrades (Loadout)
     public string stats;      // AccountStats' JSON (the Estatísticas); empty in older saves
     public string missions;   // DailyMissions' JSON (today's progress); empty in older saves
+    public string world;      // the test dungeon as its last save point left it (CampaignWorld); empty in older saves
     public int rebirths;                                   // Renascer (Rebirth)
     public List<string> looks = new List<string>();        // looks bought with coins (FrenyLook)
     public List<string> lookWorn = new List<string>();     // the helmet, cape and colour worn
@@ -209,6 +210,7 @@ public static class SaveSystem {
             campaignUnlocked = PlayerPrefs.GetInt(CampaignProgress.UnlockedKey, 0),
             stats = PlayerPrefs.GetString(AccountStats.Key, ""),
             missions = PlayerPrefs.GetString(DailyMissions.Key, ""),
+            world = PlayerPrefs.GetString(CampaignWorld.SavedKey, ""),
             rebirths = Rebirth.Count,
             looks = FrenyLook.BoughtIds,
             lookWorn = FrenyLook.WornIds(),
@@ -250,6 +252,7 @@ public static class SaveSystem {
         SetOrDelete(CampaignProgress.UnlockedKey, data.campaignUnlocked);
         SetOrDelete(AccountStats.Key, data.stats);
         SetOrDelete(DailyMissions.Key, data.missions);
+        SetOrDelete(CampaignWorld.SavedKey, data.world);
         Rebirth.Count = data.rebirths;
         FrenyLook.Load(data.looks, data.lookWorn);   // old saves: none
 

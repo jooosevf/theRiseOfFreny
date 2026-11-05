@@ -187,7 +187,7 @@ public class Player : MonoBehaviour, IDamageable {
         ? ShotgunOwned && ShotgunShells > 0
         : !Reloading && RevolverBullets > 0)));
     // a dropped potion only heals: at full health it stays on the floor until needed or it expires
-    public bool WantsPotion => !isDead && Health < MaxHealth;
+    public bool WantsPotion => !isDead && (CampaignWorld.Active ? CampaignWorld.Lives < CampaignWorld.MaxLives : Health < MaxHealth);
     // the Armeira's buffs raise the caps (WeaponLevels)
     private int ReserveMax => revolverReserveMax + WeaponLevels.ReserveBonus;
     private int ShellsMax => shellsMax + WeaponLevels.ShellsBonus;
@@ -268,7 +268,7 @@ public class Player : MonoBehaviour, IDamageable {
     public float RunMeter => runStamina;
     // the GameManager is looked up once in Start (FindObjectOfType walks the whole scene,
     // and the autopilot asks this on every decision)
-    public bool HasPotion => _gameManager != null && _gameManager.HasPotion;
+    public bool HasPotion => CampaignWorld.Active ? CampaignWorld.Lives > 0 : _gameManager != null && _gameManager.HasPotion;
 
     public Vector3 Feet => feetPos ? feetPos.position : transform.position;
 
@@ -822,6 +822,14 @@ public class Player : MonoBehaviour, IDamageable {
         if (isDead) {
             return false;
         }
+        if (CampaignWorld.Active) {
+            // in the test dungeon a potion is a life to carry and drink when he wants
+            if (CampaignWorld.Lives >= CampaignWorld.MaxLives) {
+                return false;
+            }
+            CampaignWorld.Lives++;
+            return true;
+        }
         if (Health >= MaxHealth) {
             return false;
         }
@@ -1017,7 +1025,11 @@ public class Player : MonoBehaviour, IDamageable {
         if (!_input.Current.potionPressed || Health >= MaxHealth || !HasPotion) {
             return;
         }
-        _gameManager.HasPotion = false;
+        if (CampaignWorld.Active) {
+            CampaignWorld.Lives--;
+        } else {
+            _gameManager.HasPotion = false;
+        }
         Heal(1);
         Sfx.Play("potion", transform.position);
     }
@@ -1105,10 +1117,47 @@ public class Player : MonoBehaviour, IDamageable {
     }
 
     public void AddCoins(int amount) {
+        if (CampaignWorld.Active) {
+            // spending at the Armeira: from the account; the bag only counts on screen
+            FrenyProgress.Coins = Mathf.Max(0, FrenyProgress.Coins + amount);
+            ShowCoins(FrenyProgress.Coins + CampaignWorld.State.BagCoins);
+            return;
+        }
         coins = Mathf.Max(0, coins + amount);
         FrenyProgress.Coins = coins;
         if (UIManager.Instance) {
             UIManager.Instance.UpdateCoins(coins);
+        }
+    }
+
+    // coins found on the floor: in the test dungeon they wait in the bag for a save point
+    public void AddFoundCoins(int amount) {
+        if (CampaignWorld.Active) {
+            CampaignWorld.AddFoundCoins(this, amount);
+        } else {
+            AddCoins(amount);
+        }
+    }
+
+    public void ShowCoins(int total) {
+        coins = total;
+        if (UIManager.Instance) {
+            UIManager.Instance.UpdateCoins(coins);
+        }
+    }
+
+    // what he carried into this room of the test dungeon (CampaignWorld)
+    public void RestoreCarried(int health, int armor, int bullets, int reserve, bool shotgun, int shells, int grenades, int swings) {
+        Health = Mathf.Clamp(health, 1, MaxHealth);
+        Armor = Mathf.Clamp(armor, 0, ArmorMax);
+        RevolverBullets = Mathf.Clamp(bullets, 0, DrumSize);
+        RevolverReserve = Mathf.Max(0, reserve);
+        ShotgunOwned = shotgun;
+        ShotgunShells = shotgun ? shells : 0;
+        Grenades = Mathf.Max(0, grenades);
+        GreatSwordSwings = Mathf.Max(0, swings);
+        if (UIManager.Instance) {
+            UIManager.Instance.UpdateLives(Health, false);
         }
     }
 

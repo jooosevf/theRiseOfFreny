@@ -96,7 +96,9 @@ public class GameMenus : MonoBehaviour {
     public static void Continue() {
         string scene = SaveSystem.Current.lastScene;
         if (!string.IsNullOrEmpty(scene) && Application.CanStreamedLevelBeLoaded(scene)) {
-            if (CampaignLevels.IsStage(scene)) {
+            if (CampaignLevels.IsWorldRoom(scene)) {
+                CampaignWorld.Enter(false);
+            } else if (CampaignLevels.IsStage(scene)) {
                 StartStage(scene);
             } else {
                 StartArena();
@@ -306,7 +308,9 @@ public class GameMenus : MonoBehaviour {
         // the exact number, following what the Armeira spends
         CoinLabel.Create(page.Content, MenuKit.SmallTextSize, MenuKit.DimTextColor);
         page.Button("Continuar", Resume);
-        if (CampaignLevels.IsStage(scene)) {
+        if (CampaignLevels.IsWorldRoom(scene)) {
+            page.Button("Voltar ao último checkpoint", CampaignWorld.Respawn);
+        } else if (CampaignLevels.IsStage(scene)) {
             page.Button("Recomeçar fase", () => StartStage(scene));
         } else if (arena) {
             ArenaControls(page);

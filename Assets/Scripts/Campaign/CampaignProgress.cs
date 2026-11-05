@@ -25,7 +25,7 @@ public static class CampaignProgress {
             PlayerPrefs.SetFloat(BestTimeKeyPrefix + stageId, seconds);
         }
         int next = CampaignLevels.IndexOf(stageId) + 1;
-        if (next > UnlockedIndex && next < CampaignLevels.All.Count) {
+        if (next > UnlockedIndex && next < CampaignLevels.All.Count && !CampaignLevels.All[next].world) {
             PlayerPrefs.SetInt(UnlockedKey, next);
         }
         PlayerPrefs.Save();
