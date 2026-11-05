@@ -15,7 +15,7 @@ namespace Online {
     //   "FRR1", float step (s), 4 floats: the camera's left, right, bottom, top (the arena's screen)
     //   2 shorts: Freny's drawn size (width, height)
     //   ushort n, n x (4 shorts: the ground's boxes, xMin yMin xMax yMax)
-    //   then frames until the end: ushort time (in steps), Freny (short x, short y, byte flags,
+    //   then frames until the end: uint time (in steps), Freny (short x, short y, byte flags,
     //   byte health, byte armor), ushort count, count x enemy (ushort id, byte type, short x,
     //   short y, byte flags), and a new type the first time it shows up: "type" 255, byte length +
     //   UTF-8 name, 2 shorts (its drawn size), then the real type byte.
@@ -98,7 +98,7 @@ namespace Online {
                 _full = true;   // the start of a very long run is kept; the log has the rest
                 return;
             }
-            _out.Write((ushort)Mathf.Min(ushort.MaxValue, Mathf.RoundToInt(now / Step)));
+            _out.Write((uint)Mathf.Max(0, Mathf.RoundToInt(now / Step)));
             Vector3 p = player.transform.position;
             _out.Write(Pos(p.x));
             _out.Write(Pos(p.y));
