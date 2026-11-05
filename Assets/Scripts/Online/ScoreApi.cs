@@ -69,7 +69,21 @@ namespace Online {
             _sealedAt = GameTime;
             _flags.Clear();
             _flags.AddRange(flags);
+            if (Recorder != null) {
+                try {
+                    _replay = Recorder.ToBase64();
+                } catch (Exception e) {
+                    Debug.LogWarning("[Online] Replay not saved: " + e.Message);
+                }
+                Recorder = null;
+            }
         }
+
+        // where Freny and the enemies were (RunRecorder), sent with the record so the ADMs can
+        // watch it; taken when the run ends
+        public RunRecorder Recorder;
+        private string _replay;
+        public bool HasReplay => !string.IsNullOrEmpty(_replay);
 
         // "Bug_Enemy(Clone)" -> "Bug_Enemy": the server knows each enemy by its prefab
         public static string PrefabName(string name) {
@@ -77,7 +91,8 @@ namespace Online {
             return (cut >= 0 ? name.Substring(0, cut) : name).Trim();
         }
 
-        public string ToJson(string token, string board, long score) {
+        // withReplay: the record's log (/api/run/finish) takes the replay; the Conquistas' doesn't
+        public string ToJson(string token, string board, long score, bool withReplay = false) {
             StringBuilder json = new StringBuilder(64 + _kills.Count * 24);
             json.Append("{\"token\":\"").Append(token).Append("\",\"board\":\"").Append(board)
                 .Append("\",\"score\":").Append(score)
@@ -105,7 +120,9 @@ namespace Online {
                 if (i > 0) json.Append(',');
                 json.Append('"').Append(_flags[i]).Append('"');
             }
-            return json.Append("]}").ToString();
+            json.Append(']');
+            if (withReplay && HasReplay) json.Append(",\"replay\":\"").Append(_replay).Append('"');
+            return json.Append('}').ToString();
         }
 
         private static void AppendMoments(StringBuilder json, List<Moment> moments) {
