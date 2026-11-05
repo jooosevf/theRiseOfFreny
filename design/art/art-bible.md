@@ -266,7 +266,7 @@ Nada delas está no jogo; são rascunho, não cânone. O José achou os animais 
 - **Capas saturadas.** Manto do Poço e capa de musgo em verde vivo, brasão em vermelho vivo e cruz branca dura disputam com a semântica.
 - **Fundo de teste.** Os inimigos aparecem sobre placas ardósia mais claras que o tile real. Isso esconde o problema: os navy que parecem bons ali têm 1,55 no jogo.
 
-O folclore brasileiro e o sino e a máscara do Arauto ficam como decisões pendentes, no fim do documento.
+O folclore brasileiro e o sino e a máscara do Arauto ficam para depois da arena; ver "Decisões do José".
 
 ## 6. Environment Design Language
 
