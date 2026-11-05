@@ -14,7 +14,8 @@ namespace Online {
     // Format, little-endian, version 1:
     //   "FRR1", float step (s), 4 floats: the camera's left, right, bottom, top (the arena's screen)
     //   2 shorts: Freny's drawn size (width, height)
-    //   ushort n, n x (4 shorts: the ground's boxes, xMin yMin xMax yMax)
+    //   ushort n, n x ground shape (byte kind: 0 closed polygon, 1 open line; ushort count; count x
+    //   2 shorts), the floor, walls and platforms as the physics has them
     //   then frames until the end: uint time (in steps), Freny (short x, short y, byte flags,
     //   byte health, byte armor), ushort count, count x enemy (ushort id, byte type, short x,
     //   short y, byte flags), and a new type the first time it shows up: "type" 255, byte length +
@@ -25,7 +26,8 @@ namespace Online {
         public const float Step = 0.1f;
         private const float Unit = 16f;
         private const int MaxBytes = 6 * 1024 * 1024;   // raw; well over an hour of a full arena
-        private const int MaxBoxes = 200;
+        private const int MaxShapes = 400;
+        private const int MaxPoints = 8000;
 
         private readonly MemoryStream _raw = new MemoryStream(64 * 1024);
         private readonly BinaryWriter _out;
@@ -48,23 +50,58 @@ namespace Online {
             WriteGround();
         }
 
-        // the solid, still colliders (floor, walls, platforms): the viewer draws them as the arena
+        // the solid, still colliders (floor, walls, platforms), as the physics sees them, so a
+        // tilemap's ground comes out with its real outline: the viewer draws them as the arena.
+        // Each shape: byte kind (0 a closed polygon, 1 an open line), ushort n, n points.
         private void WriteGround() {
-            List<Bounds> boxes = new List<Bounds>();
+            List<(byte kind, List<Vector2> points)> shapes = new List<(byte, List<Vector2>)>();
+            PhysicsShapeGroup2D group = new PhysicsShapeGroup2D();
+            List<Vector2> vertices = new List<Vector2>();
+            int total = 0;
             foreach (Collider2D col in UnityEngine.Object.FindObjectsByType<Collider2D>(FindObjectsSortMode.None)) {
-                if (boxes.Count >= MaxBoxes) break;
                 if (col.isTrigger || !col.enabled || !col.gameObject.activeInHierarchy) continue;
+                if (col.compositeOperation != Collider2D.CompositeOperation.None) continue;   // its composite has it
                 Rigidbody2D body = col.attachedRigidbody;
                 if (body != null && body.bodyType != RigidbodyType2D.Static) continue;
                 if (col.GetComponentInParent<Enemy>() != null || col.GetComponentInParent<Player>() != null) continue;
-                boxes.Add(col.bounds);
+                Bounds b = col.bounds;
+                if (b.size.x < 0.05f && b.size.y < 0.05f) continue;
+                group.Clear();
+                if (col.GetShapes(group) <= 0) continue;
+                Matrix4x4 toWorld = group.localToWorldMatrix;
+                for (int i = 0; i < group.shapeCount && shapes.Count < MaxShapes && total < MaxPoints; i++) {
+                    PhysicsShape2D shape = group.GetShape(i);
+                    vertices.Clear();
+                    group.GetShapeVertices(i, vertices);
+                    List<Vector2> points = new List<Vector2>();
+                    byte kind = 0;
+                    if (shape.shapeType == PhysicsShapeType2D.Polygon) {
+                        foreach (Vector2 v in vertices) points.Add(toWorld.MultiplyPoint3x4(v));
+                    } else if (shape.shapeType == PhysicsShapeType2D.Edges) {
+                        kind = 1;
+                        foreach (Vector2 v in vertices) points.Add(toWorld.MultiplyPoint3x4(v));
+                    } else if (shape.shapeType == PhysicsShapeType2D.Circle && vertices.Count > 0) {
+                        Vector2 c = toWorld.MultiplyPoint3x4(vertices[0]);
+                        for (int k = 0; k < 8; k++) {
+                            float a = k * Mathf.PI / 4f;
+                            points.Add(c + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * shape.radius);
+                        }
+                    } else {
+                        continue;   // capsules: none in the arenas
+                    }
+                    if (points.Count < 2) continue;
+                    total += points.Count;
+                    shapes.Add((kind, points));
+                }
             }
-            _out.Write((ushort)boxes.Count);
-            foreach (Bounds b in boxes) {
-                _out.Write(Pos(b.min.x));
-                _out.Write(Pos(b.min.y));
-                _out.Write(Pos(b.max.x));
-                _out.Write(Pos(b.max.y));
+            _out.Write((ushort)shapes.Count);
+            foreach ((byte kind, List<Vector2> points) in shapes) {
+                _out.Write(kind);
+                _out.Write((ushort)points.Count);
+                foreach (Vector2 v in points) {
+                    _out.Write(Pos(v.x));
+                    _out.Write(Pos(v.y));
+                }
             }
         }
 
