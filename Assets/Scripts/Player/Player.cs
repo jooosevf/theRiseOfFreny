@@ -772,10 +772,11 @@ public class Player : MonoBehaviour, IDamageable {
 
     private const float CrouchMuzzleDrop = 0.32f; // the crouched gun sits 8 art pixels lower
 
-    // the shotgun poses hold it at the hip (Tools/ArtGen/freny_poses.py): its barrel ends 3 art
-    // pixels (0.04 each) short of the pistol's and 6 lower standing or in the air, 1 further and 2 lower crouched
-    private static readonly Vector2 ShotgunMuzzle = new Vector2(-0.12f, 0.24f);
-    private static readonly Vector2 CrouchShotgunMuzzle = new Vector2(0.04f, 0.08f);
+    // the shotgun poses hold it across his belly in both hands (Tools/ArtGen/freny_poses.py): its
+    // barrel ends 8 art pixels (0.04 each) short of the pistol's, and 7 lower standing or in the
+    // air, 5 lower crouched
+    private static readonly Vector2 ShotgunMuzzle = new Vector2(-0.32f, 0.28f);
+    private static readonly Vector2 CrouchShotgunMuzzle = new Vector2(-0.32f, 0.20f);
 
     private const float RevolverPush = 0f; // the revolver only hurts: no shove
 
