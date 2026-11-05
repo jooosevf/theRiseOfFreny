@@ -666,6 +666,7 @@ namespace Online {
                 }
             } else if (_sawAlive) {
                 _reported = true;
+                _runLog?.Recorder?.Final(_player, _input != null && _input.IsAutopilotDriving);   // Freny down
                 _runLog?.Seal(AntiCheat.Flags);
                 long coins = _player != null ? Math.Max(0, _player.coins - _coinsAtStart) : 0;
                 ReportRun(CurrentScore(), coins, _assisted);

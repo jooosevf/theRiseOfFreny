@@ -93,16 +93,26 @@ namespace Online {
             if (_full || player == null) return;
             float now = Time.time - _start;
             if (now < _next) return;
-            _next = now + Step;
+            _next = (Mathf.Floor(now / Step) + 1f) * Step;   // on the grid: no drift from late frames
+            Write(player, autopilot, now);
+        }
+
+        // the moment the run ends (Freny down), whenever it falls between two steps
+        public void Final(Player player, bool autopilot) {
+            if (_full || player == null) return;
+            Write(player, autopilot, Mathf.Max(_next - Step + 0.001f, Time.time - _start));
+        }
+
+        private void Write(Player player, bool autopilot, float now) {
             if (_raw.Length > MaxBytes) {
                 _full = true;   // the start of a very long run is kept; the log has the rest
                 return;
             }
-            _out.Write((uint)Mathf.Max(0, Mathf.RoundToInt(now / Step)));
+            _out.Write((uint)Mathf.Max(0, Mathf.CeilToInt(now / Step - 0.01f)));
             Vector3 p = player.transform.position;
             _out.Write(Pos(p.x));
             _out.Write(Pos(p.y));
-            _out.Write((byte)((player.FacingRight ? 1 : 0) | (player.IsGrounded ? 2 : 0) | (player.IsDead ? 4 : 0) | (autopilot ? 8 : 0)));
+            _out.Write((byte)((player.FacingRight ? 1 : 0) | (player.IsGrounded ? 2 : 0) | (player.IsDead || player.Health <= 0 ? 4 : 0) | (autopilot ? 8 : 0)));
             _out.Write((byte)Mathf.Clamp(player.Health, 0, 255));
             _out.Write((byte)Mathf.Clamp(player.Armor, 0, 255));
 
