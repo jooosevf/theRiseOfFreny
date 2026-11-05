@@ -2,9 +2,10 @@
 
 > **Status**: Draft
 > **Owned By**: art-director
-> **Last Updated**: 2026-11-04
+> **Last Updated**: 2026-11-05
 > **Art Director Sign-Off (AD-ART-BIBLE)**: SKIPPED 2026-11-04 — lean mode
-> **Aprovação**: o José ainda não aprovou as seções; a revisão é pelo PR, e as escolhas dele estão em "Decisões pendentes do José".
+> **Aprovação**: o José respondeu às decisões em 2026-11-05 e segue lendo o documento. As respostas estão em "Decisões do José".
+> **Foco atual**: só a arena. Campanha e cosméticos vêm depois, e o que este documento diz sobre eles é direção futura, não trabalho de agora.
 
 ## 1. Visual Identity Statement
 
@@ -40,7 +41,7 @@ Os dois modos têm clima próprio e a mesma identidade. A campanha é contida e 
 
 **Vitória.** Emoção: alívio com orgulho, sem festa colorida. Luz: a primeira luz quente depois do combate, com ouro só na recompensa. Descritores: dourado, sóbrio, merecido, breve. Energia: descendente, com um pico curto no prêmio. Carrega o clima: o baú prateado ou dourado e as faíscas de ouro.
 
-**Menus e Armeira.** Emoção: o silêncio antes de voltar; na Armeira, o prazer de escolher com o que lutar. Luz: fundo quase preto, sem scanlines, com fonte quente lateral sobre Freny; na Armeira, luz neutra e estável para julgar o elmo e as armas pela cor real. Descritores: gravado, férreo, contido, cuidadoso. Energia: repouso. Carrega o clima: Freny em destaque e as placas de ferro.
+**Menus e Armeira.** Emoção: o silêncio antes de voltar; na Armeira, o prazer de escolher com o que lutar. Luz: o fundo roxo escuro de hoje, com Freny em destaque; na Armeira, luz neutra e estável para julgar o elmo e as armas pela cor real. Descritores: noturno, arcano, contido, cuidadoso. Energia: repouso. Carrega o clima: o roxo-magenta, que o José vê como parte de Dark Fantasy, e a arte atual do menu, que fica.
 
 **Poço de Ácido (desligado).** A chave `AcidPit` está desligada desde 2026-11-02, mas a arte existe. O clima é náusea e calor doentio: luz verde vinda de baixo sobre o tile de sempre. É o único lugar em que o verde ácido é o ambiente.
 
@@ -78,7 +79,7 @@ A luminância máxima do céu cai de 0,62 para 0,42, e o matiz deixa de ser o do
 
 **Ambiente.** Domina a pedra pesada e retangular, com cantos chanfrados, arcos redondos e cortes diagonais, como em `Tileset.png`. A ameaça rompe esse retângulo com pontas (`Falling spike`, espinhos do tileset). Curvas orgânicas são do que invade a pedra: hera, teias, tentáculos e líquidos.
 
-**UI.** A UI ecoa o mundo: placas retangulares de ferro, cantos chanfrados na grade do jogo. Nada de cantos arredondados, cápsulas ou brilho vítreo. Bordas retas são estáveis; diagonais marcam seleção.
+**UI.** A UI usa placas retangulares na grade do jogo, em roxo escuro, sem cantos arredondados, cápsulas ou brilho vítreo. Bordas retas são estáveis; moldura e barra marcam seleção.
 
 **Protagonistas e coadjuvantes.** Atraem o olho: o elmo de Freny, olhos de inimigo, telegrafia, itens e números. Recuam: tile, céu, props e o corpo escuro dos inimigos.
 
@@ -104,11 +105,11 @@ Cores de apoio: violeta `#484098` e `#303078`, túnica `#806868`, vinho `#600820
 
 | Cor | Significa | Onde vale | Não pode |
 |---|---|---|---|
-| Vermelho vivo `#D02828`, `#FF4033` | Dano e perigo agora | Golpes, avisos, números, frasco de vida. Exceção, ainda por decidir: texto de combo e banner no HUD, com contorno preto | Decorar cenário ou cosmético comum; no mundo, marcar o combo |
+| Vermelho vivo `#D02828`, `#FF4033` | Dano e perigo agora | Golpes, avisos, números, frasco de vida. Exceção aprovada pelo José: texto de combo e banner no HUD, com contorno preto | Decorar cenário ou cosmético comum; no mundo, marcar o combo |
 | Vinho `#600820` | Elite, sangue velho, Fúria | Corpo de elite, marcas | Ser o único aviso de um ataque |
 | Ferrugem `#C87038` | Calor, abrigo, jogador | Freny, checkpoint, torchas | Marcar inimigo comum |
 | Ouro `#D8A028` | Recompensa | Moeda, baú, conquista, combo | Fazer parte de inimigo ou ameaça |
-| Violeta `#484098` | Magia e sobrenatural hostil | Inimigos, projéteis | Interface de menu |
+| Violeta `#484098` | Magia e sobrenatural hostil, no mundo | Inimigos, projéteis | Marcar item ou recompensa no mundo. O roxo-magenta dos menus é outra família e fica |
 | Verde ácido `#44FF00` (aprox.) | Corrói e envenena | Poço, vômito do Ciclope | Decorar, ou estar em cosmético |
 | Azul-claro do diamante | Valor raro | Diamante | Efeito de inimigo |
 | Branco puro | Impacto, instante | Flash de golpe, pico de combo | Cor fixa de peça |
@@ -146,22 +147,22 @@ A campanha tem 18 fases em duas masmorras, e o código cita 9. Nomes e temas das
 
 ### Paleta de UI
 
-A UI de hoje é roxo-magenta (`MenuKit.cs`). Proponho ferro, osso e ferrugem. As cores de combate ficam (Hit `#FF4033`, Hurt `#D91A26`, Healed `#59FF66`, Energy `#FFDB33`, Rage `#BF2626`), porque são semânticas e o hype pede saturação.
+**O roxo-magenta fica.** O José vê nele muito de Dark Fantasy e não quer trocar tudo de uma vez (2026-11-05). A base é a de `MenuKit.cs` hoje. As cores de combate também ficam (Hit `#FF4033`, Hurt `#D91A26`, Healed `#59FF66`, Energy `#FFDB33`, Rage `#BF2626`), porque são semânticas e o hype pede saturação. Ferro, osso e ferrugem deixam de ser a proposta; só voltam se o José pedir.
 
-| Papel | Hoje | Proposta | Contraste proposto |
-|---|---|---|---|
-| Painel | `#120A21` | `#141018` | Base |
-| Botão | `#331F54` | `#2A2230` | 1,23 sobre o painel; exige borda |
-| Borda | Não há | `#806868` | 3,67 sobre o painel; 2,99 sobre o botão. Pede objeto novo em botão e linha |
-| Selecionado | `#AD3DD1` | Fundo segue `#2A2230`; moldura `#C87038` de 3 px e barra sólida à esquerda; texto não muda. Em repouso, moldura de 1 px `#806868` | Moldura 4,26 sobre o botão. A espessura é o sinal fora da cor, porque ferrugem sobre a borda dá 1,42 |
-| Pressionado | `#E68CFF` | `#E8A868` | Texto `#141018`: 9,16; texto claro: 1,56, então exige trocar a cor do texto |
-| Desativado | `#241A33` a 60% | `#1C1820`, sem borda, texto `#A89C8C` | Exige trocar a cor do `Text`, que hoje segue claro em botão inativo |
-| Texto | `#F7EDFF` | `#E8E0D0` | 14,33 sobre o painel; 11,68 sobre o botão |
-| Texto fraco | `#B399D1` | `#A89C8C` | 6,98 sobre o painel |
-| Título | `#ED8FFC` | `#B0A088`; considerar `#E8E0D0` | 7,37 sobre o painel. Sobre o texto fraco dá só 1,06, e a hierarquia depende de tamanho e fonte |
-| Sombra | `#05030D` | `#05030D` | Fica |
-| Ouro de conquista | `#FFD94A` | `#D8A028` | 8,04 sobre o painel |
-| Perigo em UI | Vários | `#D02828` | 3,60; só em barras, ícones e texto grande |
+| Papel | Hoje, e fica | Observação |
+|---|---|---|
+| Painel | `#120A21` | Base |
+| Botão | `#331F54` | |
+| Selecionado | `#AD3DD1` | Foco ganha reforço fora da cor, abaixo |
+| Pressionado | `#E68CFF` | |
+| Desativado | `#241A33` a 60% | O texto segue claro em botão inativo; escurecer o texto é ajuste à parte |
+| Texto | `#F7EDFF` | 17,07 sobre o painel |
+| Texto fraco | `#B399D1` | 7,69 sobre o painel |
+| Título | `#ED8FFC` | |
+| Sombra | `#05030D` | |
+| Ouro de conquista | `#FFD94A` | |
+
+**Foco de menu.** Segue a recomendação: moldura de 3 px e barra sólida à esquerda em `#AD3DD1`, com o texto sem mudar. A espessura é o sinal que não depende de cor. O marcador não pode ser ">", já usado em `MenuKit.Opens`. Borda pede objeto novo em botão e linha.
 
 ### Daltonismo
 
@@ -243,7 +244,7 @@ Freny ocupa 8% da altura da tela na arena e 12,8% na campanha, cerca de 86 e 138
 
 ### Folhas de conceito v2 (2026-11-01)
 
-Nada delas está no jogo; são rascunho, não cânone.
+Nada delas está no jogo; são rascunho, não cânone. O José achou os animais do folclore feios: eles ficam para depois, e serão redesenhados, provavelmente por um artista contratado. O Arauto e os cosméticos também ficam para depois. A análise abaixo fica como briefing para essa hora.
 
 **Seguem a direção:**
 
@@ -287,11 +288,11 @@ Direção de arte revisada pelo papel de UX, lendo o código de `MenuKit`, `Comb
 
 **HUD.** Fica em tela, não diegético, porque ranking e combo pedem números exatos. Na campanha é mínimo, nos cantos. Na arena cresce com o hype, em combo e banners, não em molduras. `HealthFull`, `HealthEmpty`, `HealthArmor` e `Boss Health.png` ficam, sujeitos ao teste de leitura. O pavio da granada junto de Freny é quase diegético, já existe e é bom. Rótulos de HUD têm mínimo de 16 px finais em 1080p: hoje `CombatHud` usa 12 x largura/1920, ou 12 px em 1080p, metade do menu. O encaixe do layout com 16 não foi verificado.
 
-**Roxo-magenta: sai dos menus.** Hoje os menus leem como synthwave: painel roxo, seleção magenta `#AD3DD1`, título rosa-lilás `#ED8FFC`, `Scanlines.png` e o quadrado violeta de `fundo.png`, que não parece ter função nem acabamento. Isso contradiz a regra do projeto e o que o jogo mostra. O violeta fica no mundo, como magia hostil. Ordem proposta: trocar as cores do `MenuKit`, tirar `Scanlines` e monitor dos menus, se estiverem lá, e depois refazer `fundo.png` e `Loading BG.png` a 4x, com pedra escura e Freny iluminado de lado. As cores estão centralizadas só em parte: são 9 no `MenuKit`, mais literais roxos em `MenuKit`, `TouchControls`, `CombatHud` e `InventoryScreens`, e `CombatHud.ReadyColor` herda `TitleColor`, então o HUD muda junto. Só trocar os hex piora o foco: texto em `#C87038` cai para 2,74, porque o `ColorBlock` tinge apenas o fundo. As scanlines nas fases vêm de `Campaign/VhsOverlay.cs`, e são decisão à parte.
+**Roxo-magenta: fica nos menus.** Decisão do José em 2026-11-05. `fundo.png`, `Loading BG.png`, `Scanlines.png`, `Monitor.png` e `Menu player.png` também ficam: a arte do menu não precisa mexer agora. Se um dia as cores mudarem, estão centralizadas só em parte: são 9 no `MenuKit`, mais literais em `MenuKit`, `TouchControls`, `CombatHud` e `InventoryScreens`, e `CombatHud.ReadyColor` herda `TitleColor`. As scanlines nas fases vêm de `Campaign/VhsOverlay.cs`, assunto da campanha.
 
-**Armeira.** É uma bancada de ferro, não uma loja brilhante: placas, ícones em 25 x 25, Freny com a arma ou o elmo escolhido, luz neutra. Preço em ouro; indisponível com cadeado ou texto, não só com `#A89C8C`. Ouro é sempre dinheiro e não destaca seleção.
+**Armeira.** Mantém a paleta dos menus: placas, ícones em 25 x 25, Freny com a arma ou o elmo escolhido, luz neutra. Preço em ouro; indisponível com cadeado ou texto, não só com `#A89C8C`. Ouro é sempre dinheiro e não destaca seleção.
 
-**PressStart2P: sai dos menus e dos textos, e fica só nos números de combate e no ranking até haver substituta.** É fonte de fliperama, larga e cansativa em pt-BR acentuado e em frase longa. Mas números de combate pedem peso, e o tom de fliperama combina com pontuação de arena. Trocar tudo de uma vez afetaria todas as telas, então a mudança é em etapas. Até a troca, PressStart2P vale para strings inteiras do HUD de combate, porque a mesma string mistura palavra e número ("Combo: x3"), e os banners de `MultiKill` ficam nela até passarem no teste de leitura em movimento. `MenuKit.Font` é única e alimenta também o HUD, então a etapa exige separar `BodyFont` e `NumberFont` antes.
+**PressStart2P: em teste.** O José aprovou separar as fontes e testar outra (2026-11-05); nada muda sem foto aprovada. A proposta é tirá-la dos menus e dos textos e mantê-la nos números de combate e no ranking até haver substituta. É fonte de fliperama, larga e cansativa em pt-BR acentuado e em frase longa. Mas números de combate pedem peso, e o tom de fliperama combina com pontuação de arena. Trocar tudo de uma vez afetaria todas as telas, então a mudança é em etapas. Até a troca, PressStart2P vale para strings inteiras do HUD de combate, porque a mesma string mistura palavra e número ("Combo: x3"), e os banners de `MultiKill` ficam nela até passarem no teste de leitura em movimento. `MenuKit.Font` é única e alimenta também o HUD, então a etapa exige separar `BodyFont` e `NumberFont` antes.
 
 | Uso | Direção | Candidatas |
 |---|---|---|
@@ -307,7 +308,7 @@ Candidata a fonte só entra com áàâãéêíóôõúüç, maiúsculas e … �
 
 **Animação.** Menu é curto e seco: deslocamento de um pixel de arte, sem elasticidade nem fade longo. Combate é o oposto: crescer, tremer, mudar de cor, conforme a escada de hype. O contraste entre os dois é proposital.
 
-**Menu player.** `Menu player.png` tem pose boa (espada nas costas, revólver estendido), mas é renderização escalonada com contorno rosa, faixas horizontais e sombra suave, sem o pixel do jogo. A espada atrás da cabeça e a ponta do elmo formam duas "orelhas" na silhueta. Recomendo refazer a pose na grade de 4x, separando a espada da cabeça.
+**Menu player.** `Menu player.png` fica como está, por decisão do José (2026-11-05), mesmo fora do pixel do jogo.
 
 **Conflito entre arte e legibilidade.** Uma fonte gótica de verdade serviria ao tom e falharia na leitura; fica só para títulos e, se não passar no teste, sai também deles. Em qualquer conflito de menu, a legibilidade ganha.
 
@@ -351,11 +352,11 @@ Chefe novo entra na C1 quando sua pasta for declarada aqui. Fora hoje, de propó
 
 | Arquivo | Excesso | Destino proposto |
 |---|---|---|
-| `Sprites/Interface/Main Menu/Menu player.png` | Bytes e largura (5190) | Refazer |
-| `Sprites/Interface/Main Menu/fundo.png` | 1.101.207 bytes | Refazer |
-| `Sprites/Interface/Loading Screen/Loading BG.png` | 677.707 bytes | Refazer |
-| `Sprites/Effects/Scanlines.png` | Bytes e dimensão | Em uso nas fases por `VhsOverlay`; depende da decisão 17 |
-| `Sprites/Effects/Monitor.png` | 17.559 bytes e altura | Remover dos menus |
+| `Sprites/Interface/Main Menu/Menu player.png` | Bytes e largura (5190) | Fica, por decisão do José; dívida aceita |
+| `Sprites/Interface/Main Menu/fundo.png` | 1.101.207 bytes | Fica, por decisão do José; dívida aceita |
+| `Sprites/Interface/Loading Screen/Loading BG.png` | 677.707 bytes | Fica, por decisão do José; dívida aceita |
+| `Sprites/Effects/Scanlines.png` | Bytes e dimensão | Em uso nas fases por `VhsOverlay`; depende do teste da decisão 17, na campanha |
+| `Sprites/Effects/Monitor.png` | 17.559 bytes e altura | Fica, por decisão do José; dívida aceita |
 | `Sprites/Characters/Player/Resources/FrenyLook/traje.png` | 51.107 bytes e altura (2048) | Aceitar ou reorganizar a folha |
 | `Sprites/Characters/Mobs/Licker/Monster attack.png` | Largura 4160 | Ver abaixo |
 
@@ -393,7 +394,7 @@ Como o audit marca NON-COMPLIANT em qualquer violação de tamanho, esse será o
 | Câmera ajustada | Tamanho 7,2; 360 px; 3x | Tamanho 5,4; 270 px; 4x | Pixel exato em 1080p | Arena vê 10% menos de altura; campanha, 8% mais; rebalancear |
 | URP `PixelPerfectCamera`, Assets PPU 25 | Sem Crop, o tamanho muda com a resolução. Com Crop X e Y, fica fixo (referência 360 = 7,2), com barras fora dos múltiplos | Igual, referência 270 = 5,4 | Pixel exato | Campo de visão fixo ou tela cheia; luzes, UI e pós não verificados. O 2D Renderer lê o componente de URP, não o de `com.unity.2d.pixel-perfect` que está no manifesto |
 
-Outras telas contam: 400 de altura dá 2x exato em 800p, 360 dá 4x em 1440p, e 270 não é inteiro em 1440p. **Este documento não resolve o conflito.** A arte nova a 4x serve às três opções. Decisão do José, com teste na Unity.
+Outras telas contam: 400 de altura dá 2x exato em 800p, 360 dá 4x em 1440p, e 270 não é inteiro em 1440p. **Este documento não resolve o conflito.** A arte nova a 4x serve às três opções. O José pediu teste com foto antes de aprovar (2026-11-05).
 
 ### Critério de aceitação de arte nova
 
@@ -422,26 +423,30 @@ Hollow Knight e Resident Evil são a direção do produto. As outras três são 
 
 **Blasphemous (proposta).** Tirar: a prova de que pixel art sustenta Dark Fantasy opressivo, e o peso das animações de morte e de chefe. Evitar: a iconografia católica espanhola, a violência ritual como tema central e o detalhamento denso. Nossa arte, a 25 pixels por unidade e em cor chapada, é mais simples, e deve continuar assim.
 
-## Decisões pendentes do José
+## Decisões do José
 
-1. **Dia azul da arena.** Manter o ciclo e trocar o céu azul pelo dia de cinza (`#7C8884` a `#A8B0A8`), com teste na Unity antes de aprovar.
-2. **Menus em roxo-magenta.** Trocar para ferro, osso e ferrugem e remover scanlines. É a mudança de maior efeito por menor custo.
-3. **Fonte.** Tirar PressStart2P de menus e textos, mantendo-a nos números de combate e no ranking até testar uma substituta.
-4. **Câmera e escala.** Testar a câmera ajustada (7,2 e 5,4) e a Pixel Perfect Camera numa cena de teste antes de escolher. Recomendo começar pela ajustada, por ser reversível, sabendo que a arena perde 10% de altura.
-5. **Menu player.** Refazer a mesma pose na grade 4x, sem contorno rosa e sem as "orelhas" na silhueta.
-6. **Aro dos inimigos.** Aprovar a borda clara não preta depois de ver em tela. Na arte antiga, a arte queria aro em runtime sem tocar nos 73 PNGs, e a técnica aponta shader novo, 7 prefabs e aro que escurece com a luz. Recomendo aro assado por script, que altera os PNGs e mantém GUIDs. Sem aro, a leitura depende só da luz.
-7. **Folclore brasileiro (Mula sem cabeça, Corpo-seco, Lobisomem, Boitatá).** Encaixa em Dark Fantasy e dá uma identidade rara na Steam, se tratado como horror rural e maldição antiga, nunca como mascote ou festa. Recomendo testar Lobisomem e Mula na Lua de Sangue e decidir junto com o mundo da campanha, porque essas criaturas num castelo medieval pedem uma explicação.
-8. **Sino do Arauto.** Se ficar, é de ferro ou bronze escuro, preso ao corpo, para fazer parte da silhueta. Dourado e solto, não: ouro é recompensa.
-9. **Máscara do Arauto.** A queda da máscara é um bom momento de chefe. Recomendo manter, em ferro rachado e não em osso, porque cabeça de osso é de Freny. O corpo de robô muda de qualquer forma, e o Arauto só vale esse trabalho se o Poço voltar.
-10. **Mercador em vermelho.** Manter o cabelo e levar a roupa para vinho e ferrugem em arte futura, sem refazer agora.
-11. **Cosméticos que imitam inimigo.** Ajustar ou cortar capuz do feiticeiro, elmo de pedra e capuz do carrasco, conforme a regra da seção 5.
-12. **Runner.** Fica fora do padrão enquanto não for decidido. Se virar parte do jogo, passa pelo audit; se for descartado, seus 69 PNGs saem.
-13. **Foco de menu.** A arte queria bloco ferrugem com texto escuro, de leitura forte. O UX aponta que o bloco quebra o que fica dentro do botão (osso 1,41, ouro 1,54) e que `Text` não troca de cor sozinho. Recomendo moldura grossa com barra lateral, já na tabela da seção 4. Se o bloco ficar, é preciso um componente que inverta os textos filhos.
-14. **Vermelho no pico do combo.** A arte sobe até sangue, seguindo o hype que você pediu. O UX lembra que vermelho vivo significa perigo, e o combo chega nele no pico de ameaça. Recomendo a exceção só no HUD, com contorno preto. A alternativa é parar em ferrugem com pico branco.
-15. **Grade da fonte e pop de combate.** A arte pede só múltiplos da grade, e o hype usa tamanho contínuo. Recomendo sair da grade só durante o pop e o throb, voltando ao múltiplo em repouso.
-16. **Fontes por papel.** A arte quer uma fonte por papel, e o UX lembra que uma mesma string do HUD mistura palavra e número. Recomendo três papéis mesmo assim, com PressStart2P em strings inteiras do HUD até a troca e `BodyFont` e `NumberFont` separadas antes de começar.
-17. **Efeito VHS nas fases.** `Campaign/VhsOverlay.cs` liga em toda fase o sprite `Scanlines` sobre o Global Volume da cena, que segundo o comentário do código traz grão, aberração cromática e distorção de lente. Isso fala de fita antiga, não de Dark Fantasy. Recomendo tirar scanlines e aberração e manter só um grão discreto, depois de ver em jogo.
-18. **Nome de sprite e código.** `StageTerrain` e `Breakable` dependem de `Tileset_N`. Recomendo manter esses nomes por ora, e separar arquivo e sprite até alguém mudar o código por outro motivo.
+Respostas de 2026-11-05. **O foco agora é só a arena.** "Testar" quer dizer: tirar foto na Unity, e o José aprova antes de entrar no jogo. Ele pode mudar qualquer item pelo número.
+
+| # | Assunto | Decisão | Próximo passo |
+|---|---|---|---|
+| 1 | Dia azul da arena | Seguir a recomendação: ciclo fica, dia de cinza no lugar do azul | Testar |
+| 2 | Menus em roxo-magenta | **Fica.** O José gosta e vê Dark Fantasy nele; não tirar de uma vez | Nenhum |
+| 3 | Fonte | Testar outra | Testar |
+| 4 | Câmera e escala | Testar | Testar |
+| 5 | Menu player | Não mexer | Nenhum |
+| 6 | Aro dos inimigos | Seguir a recomendação: aro assado por script | Testar |
+| 7 | Folclore brasileiro | Fica para depois. Os desenhos atuais estão feios; redesenhar, provavelmente com artista contratado | Depois da arena |
+| 8 | Sino do Arauto | Sem preocupação agora | Depois da arena |
+| 9 | Máscara do Arauto | Sem preocupação agora | Depois da arena |
+| 10 | Mercador em vermelho | Aprovado: cabelo fica; roupa muda só em arte futura | Nenhum |
+| 11 | Cosméticos que imitam inimigo | Cosméticos ainda não entram; virão separados e aos poucos | Depois da arena |
+| 12 | Runner | Fica fora por enquanto | Nenhum |
+| 13 | Foco de menu | Seguir a recomendação, sem trocar a paleta: moldura e barra em magenta | Quando o menu for mexido |
+| 14 | Vermelho no pico do combo | Aprovado: pode ficar vermelho no HUD | Nenhum |
+| 15 | Grade da fonte e pop de combate | **Em aberto:** o José pediu explicação. Recomendação: número fica no tamanho nítido em repouso, e só cresce fora dele durante o pulo curto de um golpe | Mostrar no teste de fonte |
+| 16 | Fontes por papel | Separar as fontes e testar | Testar |
+| 17 | Efeito VHS nas fases | Testar quando chegar a campanha | Depois da arena |
+| 18 | Nome de sprite e código | Aprovado: manter `Tileset_N` por ora | Nenhum |
 
 ## Fora deste documento
 
@@ -460,7 +465,7 @@ Hollow Knight e Resident Evil são a direção do produto. As outras três são 
 
 ## Para o mapa de sistemas
 
-Estes itens criam ou tocam sistemas e devem aparecer em `/map-systems`. Cada um depende de uma decisão acima ou de teste na Unity.
+Estes itens criam ou tocam sistemas e devem aparecer em `/map-systems`. Cada um depende de uma decisão acima ou de teste na Unity. A ordem de trabalho é arena primeiro; iluminação de campanha, interativos do cenário e cosméticos vêm depois.
 
 | Sistema | O que este documento pede | Seção |
 |---|---|---|
@@ -470,7 +475,7 @@ Estes itens criam ou tocam sistemas e devem aparecer em `/map-systems`. Cada um 
 | Iluminação de campanha | Uma fonte por trecho; calor significa segurança | 2, 6 |
 | Leitura de inimigos | Aro assado, olhos, teto de contraste do tile | 4, 5 |
 | Interativos do cenário | Brilho ou borda no que se usa; vasos e barris | 6 |
-| Interface | Paleta, foco de menu, estados de botão, fontes por papel, escala do Canvas | 4, 7 |
+| Interface | Foco de menu, estados de botão, fontes por papel, escala do Canvas; paleta roxa fica | 4, 7 |
 | Acessibilidade | Reduzir tremor e flash, tamanho de texto, modo daltônico, teclas por dispositivo | 2, 4, 7 |
 | Câmera | Tamanho e pixel exato; `ArenaBounds` e ranking dependem disso | 8 |
 | Cosméticos | Limites de cabeça para Freny não virar inimigo | 5 |
