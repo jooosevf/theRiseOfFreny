@@ -150,7 +150,7 @@ namespace Online {
             PlayerPrefs.Save();
         }
 
-        // ---- the notice: a panel at the bottom of the screen for a few seconds ----
+        // ---- the notice: a panel at the bottom left of the screen for a few seconds ----
 
         private void Show(int coins, List<string> looks, string note) {
             List<string> what = new List<string>();
@@ -170,10 +170,10 @@ namespace Online {
             _canvas = MenuKit.CreateCanvas("Gift Notice", 26000, transform);
             Image panel = MenuKit.MakeImage("Panel", _canvas.transform, MenuKit.PanelColor);
             panel.raycastTarget = false;
-            // at the bottom, over the menu buttons' row of hints, clear of the title
+            // bottom left: clear of the title (top) and of the main menu's buttons (right side)
             _panel = panel.rectTransform;
-            _panel.anchorMin = _panel.anchorMax = _panel.pivot = new Vector2(0.5f, 0f);
-            _panel.anchoredPosition = new Vector2(0f, 56f);
+            _panel.anchorMin = _panel.anchorMax = _panel.pivot = Vector2.zero;
+            _panel.anchoredPosition = new Vector2(16f, 56f);
             _panel.sizeDelta = new Vector2(560f, 76f);
             Outline border = panel.gameObject.AddComponent<Outline>();
             border.effectColor = MenuKit.TitleColor;
