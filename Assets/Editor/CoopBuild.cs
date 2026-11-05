@@ -41,6 +41,7 @@ public static class CoopBuild {
                 locationPathName = location,
                 target = target,
                 options = BuildOptions.None,
+                extraScriptingDefines = new[] { "FRENY_COOP_BUILD" },   // Features.Coop on here, whatever the release has
             });
         } finally {
             if (font != null) {
