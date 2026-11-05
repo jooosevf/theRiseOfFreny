@@ -1,9 +1,9 @@
 # Systems Index: The Rise of Freny (campanha)
 
-> **Status**: Draft, aguardando as 4 decisões do José (ver "Decisões abertas")
+> **Status**: Draft, com as decisões do José de 2026-11-05 aplicadas
 > **Created**: 2026-11-04
-> **Last Updated**: 2026-11-04
-> **Source Concept**: design/game-brief.md (PR #193, ainda fora da `dev`)
+> **Last Updated**: 2026-11-05
+> **Source Concept**: design/game-brief.md
 > **Escopo**: só a campanha. Arena, ranking, co-op e integração com a Steam ficam de fora, e nada aqui pode mudar a API do ranking.
 > **Rigor**: standard (`docs.density: balanced`, `review_mode: lean`). Por isso os gates TD-SYSTEM-BOUNDARY, PR-SCOPE e CD-SYSTEMS não rodaram.
 
@@ -21,7 +21,7 @@ O que o código mostra hoje (lido em `a2340c2`, sem rodar o jogo):
 - **Ligação entre salas existe, mas ninguém usa:** `LevelDoor.Kind.Link` e `CampaignRun.Travel` existem, e nenhuma das 18 cenas preenche `targetScene`. `Travel` ainda apaga o checkpoint ao trocar de cena (`CampaignRun.cs:148`).
 - **Nada passa de uma cena para outra:** ao carregar a cena o Freny volta com vida cheia e tambor cheio (`Player.cs:329`). As redes são "por fase" (`NetThrower.NetsPerStage = 3`).
 - **Vasos reabastecem:** `Breakable.FromTilemaps` recria vasos, barris e caixas a cada carga, e eles sorteiam poção 18%, balas 10%, granada 8%, armadura 3% e diamante 12%. Morrer repõe tudo.
-- **Pulo duplo vem da loja:** `FrenyUpgrade.DoubleJump` é comprado com moedas, que também saem da Arena, e vale em todo lugar. Isso impede usar o pulo como trava de caminho. A decisão de 26/10 diz que farmar na Arena deve mudar a campanha, e ela bate de frente com a escassez.
+- **Pulo duplo vem da loja:** `FrenyUpgrade.DoubleJump` é comprado com moedas, que também saem da Arena, e vale em todo lugar. Isso impede usar o pulo como trava de caminho. Como a Armeira continua igual nos dois modos (decisão 2), as travas precisam vir de outras habilidades.
 - **HUD e minimapa são de teste:** `CampaignHud` é IMGUI temporário com tempo, quedas e lista de fases no Tab. `CampaignMinimap` mostra inimigos e a saída, o que tira a exploração.
 - **Chefes:** a 2-9 tranca a saída enquanto `Sorcerer_Supreme` vive. A 1-9 tem um objeto `Boss` e barra de vida, mas a porta dela não tem `bossName` no arquivo da cena. Não testei se o chefe funciona.
 - **Puzzles:** não há nenhum sistema de alavanca, placa ou item-chave. `BossKey` é a chave do baú de ouro da Arena.
@@ -38,12 +38,12 @@ O que o código mostra hoje (lido em `a2340c2`, sem rodar o jogo):
 
 **MVP (provar o mundo que lembra):**
 
-- **Estado do mundo (inferido):** um registro de chave e valor do que já aconteceu: porta aberta, atalho, item pego, inimigo morto, chefe derrotado. Quase tudo depende dele, então é o maior gargalo.
+- **Estado do mundo (inferido):** um registro de chave e valor do que já aconteceu: porta aberta, atalho, item pego, inimigo morto, chefe derrotado. Volta ao último checkpoint quando o Freny morre e só vai para o disco no save point. Quase tudo depende dele, então é o maior gargalo.
 - **Mapa da masmorra:** define as salas de uma masmorra e como se ligam, incluindo atalhos de mão única, e a transição entre cenas. Substitui a fila de `CampaignLevels`, sem quebrar os saves atuais.
-- **Mochila da campanha (inferido):** vida, munição, granadas e redes passam de uma sala para outra. É a condição para existir escassez.
-- **Morte e retorno:** para onde o Freny volta, o que renasce e o que fica perdido. Substitui a regra atual de recarregar a cena.
-- **Melhorias entre modos (inferido):** o que comprado na Armeira vale na campanha. Equilibra a decisão de 26/10 com a escassez.
-- **Escassez:** quanto de cada recurso existe por masmorra, o que os vasos dão e se os itens ficam em lugares fixos.
+- **Mochila da campanha (inferido):** vida, munição, granadas e redes passam de uma sala para outra. Inclui as vidas que o Freny carrega e usa quando quiser (decisão 3). Hoje ele carrega no máximo uma poção (`GameManager.HasPotion`). É a condição para existir escassez.
+- **Morte e retorno:** volta ao último checkpoint, e só renasce o que morreu depois dele. Define também como se usa o save point e o que ele oferece. Substitui a regra atual de recarregar a cena.
+- **Melhorias entre modos (inferido):** a Armeira é a mesma nos dois modos. Falta decidir só o que isso muda nas fases, como deixar cada sala boa com e sem pulo duplo.
+- **Escassez:** os itens caem no jogo como na Arena (decisão 2), e a escassez vem de inimigos e vasos que não voltam. Define as tabelas de queda e quantos itens fixos cada masmorra tem.
 - **Interativos e puzzles:** alavanca, placa, porta trancada e bloco movível, com a regra de como salvam no Estado do mundo. Começa pelo que abre um atalho.
 - **Construtor de fases:** o `Tools/LevelBuilder` aprende a gerar portas `Link`, interativos e checagem de caminho entre salas. Sem isso, cada sala nova é trabalho manual na cena.
 
@@ -53,7 +53,7 @@ O que o código mostra hoje (lido em `a2340c2`, sem rodar o jogo):
 - **Encontros e bestiário:** onde cada inimigo fica e quais tipos aparecem em cada masmorra, poucos e colocados à mão.
 - **Itens-chave:** chaves e objetos de puzzle que o Freny carrega, ao estilo Resident Evil.
 - **Chefes de masmorra:** o molde da luta (porta, barra de vida, recompensa, nunca volta depois de morto) e cada chefe.
-- **Save e Continuar:** grava o Estado do mundo e a Mochila no `SaveData`, com migração dos saves atuais e sincronização na nuvem.
+- **Save e Continuar:** a tela de Continuar e o aviso de sair sem salvar, além da migração dos saves atuais e da sincronização na nuvem.
 - **HUD da campanha:** troca o IMGUI temporário. Decide se pontuação, combo, tempo e quedas continuam aparecendo.
 - **Mapa do jogador:** troca o minimapa de teste por um mapa que se descobre andando.
 - **Tela de inventário:** mostra a Mochila e os itens-chave. Parte da `InventoryScreens` que já existe.
@@ -72,16 +72,14 @@ O que o código mostra hoje (lido em `a2340c2`, sem rodar o jogo):
 
 ---
 
-## Decisões abertas
+## Decisões do José (2026-11-05)
 
-Elas mudam a lista e o design, então são do José. Cada uma tem uma recomendação, e a ordem de design abaixo assume as quatro.
-
-| # | Decisão | Recomendação | Alternativas |
-|---|---------|--------------|--------------|
-| 1 | Como as fases se ligam? | Cada masmorra é um mapa interligado de cerca de 9 salas, com atalhos. Dentro dela se anda livre. As masmorras seguem em ordem, na subida. | Um mundo único todo interligado (mais fiel a Hollow Knight, muito mais trabalho). Manter fases em fila com salas extras (barato, mas perde a referência). |
-| 2 | Arena e campanha dividem progresso? | Moedas da Arena continuam comprando vida e melhorias de arma que valem na campanha, como decidido em 26/10, com limite. Habilidades de travessia e consumíveis só se acham no mundo. | Campanha com progresso totalmente próprio (escassez pura, mas desfaz 26/10). Deixar como está (a Arena anula a escassez). |
-| 3 | O que acontece ao morrer? | Volta ao último checkpoint. Inimigos mortos continuam mortos, e o que foi gasto continua gasto. A espada nunca acaba, então o jogo não trava sem munição. | Inimigos renascem ao descansar, como Hollow Knight (dá para farmar moedas e exige mais balanceamento). Regra atual (recarrega tudo e não há escassez). |
-| 4 | Qual masmorra prova o conceito? | Cisternas (masmorra 2): as cenas saem do construtor em Python, então refazer é barato. A 1 é refeita depois, com o que for aprendido. | Masmorra 1: é o que o jogador vê primeiro, mas as cenas são manuais e bem mais pesadas (até 8,7 MB contra 1,8 MB). |
+| # | Decisão | O que ele disse | Como isto foi aplicado |
+|---|---------|-----------------|------------------------|
+| 1 | Como as fases se ligam | Ir e vir: poder entrar em lugares e voltar. Todas as fases serão refeitas. | Cada masmorra é um mapa interligado de cerca de 9 salas. As 18 cenas atuais viram material de partida. Não foi dito se as 9 masmorras formam um mundo único: fica para Ligação entre masmorras. |
+| 2 | Arena e campanha | Usa tudo igual, e os itens caem dentro do jogo. Separar a Armeira da campanha ficou como "talvez". | Armeira única, sem limite. As quedas seguem a ideia da Arena. Pulo duplo não pode ser trava de caminho. |
+| 3 | Morte | Save point e checkpoint. Inimigo morto fica morto, a não ser que o checkpoint volte para antes de ele morrer. Dá para carregar vidas e usar quando quiser. | Regras em `design/gdd/estado-do-mundo.md`. Vidas carregadas entram na Mochila da campanha. |
+| 4 | Masmorra de teste | Não respondida. | Segue a recomendação: Cisternas (masmorra 2), porque as cenas saem do construtor em Python. Fácil de trocar antes do protótipo. |
 
 ---
 
@@ -93,7 +91,7 @@ Elas mudam a lista e o design, então são do José. Cada uma tem uma recomenda�
 | 2 | Terreno e perigos | Core | MVP | Implemented | — | Controle do Freny |
 | 3 | Combate e armas | Gameplay | MVP | Implemented | — | Controle do Freny |
 | 4 | Inimigos | Gameplay | MVP | Implemented | — | Terreno e perigos, Combate e armas |
-| 5 | Estado do mundo (inferred) | Persistence | MVP | Not Started | — | — |
+| 5 | Estado do mundo (inferred) | Persistence | MVP | In Design | design/gdd/estado-do-mundo.md | — |
 | 6 | Mapa da masmorra | World | MVP | Not Started | — | Estado do mundo |
 | 7 | Mochila da campanha (inferred) | Economy | MVP | Not Started | — | Estado do mundo, Combate e armas |
 | 8 | Morte e retorno | Gameplay | MVP | Not Started | — | Estado do mundo, Mapa da masmorra, Mochila da campanha |
@@ -205,7 +203,7 @@ Os sistemas 1 a 4 já existem e não entram na ordem. Quem depende deles precisa
 | 2 | Mapa da masmorra | MVP | Core | game-designer, technical-director | L |
 | 3 | Mochila da campanha | MVP | Core | game-designer, gameplay-programmer | M |
 | 4 | Morte e retorno | MVP | Core | game-designer | M |
-| 5 | Melhorias entre modos | MVP | Feature | game-designer | M |
+| 5 | Melhorias entre modos | MVP | Feature | game-designer | S |
 | 6 | Escassez | MVP | Feature | game-designer | M |
 | 7 | Interativos e puzzles | MVP | Feature | game-designer, gameplay-programmer | M |
 | 8 | Construtor de fases | MVP | Feature | technical-director | S |
@@ -242,8 +240,8 @@ Nenhum ciclo ficou no mapa. Dois quase existiam e foram quebrados por contrato:
 
 | System | Risk Type | Risk Description | Mitigation |
 |--------|-----------|-----------------|------------|
-| Conteúdo das 9 masmorras | Scope | São 81 salas, e 63 ainda não existem. As 18 atuais foram feitas para a fila, sem ligação entre si, então também precisam de revisão. O José desenvolve sozinho. Não estimei prazo. | Medir quanto custa uma masmorra no Vertical Slice e só então confirmar o número final de masmorras e salas. |
-| Melhorias entre modos | Design | Se a Arena der poder demais, a escassez some. Se der de menos, a decisão de 26/10 perde o sentido. Saves atuais já têm pulo duplo comprado. | Decisão 2 e teste no MVP com um save farmado e um save novo. |
+| Conteúdo das 9 masmorras | Scope | Com o redesign, as 81 salas precisam ser desenhadas: 63 nem têm cena, e as 18 atuais só servem de ponto de partida. O José desenvolve sozinho. Não estimei prazo. | Medir quanto custa uma masmorra no Vertical Slice e só então confirmar o número final de masmorras e salas. |
+| Melhorias entre modos | Design | Com a Armeira igual e sem limite, quem farma na Arena pode atravessar a campanha sem sentir escassez. Saves atuais já têm pulo duplo comprado. | Testar o MVP com um save farmado e um save novo. Se a escassez sumir, voltar à ideia de separar ou limitar. |
 | Mapa da masmorra | Technical | Trocar a fila por um mapa mexe em `CampaignLevels`, `CampaignProgress`, nos menus e nos saves atuais. Cada sala é uma cena e ainda não medi o tempo de troca. | Prototipar a troca entre 3 salas antes do GDD final e medir no build de Windows. |
 | Estado do mundo | Technical | É usado por quase tudo, e uma chave mudada depois invalida saves. | Definir nomes estáveis e versão do save desde o início. |
 | Interativos e puzzles | Design | O jogo não tem nenhum puzzle hoje, e não há prova de que combinem com o ritmo do combate. | Começar por um puzzle simples no MVP e testar com jogadores. |
@@ -257,7 +255,7 @@ Nenhum ciclo ficou no mapa. Dois quase existiam e foram quebrados por contrato:
 | Metric | Count |
 |--------|-------|
 | Total systems identified | 29 (4 já existem, 25 novos) |
-| Design docs started | 0 |
+| Design docs started | 1 |
 | Design docs reviewed | 0 |
 | Design docs approved | 0 |
 | MVP systems designed | 0/8 |
@@ -267,8 +265,8 @@ Nenhum ciclo ficou no mapa. Dois quase existiam e foram quebrados por contrato:
 
 ## Next Steps
 
-- [ ] José responde às 4 decisões abertas e revisa esta lista
-- [ ] Design MVP-tier systems first (`/design-system estado-do-mundo` é o primeiro)
+- [x] José responde às decisões (a 4 segue com a recomendação)
+- [ ] Design MVP-tier systems first (`estado-do-mundo` em revisão; o próximo é `mapa-da-masmorra`)
 - [ ] Run `/design-review` on each completed GDD
 - [ ] Run `/gate-check technical-setup` when MVP systems are designed
 - [ ] Validate the highest-risk systems with `/vertical-slice` before committing to Production
