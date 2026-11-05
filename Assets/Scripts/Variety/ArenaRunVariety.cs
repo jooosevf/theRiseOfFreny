@@ -40,6 +40,7 @@ public class ArenaRunVariety : MonoBehaviour {
     private readonly List<Image> holdBars = new List<Image>();
     private float openedAt;
     private float padHeldSince = -1f;
+    private bool flying;                         // the taken card's last part: the HUD shows again
     private int chosenIndex = -1;                // the card taken: its effect plays, nothing else counts
     private CanvasGroup panelGroup;
     private Image shadeImage;
@@ -437,7 +438,16 @@ public class ArenaRunVariety : MonoBehaviour {
         if (raycaster != null) {
             raycaster.enabled = false;   // no more clicks on anything
         }
-        RectTransform card = (RectTransform)cards[index].transform;
+        // the button's tint multiplies the whole card, gold edge included (it came out brown): bake
+        // the card's colour into the image and drop the tint
+        Button button = cards[index];
+        Color cardColor = button.colors.highlightedColor;
+        button.transition = Selectable.Transition.None;
+        if (button.targetGraphic != null) {
+            button.targetGraphic.canvasRenderer.SetColor(Color.white);
+            button.targetGraphic.color = cardColor;
+        }
+        RectTransform card = (RectTransform)button.transform;
         card.SetParent(pickerCanvas.transform, true);   // out of the panel, so it stays when the panel goes
         CanvasGroup cardGroup = card.gameObject.AddComponent<CanvasGroup>();
         Outline edge = index < cardEdges.Count ? cardEdges[index] : null;
@@ -466,7 +476,9 @@ public class ArenaRunVariety : MonoBehaviour {
             glow.effectColor = new Color(Gold.r, Gold.g, Gold.b, 0.45f + 0.25f * Mathf.Sin(t * 14f));
             yield return WhileMenuPaused();
         }
-        // 3: it flies to its slot and shrinks, the shade lifts
+        // 3: it flies to its slot and shrinks, the shade lifts; the HUD comes back so it lands on it
+        flying = true;
+        PickerOpen = false;
         float scale = Screen.width / 1920f;
         float box = 40f * scale;
         int slot = Blessings.Held.Count;
@@ -477,12 +489,13 @@ public class ArenaRunVariety : MonoBehaviour {
             float k = Smooth(t / 0.4f);
             card.position = Vector3.Lerp(from, to, k);
             card.localScale = Vector3.one * Mathf.Lerp(startScale, endScale, k);
-            cardGroup.alpha = 1f - k * k;
+            cardGroup.alpha = k < 0.8f ? 1f : 1f - (k - 0.8f) / 0.2f;
             if (shadeImage != null) {
                 shadeImage.color = new Color(shadeFrom.r, shadeFrom.g, shadeFrom.b, shadeFrom.a * (1f - k));
             }
             yield return WhileMenuPaused();
         }
+        Sfx.Ui("ui_select");
         ClosePicker();
         Choose(offered[index]);
     }
@@ -500,6 +513,7 @@ public class ArenaRunVariety : MonoBehaviour {
         picking = false;
         PickerOpen = false;
         chosenIndex = -1;
+        flying = false;
         panelGroup = null;
         shadeImage = null;
         cards = null;   // gone with the canvas: the next chest's picker must not touch them
@@ -518,7 +532,7 @@ public class ArenaRunVariety : MonoBehaviour {
 
     private void OnGUI() {
         Mutator? mutator = WeeklyMutators.ThisRun;
-        if (picking || GameMenus.Paused || player == null || (Blessings.Held.Count == 0 && !mutator.HasValue)) {
+        if ((picking && !flying) || GameMenus.Paused || player == null || (Blessings.Held.Count == 0 && !mutator.HasValue)) {
             return;
         }
         float scale = Screen.width / 1920f;
