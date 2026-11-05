@@ -40,6 +40,8 @@ public enum FrenyUpgrade {
     // the autopilot's brain, added with the buffs
     ItemSense,
     BossHunter,
+    // the classes (FrenyClass): bought once, kept through a rebirth (Rebirth)
+    ClassFlagelante,
 }
 
 // XP, levels and the two upgrade tracks from the GDD ("Arena idle"), saved with PlayerPrefs.
@@ -174,6 +176,7 @@ public static class FrenyProgress {
             case FrenyUpgrade.AttackSpeed: return new[] { 1500, 4000 };         // the sword, -10% each
             case FrenyUpgrade.DoubleJump: return new[] { 1000 };
             case FrenyUpgrade.Net: return new[] { 3000 };
+            case FrenyUpgrade.ClassFlagelante: return new[] { 8000 };
             case FrenyUpgrade.PistolDamage: return new[] { 1200, 3500, 7000 };
             case FrenyUpgrade.PistolDrum: return new[] { 1000, 3000 };
             case FrenyUpgrade.PistolReserve: return new[] { 800, 2500 };
@@ -250,6 +253,7 @@ public static class FrenyProgress {
     public static string DisplayName(FrenyUpgrade upgrade) {
         switch (upgrade) {
             case FrenyUpgrade.MaxHealth: return "Vida máxima +1";
+            case FrenyUpgrade.ClassFlagelante: return "Flagelante: mangual e escudo";
             case FrenyUpgrade.MoveSpeed: return "Velocidade +5%";
             case FrenyUpgrade.AttackSpeed: return "Espada mais rápida -10%";
             case FrenyUpgrade.DoubleJump: return "Pulo duplo (pule de novo no ar)";
@@ -368,6 +372,9 @@ public static class FrenyProgress {
 
         PlayerPrefs.SetInt(LevelKeyPrefix + upgrade, GetLevel(upgrade) + 1);
         PlayerPrefs.DeleteKey(UnequippedKeyPrefix + upgrade);   // what you buy goes on equipped
+        if (upgrade == FrenyUpgrade.ClassFlagelante) {
+            FrenyClasses.Selected = FrenyClass.Flagelante;   // a class just bought is the one he plays next
+        }
         PlayerPrefs.Save();
         Sfx.Ui("upgrade");
         Changed?.Invoke();

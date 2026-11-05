@@ -8,6 +8,7 @@ public struct PlayerInputFrame {
     public bool jumpHeld;       // not used by the fixed-height jump; kept for a variable jump later
     public bool meleePressed;
     public bool rangedPressed;
+    public bool rangedHeld;      // the Flagelante holds his shield up with the same button
     public bool dashPressed;
     public bool runPressed;      // the sprint's button went down: a dash too in the air (Dash)
     public bool runHeld;         // sprint while held (short, with a cooldown)
@@ -25,7 +26,7 @@ public struct PlayerInputFrame {
 
     public bool IsEmpty =>
         Mathf.Approximately(move, 0f) && !jumpPressed && !jumpHeld && !meleePressed &&
-        !rangedPressed && !dashPressed && !potionPressed && !grenadePressed && !grenadeHeld && !furyPressed && !runHeld && !crouchHeld && !aimUpHeld && !selectPistol && !selectShotgun && !netPressed;
+        !rangedPressed && !rangedHeld && !dashPressed && !potionPressed && !grenadePressed && !grenadeHeld && !furyPressed && !runHeld && !crouchHeld && !aimUpHeld && !selectPistol && !selectShotgun && !netPressed;
 }
 
 public interface IPlayerInputSource {

@@ -93,6 +93,7 @@ public class BloodBeam : MonoBehaviour {
         if (!hitFreny && freny != null && !freny.IsDead && Distance(freny.BodyCenter) < Radius + 0.4f) {
             hitFreny = true;
             Player.NextDamageSource = PlayerStats.CauseBeam;
+            Player.NextDamageFrom = transform.position;
             freny.TryDamage(Damage);
         }
         for (int i = Enemy.Active.Count - 1; i >= 0; i--) {

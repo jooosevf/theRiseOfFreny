@@ -75,7 +75,11 @@ public class NetProjectile : MonoBehaviour {
             Bounds b = enemy.BodyBounds;
             Vector2 closest = b.ClosestPoint(at);
             if (Vector2.Distance(closest, at) <= Radius && caught.Add(enemy)) {
-                NetTrap.Catch(enemy);
+                if (FrenyClasses.Flagelante) {
+                    NetTrap.Drag(enemy);   // the Corrente de Açoite brings it to him
+                } else {
+                    NetTrap.Catch(enemy);
+                }
             }
         }
         if (caught.Count == 0) {

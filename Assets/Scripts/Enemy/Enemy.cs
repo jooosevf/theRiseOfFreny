@@ -1117,7 +1117,11 @@ public abstract class Enemy : MonoBehaviour, IDamageable
 
     protected void HitPlayer() {
         Player.NextDamageSource = Online.RunLog.PrefabName(gameObject.name);
+        Player.NextDamageFrom = transform.position;
         if (!player.TryDamage(HitDamage + BloodDamage + RunModifiers.SlainDamage)) {
+            if (player.JustBlocked) {
+                player.Thorns(this);
+            }
             return;
         }
         float dir = Mathf.Sign(player_t.position.x - transform.position.x);

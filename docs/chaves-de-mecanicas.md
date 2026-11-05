@@ -16,6 +16,7 @@ Para desligar uma mecânica, troque `true` por `false` na linha dela e salve. A 
 | `WeakCombo` | Inseto e morcego contam metade no combo | Todo abate soma 0,1x. A API aceita os dois jeitos. |
 | `SwarmSpeedUp` | Inseto e morcego mais rápidos ao longo da corrida | Eles só seguem a aceleração normal da Arena. |
 | `Net` | Rede | Sai da Armeira, do Inventário, do HUD, dos Controles e dos botões de toque. |
+| `ClassFlagelante` | Flagelante: mangual, escudo, pavês, incensário e corrente | Sai da Armeira e do Inventário. Quem usava volta ao Sobrevivente e não perde a compra. |
 | `MageStaff` | Cajado do Mago | Os feiticeiros não deixam mais o cajado. |
 | `Fury` | Fúria | Some a barra, o botão, o "+5 s" da Armeira e a Fúria do baú dourado. |
 | `GrenadeFuse` | Pavio de 3 s da granada | A granada explode onde bater (no máximo 1 s no ar), sem segurar para queimar o pavio. |

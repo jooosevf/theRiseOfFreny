@@ -71,8 +71,8 @@ public class MeleeAttack : MonoBehaviour
             lastHit.Clear(); // forget enemies that died long ago
         }
         lastHit[hit] = swing;
-        int damage = owner ? owner.MeleeDamage : 1;
         int step = owner ? Mathf.Clamp(owner.ComboStep, 1, 3) : 1;
+        int damage = owner ? owner.MeleeDamageFor(step) : 1;
         if (hit is Enemy enemy) {
             // where the blade meets the body: the middle of the hitbox, pulled onto the enemy
             Collider2D blade = GetComponent<Collider2D>();

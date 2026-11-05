@@ -251,6 +251,7 @@ public class ItemPickup : MonoBehaviour {
                 case Kind.Diamond: sprite = assets.diamondFrames != null && assets.diamondFrames.Length > 0 ? assets.diamondFrames[0] : null; break;
             }
         }
+        sprite = FrenyClasses.Drop(kind, sprite);
         if (kind == Kind.Staff) {
             sprite = MageStaff.Icon;
         }
@@ -454,11 +455,11 @@ public class ItemPickup : MonoBehaviour {
     public string Describe() {
         switch (kind) {
             case Kind.Potion: return "a poção";
-            case Kind.Bullets: return "as balas";
-            case Kind.Shells: return "os cartuchos";
-            case Kind.Grenades: return "as granadas";
-            case Kind.Shotgun: return "a escopeta";
-            case Kind.GreatSword: return "o espadão";
+            case Kind.Bullets: return FrenyClasses.ItemName(kind, "as balas");
+            case Kind.Shells: return FrenyClasses.ItemName(kind, "os cartuchos");
+            case Kind.Grenades: return FrenyClasses.ItemName(kind, "as granadas");
+            case Kind.Shotgun: return FrenyClasses.ItemName(kind, "a escopeta");
+            case Kind.GreatSword: return FrenyClasses.ItemName(kind, "o espadão");
             case Kind.Armor: return "a armadura";
             case Kind.Diamond: return "o diamante";
             case Kind.Staff: return "o cajado";

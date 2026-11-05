@@ -1,0 +1,1103 @@
+fileFormatVersion: 2
+guid: 3d63d35e9d7042b7befcf43495e1f3ec
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 2124030002244603497
+    second: Freny flail_-90
+  - first:
+      213: 592665441159041439
+    second: Freny flail_-75
+  - first:
+      213: 834955457413060099
+    second: Freny flail_-60
+  - first:
+      213: -1967751720712498569
+    second: Freny flail_-45
+  - first:
+      213: 2099176593157912539
+    second: Freny flail_-30
+  - first:
+      213: 1987400831141779348
+    second: Freny flail_-15
+  - first:
+      213: -1597478827066973501
+    second: Freny flail_0
+  - first:
+      213: -1663235763289596804
+    second: Freny flail_15
+  - first:
+      213: -2747522365330492342
+    second: Freny flail_30
+  - first:
+      213: -1041547379171481438
+    second: Freny flail_45
+  - first:
+      213: -2096243057090273891
+    second: Freny flail_60
+  - first:
+      213: 485652316765704032
+    second: Freny flail_75
+  - first:
+      213: 74405606410006887
+    second: Freny flail_90
+  - first:
+      213: -3189714755484258064
+    second: Freny flail_105
+  - first:
+      213: -106579127976305079
+    second: Freny flail_120
+  - first:
+      213: -1595194837072814591
+    second: Freny flail_135
+  - first:
+      213: -4030338355998920200
+    second: Freny flail_150
+  - first:
+      213: 4414118824939292016
+    second: Freny flail_165
+  - first:
+      213: -373727516809516461
+    second: Freny flail_180
+  - first:
+      213: -3127827816069108447
+    second: Freny great flail_-90
+  - first:
+      213: -4553259729906731209
+    second: Freny great flail_-75
+  - first:
+      213: -4493188115557459025
+    second: Freny great flail_-60
+  - first:
+      213: 2585880505385673539
+    second: Freny great flail_-45
+  - first:
+      213: 2183772893414618296
+    second: Freny great flail_-30
+  - first:
+      213: -2011347767452962242
+    second: Freny great flail_-15
+  - first:
+      213: 4484552802564921386
+    second: Freny great flail_0
+  - first:
+      213: -192857016165520198
+    second: Freny great flail_15
+  - first:
+      213: -2511683972250410899
+    second: Freny great flail_30
+  - first:
+      213: -763327057634045064
+    second: Freny great flail_45
+  - first:
+      213: -2967907536605684670
+    second: Freny great flail_60
+  - first:
+      213: -3924169693874406172
+    second: Freny great flail_75
+  - first:
+      213: 2005764106036028689
+    second: Freny great flail_90
+  - first:
+      213: 881922966126311671
+    second: Freny great flail_105
+  - first:
+      213: 3963056232025152727
+    second: Freny great flail_120
+  - first:
+      213: 3828120061768644966
+    second: Freny great flail_135
+  - first:
+      213: 1493580548735569039
+    second: Freny great flail_150
+  - first:
+      213: -1061579762015557836
+    second: Freny great flail_165
+  - first:
+      213: 1394920700630529866
+    second: Freny great flail_180
+  externalObjects: {}
+  serializedVersion: 12
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 1
+  platformSettings:
+  - serializedVersion: 3
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Server
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Freny flail_-90
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 888
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3e78006ebeef4b13a7c9c4439c8d8ce5
+      internalID: 2124030002244603497
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny flail_-75
+      rect:
+        serializedVersion: 2
+        x: 296
+        y: 888
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7659eaca549b49f7a802089fbb851053
+      internalID: 592665441159041439
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny flail_-60
+      rect:
+        serializedVersion: 2
+        x: 592
+        y: 888
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ee5acdc3da7541009c98c6716d0c2434
+      internalID: 834955457413060099
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny flail_-45
+      rect:
+        serializedVersion: 2
+        x: 888
+        y: 888
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cc884008a46d4709b046b25639ff58d0
+      internalID: -1967751720712498569
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny flail_-30
+      rect:
+        serializedVersion: 2
+        x: 1184
+        y: 888
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 89975254d9f54817b25ede48b92031f7
+      internalID: 2099176593157912539
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny flail_-15
+      rect:
+        serializedVersion: 2
+        x: 1480
+        y: 888
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5dba1a5bd58c448383ef6e8771ebf4df
+      internalID: 1987400831141779348
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny flail_0
+      rect:
+        serializedVersion: 2
+        x: 1776
+        y: 888
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8c2dc4a4ec4e4b43b1a177412968ea55
+      internalID: -1597478827066973501
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny flail_15
+      rect:
+        serializedVersion: 2
+        x: 2072
+        y: 888
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: dc882ec4d536405ca0e603e96d4f90b4
+      internalID: -1663235763289596804
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny flail_30
+      rect:
+        serializedVersion: 2
+        x: 2368
+        y: 888
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8518f2445f214c7eab9c0574a8cb9693
+      internalID: -2747522365330492342
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny flail_45
+      rect:
+        serializedVersion: 2
+        x: 2664
+        y: 888
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a63e088bf7454ddfb8c18c3802dcfd83
+      internalID: -1041547379171481438
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny flail_60
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 592
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 84493c3caef54053b8d0b37bdf7e8089
+      internalID: -2096243057090273891
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny flail_75
+      rect:
+        serializedVersion: 2
+        x: 296
+        y: 592
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 299dc424ad1b4518a001618bf8d40a07
+      internalID: 485652316765704032
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny flail_90
+      rect:
+        serializedVersion: 2
+        x: 592
+        y: 592
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 82c1ce187c374ad5b4ce8ac72da61ff6
+      internalID: 74405606410006887
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny flail_105
+      rect:
+        serializedVersion: 2
+        x: 888
+        y: 592
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4eebec585a2c4d8a8f3874ab36672b0e
+      internalID: -3189714755484258064
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny flail_120
+      rect:
+        serializedVersion: 2
+        x: 1184
+        y: 592
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b42e143bc0c24003a710e7f9e3cd8d2f
+      internalID: -106579127976305079
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny flail_135
+      rect:
+        serializedVersion: 2
+        x: 1480
+        y: 592
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: af772de92be7406bb930d7fa8a8fb776
+      internalID: -1595194837072814591
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny flail_150
+      rect:
+        serializedVersion: 2
+        x: 1776
+        y: 592
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a9023c0c6f4d46d7a059973c1142c07c
+      internalID: -4030338355998920200
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny flail_165
+      rect:
+        serializedVersion: 2
+        x: 2072
+        y: 592
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: be4842bc9ba34c088db6453544644950
+      internalID: 4414118824939292016
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny flail_180
+      rect:
+        serializedVersion: 2
+        x: 2368
+        y: 592
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a5a098e119f94cb5a08d3e798b5dc31c
+      internalID: -373727516809516461
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny great flail_-90
+      rect:
+        serializedVersion: 2
+        x: 2664
+        y: 592
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e936436900824fb6b530b7d64b6af2a3
+      internalID: -3127827816069108447
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny great flail_-75
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 296
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c3336fa9975c40aea3231035d629eabf
+      internalID: -4553259729906731209
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny great flail_-60
+      rect:
+        serializedVersion: 2
+        x: 296
+        y: 296
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 57f297c2b5554731835863f6265a60b2
+      internalID: -4493188115557459025
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny great flail_-45
+      rect:
+        serializedVersion: 2
+        x: 592
+        y: 296
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b6ae314a52a942dba4dc42a2d8c6177d
+      internalID: 2585880505385673539
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny great flail_-30
+      rect:
+        serializedVersion: 2
+        x: 888
+        y: 296
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 22ced427126248e293bde0939d657c78
+      internalID: 2183772893414618296
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny great flail_-15
+      rect:
+        serializedVersion: 2
+        x: 1184
+        y: 296
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 89b087eecf12472581f2206b74540306
+      internalID: -2011347767452962242
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny great flail_0
+      rect:
+        serializedVersion: 2
+        x: 1480
+        y: 296
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ca39a685639646669c5e7268e6afa58d
+      internalID: 4484552802564921386
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny great flail_15
+      rect:
+        serializedVersion: 2
+        x: 1776
+        y: 296
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f72c7b1b97dc4c24b3b2cba7b73e4eca
+      internalID: -192857016165520198
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny great flail_30
+      rect:
+        serializedVersion: 2
+        x: 2072
+        y: 296
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 820ab68ca3aa417eb32e2874e237c2d9
+      internalID: -2511683972250410899
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny great flail_45
+      rect:
+        serializedVersion: 2
+        x: 2368
+        y: 296
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c4e68aa2430f4cb4a1da0fcbed78bcb3
+      internalID: -763327057634045064
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny great flail_60
+      rect:
+        serializedVersion: 2
+        x: 2664
+        y: 296
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 52a7231bbe594c7b834bad62806d5291
+      internalID: -2967907536605684670
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny great flail_75
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 996ee3c9b20c4b05ad323a95cd9c9b9e
+      internalID: -3924169693874406172
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny great flail_90
+      rect:
+        serializedVersion: 2
+        x: 296
+        y: 0
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d991ffe40cbe4271a38b38b42ed9ded0
+      internalID: 2005764106036028689
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny great flail_105
+      rect:
+        serializedVersion: 2
+        x: 592
+        y: 0
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d0e2a0c472ea45d5a0b3746dd0fa124f
+      internalID: 881922966126311671
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny great flail_120
+      rect:
+        serializedVersion: 2
+        x: 888
+        y: 0
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e22ee5d61cd744d1b3fb9ad986a59859
+      internalID: 3963056232025152727
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny great flail_135
+      rect:
+        serializedVersion: 2
+        x: 1184
+        y: 0
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d517806a3aac40d39089c8bcb496ce0a
+      internalID: 3828120061768644966
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny great flail_150
+      rect:
+        serializedVersion: 2
+        x: 1480
+        y: 0
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 218de1c3b03a403c8f2bd0b260b64cb0
+      internalID: 1493580548735569039
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny great flail_165
+      rect:
+        serializedVersion: 2
+        x: 1776
+        y: 0
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7fb219bcdf734e8ba4284c16964d8d38
+      internalID: -1061579762015557836
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Freny great flail_180
+      rect:
+        serializedVersion: 2
+        x: 2072
+        y: 0
+        width: 296
+        height: 296
+      alignment: 9
+      pivot: {x: 0.506757, y: 0.493243}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cb64755cc7224d708bec59aefb6897e0
+      internalID: 1394920700630529866
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    nameFileIdTable:
+      Freny flail_-90: 2124030002244603497
+      Freny flail_-75: 592665441159041439
+      Freny flail_-60: 834955457413060099
+      Freny flail_-45: -1967751720712498569
+      Freny flail_-30: 2099176593157912539
+      Freny flail_-15: 1987400831141779348
+      Freny flail_0: -1597478827066973501
+      Freny flail_15: -1663235763289596804
+      Freny flail_30: -2747522365330492342
+      Freny flail_45: -1041547379171481438
+      Freny flail_60: -2096243057090273891
+      Freny flail_75: 485652316765704032
+      Freny flail_90: 74405606410006887
+      Freny flail_105: -3189714755484258064
+      Freny flail_120: -106579127976305079
+      Freny flail_135: -1595194837072814591
+      Freny flail_150: -4030338355998920200
+      Freny flail_165: 4414118824939292016
+      Freny flail_180: -373727516809516461
+      Freny great flail_-90: -3127827816069108447
+      Freny great flail_-75: -4553259729906731209
+      Freny great flail_-60: -4493188115557459025
+      Freny great flail_-45: 2585880505385673539
+      Freny great flail_-30: 2183772893414618296
+      Freny great flail_-15: -2011347767452962242
+      Freny great flail_0: 4484552802564921386
+      Freny great flail_15: -192857016165520198
+      Freny great flail_30: -2511683972250410899
+      Freny great flail_45: -763327057634045064
+      Freny great flail_60: -2967907536605684670
+      Freny great flail_75: -3924169693874406172
+      Freny great flail_90: 2005764106036028689
+      Freny great flail_105: 881922966126311671
+      Freny great flail_120: 3963056232025152727
+      Freny great flail_135: 3828120061768644966
+      Freny great flail_150: 1493580548735569039
+      Freny great flail_165: -1061579762015557836
+      Freny great flail_180: 1394920700630529866
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

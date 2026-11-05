@@ -21,6 +21,8 @@ public static class InventoryScreens {
     // its own page so no list grows past the screen
     private static readonly (string title, string hint, FrenyUpgrade[] rows)[] Shelves = {
         // José, 2026-11-02: the Rede on its own shelf, in the Freny shelf nobody found it
+        ("Classes", "Outro jogo de armas. Troque de classe no Inventário.",
+            new[] { FrenyUpgrade.ClassFlagelante }),
         ("Rede", "Prende os inimigos no chão. Vai com o Freny em cada fase.",
             new[] { FrenyUpgrade.Net }),
         ("Pistola", "A pistola vai sempre com o Freny.",
@@ -54,6 +56,15 @@ public static class InventoryScreens {
         MenuPage page = new MenuPage(stack.transform, "Inventário", 600f, new Vector2(0.5f, 0.5f), 6f);
         FrenyView freny = new FrenyView(SidePanel(page, "Freny"));
         page.Label("O que o Freny leva para a próxima fase");
+        // the weapons he plays with: only with more than one to pick, and it counts from the next run
+        List<FrenyClass> kits = FrenyClasses.Available();
+        if (kits.Count > 1) {
+            MenuChoice kitChoice = page.Choice("Classe", kits.ConvertAll(FrenyClasses.Name).ToArray(), Mathf.Max(0, kits.IndexOf(FrenyClasses.Selected)), i => {
+                FrenyClasses.Selected = kits[i];
+                freny.Say("Na próxima corrida eu vou de " + FrenyClasses.Name(kits[i]).ToLower() + ".");
+            });
+            Hover(kitChoice, () => freny.Say("Muda as armas, não o resto. Vale a partir da próxima corrida."));
+        }
 
         foreach (FrenyUpgrade upgrade in Equipment) {
             FrenyUpgrade item = upgrade;

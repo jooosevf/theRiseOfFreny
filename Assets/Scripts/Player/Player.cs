@@ -98,13 +98,19 @@ public class Player : MonoBehaviour, IDamageable {
     // what the next TryDamage comes from, set right before it (an enemy's prefab name or a
     // PlayerStats cause), and what the last hit that landed came from: the Perfil's deaths by cause
     public static string NextDamageSource;
+    // and where it comes from, for the Flagelante's shield; a hit with no side (a fall, the acid) goes past it
+    public static Vector3? NextDamageFrom;
     public string LastDamageSource { get; private set; }
+    // the weapons he plays this run with (FrenyClass), read once in Start
+    public FrenyClass Class { get; private set; }
+    public bool IsFlagelante => Class == FrenyClass.Flagelante;
     public bool ShotgunOwned { get; private set; }          // bought in the shop, or found in a chest this run
     public bool ShotgunEquipped { get; private set; } = true; // 1 = pistol, 2 = shotgun
     public bool IsRunning { get; private set; }
     // the grenade in his hand, its fuse burning (the HUD counts it down)
     public bool ChargingGrenade => cookStart >= 0f;
-    public float GrenadeFuseLeft => ChargingGrenade ? Mathf.Max(0f, GrenadeFuse - (Time.time - cookStart)) : GrenadeFuse;
+    private float FuseNow => IsFlagelante ? FrenyClasses.Kit.incenseFuse : GrenadeFuse;
+    public float GrenadeFuseLeft => ChargingGrenade ? Mathf.Max(0f, FuseNow - (Time.time - cookStart)) : FuseNow;
     private float cookStart = -1f;
     private bool grenadeNeedsRelease;   // it went off in his hand: the next one waits for the button to come up
 
@@ -145,7 +151,7 @@ public class Player : MonoBehaviour, IDamageable {
     private const float RageDrainPerSecond = 0.05f;
     private float lastRageAction;
     private const float RageSeconds = 20f;
-    private const int RageMeleeDamage = 2;
+    private const int RageMeleeBonus = 1;
     private float stunnedUntil;
     private float runStamina = 1f;
     private float nextDustTime;
@@ -189,11 +195,11 @@ public class Player : MonoBehaviour, IDamageable {
     // a dropped potion only heals: at full health it stays on the floor until needed or it expires
     public bool WantsPotion => !isDead && Health < MaxHealth;
     // the Armeira's buffs raise the caps (WeaponLevels)
-    private int ReserveMax => revolverReserveMax + WeaponLevels.ReserveBonus;
+    private int ReserveMax => IsFlagelante ? FrenyClasses.Kit.repairsMax + WeaponLevels.ReserveBonus / 4 : revolverReserveMax + WeaponLevels.ReserveBonus;
     private int ShellsMax => shellsMax + WeaponLevels.ShellsBonus;
     private int GrenadesMax => grenadesMax + WeaponLevels.GrenadeCarryBonus;
     private int DrumSize => revolverCapacity + WeaponLevels.DrumBonus;
-    private int DroppedGreatSwordSwings => GreatSwordDropSwings + WeaponLevels.GreatSwordExtraSwings;
+    private int DroppedGreatSwordSwings => (IsFlagelante ? FrenyClasses.Kit.greatSwings : GreatSwordDropSwings) + WeaponLevels.GreatSwordExtraSwings;
     private float RageTotal => RageSeconds + WeaponLevels.RageBonusSeconds;
     public bool WantsBullets => !RunModifiers.NoGuns && RevolverReserve < ReserveMax;
     public bool WantsShells => !RunModifiers.NoGuns && ShotgunOwned && ShotgunShells < ShellsMax;
@@ -227,7 +233,12 @@ public class Player : MonoBehaviour, IDamageable {
     public bool RageReady => !Raging && Rage >= 1f;
     public bool Raging => Time.time < rageUntil;
     public float RageLeft => Raging ? (rageUntil - Time.time) / RageTotal : 0f;
-    public int MeleeDamage => Raging ? RageMeleeDamage : 1;
+    // the combo's hit: the Fúria adds to each one (the Sobrevivente's 1 becomes 2, as it always was)
+    public int MeleeDamageFor(int step) {
+        int hit = IsFlagelante && step == 3 ? FrenyClasses.Kit.finisherDamage : 1;
+        return Raging ? hit + RageMeleeBonus : hit;
+    }
+    public int MeleeDamage => MeleeDamageFor(1);
     public float ReloadProgress => Reloading ? Mathf.Clamp01(1f - (reloadReadyAt - Time.time) / (revolverReloadTime * WeaponLevels.ReloadTime)) : 1f;
     // body and jump, for the autopilot's platform map (the same numbers the physics uses)
     public float JumpHeight => jumpHeight;
@@ -241,7 +252,7 @@ public class Player : MonoBehaviour, IDamageable {
     // slowed down for a moment (wading through the Ciclope's vomit)
     private float slowUntil;
     private float slowFactor = 1f;
-    private float SlowFactor => Time.time < slowUntil ? slowFactor : 1f;
+    private float SlowFactor => (Time.time < slowUntil ? slowFactor : 1f) * (ShieldUp ? FrenyClasses.Kit.shieldWalk / (IsRunning ? runMultiplier : 1f) : 1f);
 
     public void Slow(float factor, float seconds) {
         slowFactor = Time.time < slowUntil ? Mathf.Min(slowFactor, factor) : factor;
@@ -314,6 +325,10 @@ public class Player : MonoBehaviour, IDamageable {
         _baseSpeed = _speed;
         _baseAttackCooldown = attackCooldown;
         _baseMaxHealth = MaxHealth;
+        Class = FrenyClasses.BeginRun(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == GameMenus.ArenaScene && !ArenaDifficulty.Manual);
+        if (IsFlagelante) {
+            gameObject.AddComponent<ShieldView>();
+        }
         ApplyUpgrades();
         FrenyProgress.Changed += ApplyUpgrades;
         Enemy.Killed += OnEnemyKilled;
@@ -327,7 +342,7 @@ public class Player : MonoBehaviour, IDamageable {
         }
         // the run's loadout: a loaded revolver with spare bullets
         RevolverBullets = DrumSize;
-        RevolverReserve = revolverReserveStart;
+        RevolverReserve = IsFlagelante ? FrenyClasses.Kit.repairsStart : revolverReserveStart;
         // coins persist between runs and scenes (GDD: persistência)
         coins = FrenyProgress.Coins;
         if (UIManager.Instance) {
@@ -365,10 +380,12 @@ public class Player : MonoBehaviour, IDamageable {
             rangedPressedTime = Time.time;
         }
         if (UpdateStun()) {
+            ShieldUp = false;
             RecoverStamina();
             return; // knocked down: no control until he gets up (a swing pressed now is kept)
         }
 
+        UpdateShield();
         Movement();
         Run();
         Jump();
@@ -686,7 +703,7 @@ public class Player : MonoBehaviour, IDamageable {
 
     // the sword and the gun both work mid-air and crouched
     private void Attack() {
-        if (Time.time - meleePressedTime > AttackBuffer || !AttackReady) {
+        if (Time.time - meleePressedTime > AttackBuffer || !AttackReady || ShieldUp) {
             return;
         }
         meleePressedTime = -10f;
@@ -694,7 +711,7 @@ public class Player : MonoBehaviour, IDamageable {
         SwingCount++;
         _playerAnim.Melee(ComboStep);
         Sfx.Play("sword_combo" + ComboStep, transform.position);
-        swingCooldown = attackCooldown * (ComboStep == 3 ? FinisherRecovery : ComboGapFactor);
+        swingCooldown = attackCooldown * (ComboStep == 3 ? (IsFlagelante ? FrenyClasses.Kit.finisherRecovery : FinisherRecovery) : (IsFlagelante ? FrenyClasses.Kit.gapFactor : ComboGapFactor));
         attackReadyAt = Time.time + swingCooldown;
         if (GreatSwordSwings > 0) {
             GreatSwordSwings--;
@@ -708,8 +725,9 @@ public class Player : MonoBehaviour, IDamageable {
         if (Reloading) {
             if (Time.time >= reloadReadyAt) {
                 reloadReadyAt = -1f;
-                int take = Mathf.Min(DrumSize, RevolverReserve);
-                RevolverBullets = take;
+                // the shield: one repair brings all of it back; the revolver takes bullet by bullet
+                int take = IsFlagelante ? 1 : Mathf.Min(DrumSize, RevolverReserve);
+                RevolverBullets = IsFlagelante ? DrumSize : take;
                 RevolverReserve -= take;
                 Fx.Spray(transform.position + Vector3.up * 0.6f, Vector3.up, new Color(1f, 0.9f, 0.5f), 4, 1.5f, 0.3f);
                 Sfx.Play("pistol_reload", transform.position);
@@ -725,6 +743,10 @@ public class Player : MonoBehaviour, IDamageable {
 
     private void Shoot() {
         bool pressed = Time.time - rangedPressedTime <= AttackBuffer;
+        if (IsFlagelante && !UsingShotgun && !MageStaff.Held(this)) {
+            rangedPressedTime = -10f;   // no gun: this button holds the shield up (UpdateShield)
+            return;
+        }
         if (!pressed || !GunReady) {
             return;
         }
@@ -745,6 +767,10 @@ public class Player : MonoBehaviour, IDamageable {
             gunReadyAt = Time.time + MageStaff.Cooldown;
             return;
         }
+        if (IsFlagelante) {
+            PavesShove(muzzle, forward);
+            return;
+        }
         Fx.Spray(muzzle, forward, new Color(1f, 0.9f, 0.5f), 6, 5f, 0.3f);
 
         // the shotgun fires three bullets in a fan, one shell per shot; only its pellets shove enemies back
@@ -762,6 +788,94 @@ public class Player : MonoBehaviour, IDamageable {
         }
         // the Armeira's "Espada mais rápida" is the sword's only (2026-11-01); the guns' buffs are their own
         gunReadyAt = Time.time + (shotgun ? shotgunCooldown : pistolCooldown);
+    }
+
+    // ---- the Flagelante's Escudo de Espinhos and Pavês de Ferro ----
+
+    // held up with the gun's button. Worn out (RevolverBullets), it breaks and comes back through
+    // Reload, one repair at a time
+    public bool ShieldUp { get; private set; }
+    private float blockGraceUntil;
+    private int blockedFrame = -1;
+    public bool JustBlocked => blockedFrame == Time.frameCount;
+
+    private void UpdateShield() {
+        bool up = IsFlagelante && _input.Current.rangedHeld && !UsingShotgun && !MageStaff.Held(this) && RevolverBullets > 0 && !Reloading;
+        if (up && !ShieldUp) {
+            Sfx.Play("weapon_switch", transform.position, 1f, 0.7f);
+        }
+        ShieldUp = up;
+    }
+
+    // what TryDamage asks when it knows where the hit comes from: only the front is covered
+    private bool Block(Vector3 from, int amount) {
+        float facing = FacingRight ? 1f : -1f;
+        if (!ShieldUp || (from.x - BodyCenter.x) * facing < -0.2f) {
+            return false;
+        }
+        blockedFrame = Time.frameCount;
+        if (Time.time < blockGraceUntil) {
+            return true;
+        }
+        blockGraceUntil = Time.time + FrenyClasses.Kit.blockGrace;
+        AddRage(RagePerHurt);
+        RevolverBullets = Mathf.Max(0, RevolverBullets - Mathf.Max(1, amount));
+        Vector3 at = BodyCenter + Vector3.right * (facing * 0.45f);
+        if (RevolverBullets > 0) {
+            Fx.Burst(at, new Color(1f, 0.75f, 0.35f), 10 + 8 * amount, 3f, 0.08f, 0.3f);
+            Sfx.Play("sword_hit", at, 1f, 0.7f);
+            ScreenKick.Kick(0.05f * amount, 0.15f);
+        } else {
+            // it breaks with a bang, so the wait for the repair is no surprise
+            Fx.Burst(at, new Color(0.75f, 0.7f, 0.65f), 40, 5f, 0.12f, 0.6f);
+            Sfx.Play("grenade_throw", at, 1f, 0.6f);
+            ScreenKick.Kick(0.2f, 0.25f);
+            ShieldUp = false;
+        }
+        return true;
+    }
+
+    // the spikes: who hits the shield up close gets hurt (Enemy.HitPlayer)
+    public void Thorns(Enemy enemy) {
+        if (enemy == null || enemy.IsDead) {
+            return;
+        }
+        Vector3 at = enemy.BodyBounds.center;
+        Enemy.NextHitPower = WeaponLevels.Roll(WeaponLevels.PistolPower, at);
+        Enemy.NextHitSource = PlayerStats.WeaponGun;
+        enemy.Damage(FrenyClasses.Kit.thornDamage, 0f, at);
+    }
+
+    // one big shove with the Pavês: everything right in front of him is hurt and thrown back
+    private void PavesShove(Vector3 muzzle, Vector3 forward) {
+        ShotgunShells--;
+        gunReadyAt = Time.time + FrenyClasses.Kit.pavesCooldown;
+        Vector3 center = transform.position + Vector3.down * 0.4f + forward * FrenyClasses.Kit.pavesAhead;
+        float radius = WeaponLevels.ShotgunAngles.Length > 3 ? FrenyClasses.Kit.pavesWideRadius : FrenyClasses.Kit.pavesRadius;
+        int shot = Achievements.NextShot();
+        System.Collections.Generic.HashSet<Enemy> hit = new System.Collections.Generic.HashSet<Enemy>();
+        foreach (Collider2D col in Physics2D.OverlapCircleAll(center, radius)) {
+            Enemy enemy = col.GetComponentInParent<Enemy>();
+            if (enemy != null && !enemy.IsDead && hit.Add(enemy)) {
+                Vector3 at = col.ClosestPoint(center);
+                Enemy.NextHitPower = WeaponLevels.Roll(WeaponLevels.ShotgunPower, at);
+                Enemy.NextHitSource = PlayerStats.WeaponShotgun;
+                enemy.Damage(FrenyClasses.Kit.pavesDamage, FrenyClasses.Kit.pavesPush, at);
+                if (enemy.IsDead) {
+                    Achievements.ShotKill(shot);
+                    MultiKill.ShotKill(shot);
+                }
+            } else if (col.GetComponent<ArenaChest>() is ArenaChest chest) {
+                chest.Damage();
+            } else if (col.GetComponent<ArenaVase>() is ArenaVase vase) {
+                vase.Damage();
+            } else if (col.GetComponent<Breakable>() is Breakable prop) {
+                prop.Damage();
+            }
+        }
+        Fx.Spray(center, forward, new Color(0.8f, 0.75f, 0.65f), 14 + 6 * hit.Count, 6f, 0.35f);
+        Sfx.Play("sword_hit", center, 1.2f, 0.6f);
+        ScreenKick.Kick(0.08f + 0.04f * Mathf.Min(hit.Count, 3), 0.2f);
     }
 
     private const float CrouchMuzzleDrop = 0.32f; // the crouched gun sits 8 art pixels lower
@@ -791,7 +905,7 @@ public class Player : MonoBehaviour, IDamageable {
         if (!WantsBullets) {
             return false;
         }
-        RevolverReserve = Mathf.Min(ReserveMax, RevolverReserve + amount);
+        RevolverReserve = Mathf.Min(ReserveMax, RevolverReserve + (IsFlagelante ? Mathf.Max(1, amount / 4) : amount));
         return true;
     }
 
@@ -844,7 +958,7 @@ public class Player : MonoBehaviour, IDamageable {
             return;
         }
         if (ChargingGrenade) {
-            if (Time.time - cookStart >= GrenadeFuse) {
+            if (Time.time - cookStart >= FuseNow) {
                 // held too long: it goes off in his hand
                 cookStart = -1f;
                 grenadeNeedsRelease = true;
@@ -867,7 +981,7 @@ public class Player : MonoBehaviour, IDamageable {
             cookStart = Time.time;
             Sfx.Play("pistol_reload", transform.position);   // the pin
         } else if (input.grenadePressed) {
-            Throw(input.grenadeCharge, GrenadeFuse);
+            Throw(input.grenadeCharge, FuseNow);
         }
     }
 
@@ -879,7 +993,7 @@ public class Player : MonoBehaviour, IDamageable {
         bool tap = charge < 0f;
         Vector3 from = tap ? Feet + Vector3.up * GrenadeTapHeight : transform.position + Vector3.up * 0.6f;
         float facing = FacingRight ? 1f : -1f;
-        float speed = tap ? GrenadeTapSpeed : Mathf.Lerp(grenadeMinSpeed, grenadeMaxSpeed, Mathf.Clamp01(charge));
+        float speed = (tap ? GrenadeTapSpeed : Mathf.Lerp(grenadeMinSpeed, grenadeMaxSpeed, Mathf.Clamp01(charge))) * (IsFlagelante ? FrenyClasses.Kit.incenseThrow : 1f);
         float rad = (tap ? GrenadeTapAngle : grenadeAngle) * Mathf.Deg2Rad;
         Vector2 velocity = new Vector2(facing * Mathf.Cos(rad), Mathf.Sin(rad)) * speed;
         SpawnGrenade(from, velocity, fuse);
@@ -893,7 +1007,7 @@ public class Player : MonoBehaviour, IDamageable {
         grenade.transform.position = from;
         grenade.transform.localScale = Vector3.one * 0.35f;
         SpriteRenderer renderer = grenade.AddComponent<SpriteRenderer>();
-        renderer.sprite = ArenaAssets.Instance ? ArenaAssets.Instance.grenadeIcon : null;
+        renderer.sprite = FrenyClasses.Slot("Incensario", ArenaAssets.Instance ? ArenaAssets.Instance.grenadeIcon : null);
         renderer.sortingOrder = 50;
         Rigidbody2D body = grenade.AddComponent<Rigidbody2D>();
         body.gravityScale = GrenadeGravity;
@@ -913,8 +1027,8 @@ public class Player : MonoBehaviour, IDamageable {
         }
         Grenade blast = grenade.AddComponent<Grenade>();
         blast.fuse = fuse;
-        blast.radius = WeaponLevels.GrenadeRadius;
-        blast.damage = WeaponLevels.GrenadeDamage;
+        blast.radius = WeaponLevels.GrenadeRadius * (IsFlagelante ? FrenyClasses.Kit.incenseRadius : 1f);
+        blast.damage = WeaponLevels.GrenadeDamage - (IsFlagelante ? FrenyClasses.Kit.incenseDamageDown : 0);
     }
 
     // about how long a throw at this charge flies to cover dx (the autopilot times its cooking with it)
@@ -961,8 +1075,13 @@ public class Player : MonoBehaviour, IDamageable {
     public bool TryDamage(int amount, bool armorAbsorbs) {
         string source = NextDamageSource;
         NextDamageSource = null;
+        Vector3? from = NextDamageFrom;
+        NextDamageFrom = null;
         if (isDead || IsInvulnerable) {
             return false;
+        }
+        if (from.HasValue && Block(from.Value, amount)) {
+            return false;   // the shield took it: nothing for the run's log, no knockback
         }
         LastDamageSource = source;
         invulnerableUntil = Time.time + InvulnerableTime;

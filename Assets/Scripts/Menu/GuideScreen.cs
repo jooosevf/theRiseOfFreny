@@ -108,6 +108,13 @@ public static class GuideScreen {
             MageStaff.Duration + " s, o botão Atirar lança bolas de feitiço sem gastar munição: " + MageStaff.Damage +
             " de dano, ferem os inimigos (até o Ciclope) e nunca o Freny. O cajado aparece nas costas dele e no HUD, " +
             "e pisca nos últimos segundos. Pegar outro recomeça o tempo.");
+        if (Features.ClassFlagelante) Entry(parent, FrenyClasses.Icon("Mangual"), "Classe: Flagelante",
+            "Comprada na Armeira, escolhida no Inventário. O Mangual bate 1, 1 e 2, mais devagar que a espada e com 40% mais alcance. " +
+            "No lugar do tiro, o Escudo de Espinhos: segure o botão Atirar para bloquear o que vem de frente, andando na metade da velocidade e sem atacar. " +
+            "Ele aguenta 4 de dano e quebra; volta em 1,6 s gastando um reparo (começa com 4). Quem bate nele de perto leva 1. " +
+            "Do chão vêm o Mangual de Três Cabeças (4 golpes) e o Pavês de Ferro, um empurrão de 2 de dano. " +
+            "O Incensário de Brasas tem 2 de dano, raio maior, pavio de 2 s e vai mais perto. A Corrente de Açoite puxa os inimigos até ele e prende por 2 s (o Golem Vermelho e o Ciclope só ficam lentos). " +
+            "O piloto automático só joga de Sobrevivente.");
         if (Features.WeaponBuffs) Entry(parent, art ? art.revolver : null, "Melhorias da Armeira",
             "A Armeira não vende armas: vende melhorias para elas (dano, munição, recarga, crítico). Elas valem " +
             "para sempre e para a arma que cair do chão também (veja Armeira).");
