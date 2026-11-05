@@ -40,6 +40,11 @@ public class ArenaRunVariety : MonoBehaviour {
     private readonly List<Image> holdBars = new List<Image>();
     private float openedAt;
     private float padHeldSince = -1f;
+    private bool flying;                         // the taken card's last part: the HUD shows again
+    private int chosenIndex = -1;                // the card taken: its effect plays, nothing else counts
+    private CanvasGroup panelGroup;
+    private Image shadeImage;
+    private static readonly Color Gold = new Color(1f, 0.82f, 0.3f);
     public static bool PickerOpen { get; private set; }   // CombatHud draws over canvases: it waits
     private bool picking;
     private float announcedAt = -100f;
@@ -236,11 +241,14 @@ public class ArenaRunVariety : MonoBehaviour {
         pickerCanvas = MenuKit.CreateCanvas("Blessings", 29000, null);
         Image shade = MenuKit.MakeImage("Shade", pickerCanvas.transform, MenuKit.ShadeColor);
         MenuKit.Stretch(shade.rectTransform);
+        shadeImage = shade;
+        chosenIndex = -1;
 
         Image panel = MenuKit.MakeImage("Panel", pickerCanvas.transform, MenuKit.PanelColor);
         RectTransform rect = panel.rectTransform;
         rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
         rect.sizeDelta = new Vector2(760f, 400f);
+        panelGroup = panel.gameObject.AddComponent<CanvasGroup>();
         Outline edge = panel.gameObject.AddComponent<Outline>();
         edge.effectColor = MenuKit.ButtonColor;
         edge.effectDistance = new Vector2(3f, -3f);
@@ -365,7 +373,7 @@ public class ArenaRunVariety : MonoBehaviour {
         }
         Time.timeScale = 0f;
         InputBindings.BlockGameplay(true);
-        if (cards == null) {
+        if (cards == null || chosenIndex >= 0) {
             return;
         }
         EventSystem events = EventSystem.current;
@@ -411,17 +419,104 @@ public class ArenaRunVariety : MonoBehaviour {
     }
 
     private void Pick(int index) {
-        if (!picking || GameMenus.Paused || index < 0 || index >= offered.Length) {
+        if (!picking || chosenIndex >= 0 || GameMenus.Paused || index < 0 || index >= offered.Length) {
             return;
         }
+        chosenIndex = index;
         Sfx.Ui("upgrade");
+        StartCoroutine(PickEffect(index));
+    }
+
+    // the taken card: a gold edge, the rest of the screen fades out leaving only it, then it flies
+    // to its slot under the weapons (where the held blessings show) and the run goes on.
+    // Real time: the game stays paused until it ends.
+    private IEnumerator PickEffect(int index) {
+        if (EventSystem.current != null) {
+            EventSystem.current.SetSelectedGameObject(null);
+        }
+        GraphicRaycaster raycaster = pickerCanvas.GetComponent<GraphicRaycaster>();
+        if (raycaster != null) {
+            raycaster.enabled = false;   // no more clicks on anything
+        }
+        // the button's tint multiplies the whole card, gold edge included (it came out brown): bake
+        // the card's colour into the image and drop the tint
+        Button button = cards[index];
+        Color cardColor = button.colors.highlightedColor;
+        button.transition = Selectable.Transition.None;
+        if (button.targetGraphic != null) {
+            button.targetGraphic.CrossFadeColor(Color.white, 0f, true, true);   // also stops the running tint fade
+            button.targetGraphic.color = cardColor;
+        }
+        RectTransform card = (RectTransform)button.transform;
+        card.SetParent(pickerCanvas.transform, true);   // out of the panel, so it stays when the panel goes
+        CanvasGroup cardGroup = card.gameObject.AddComponent<CanvasGroup>();
+        Outline edge = index < cardEdges.Count ? cardEdges[index] : null;
+        if (edge != null) {
+            edge.enabled = true;
+            edge.effectColor = Gold;
+            edge.effectDistance = new Vector2(5f, -5f);
+        }
+        Outline glow = card.gameObject.AddComponent<Outline>();
+        glow.effectColor = new Color(Gold.r, Gold.g, Gold.b, 0.45f);
+        glow.effectDistance = new Vector2(10f, -10f);
+        Color shadeFrom = shadeImage != null ? shadeImage.color : Color.clear;
+        Vector3 from = card.position;
+
+        // 1: the others fade out, the card grows a little and its edge pulses
+        for (float t = 0f; t < 0.35f; t += Time.unscaledDeltaTime) {
+            float k = t / 0.35f;
+            panelGroup.alpha = 1f - k;
+            card.localScale = Vector3.one * Mathf.Lerp(1f, 1.12f, Smooth(k));
+            glow.effectColor = new Color(Gold.r, Gold.g, Gold.b, 0.45f + 0.35f * Mathf.Sin(k * Mathf.PI));
+            yield return WhileMenuPaused();
+        }
+        panelGroup.alpha = 0f;
+        // 2: only the card, a moment to read it
+        for (float t = 0f; t < 0.45f; t += Time.unscaledDeltaTime) {
+            glow.effectColor = new Color(Gold.r, Gold.g, Gold.b, 0.45f + 0.25f * Mathf.Sin(t * 14f));
+            yield return WhileMenuPaused();
+        }
+        // 3: it flies to its slot and shrinks, the shade lifts; the HUD comes back so it lands on it
+        flying = true;
+        PickerOpen = false;
+        float scale = Screen.width / 1920f;
+        float box = 40f * scale;
+        int slot = Blessings.Held.Count;
+        Vector3 to = new Vector3(74f * scale + slot * (box + 4f * scale) + box / 2f, Screen.height - (300f * scale + box / 2f), 0f);
+        float startScale = card.localScale.x;
+        float endScale = Mathf.Max(0.05f, box / Mathf.Max(1f, card.rect.width * card.lossyScale.x / startScale));
+        for (float t = 0f; t < 0.4f; t += Time.unscaledDeltaTime) {
+            float k = Smooth(t / 0.4f);
+            card.position = Vector3.Lerp(from, to, k);
+            card.localScale = Vector3.one * Mathf.Lerp(startScale, endScale, k);
+            cardGroup.alpha = k < 0.8f ? 1f : 1f - (k - 0.8f) / 0.2f;
+            if (shadeImage != null) {
+                shadeImage.color = new Color(shadeFrom.r, shadeFrom.g, shadeFrom.b, shadeFrom.a * (1f - k));
+            }
+            yield return WhileMenuPaused();
+        }
+        card.position = to;   // a long frame can end the loop short of the slot
+        Sfx.Ui("ui_select");
         ClosePicker();
         Choose(offered[index]);
+    }
+
+    private static float Smooth(float k) => k * k * (3f - 2f * k);
+
+    // the pause menu over the cards holds the effect too
+    private static IEnumerator WhileMenuPaused() {
+        do {
+            yield return null;
+        } while (GameMenus.Paused);
     }
 
     private void ClosePicker() {
         picking = false;
         PickerOpen = false;
+        chosenIndex = -1;
+        flying = false;
+        panelGroup = null;
+        shadeImage = null;
         cards = null;   // gone with the canvas: the next chest's picker must not touch them
         cardEdges.Clear();
         holdBars.Clear();
@@ -438,7 +533,7 @@ public class ArenaRunVariety : MonoBehaviour {
 
     private void OnGUI() {
         Mutator? mutator = WeeklyMutators.ThisRun;
-        if (picking || GameMenus.Paused || player == null || (Blessings.Held.Count == 0 && !mutator.HasValue)) {
+        if ((picking && !flying) || GameMenus.Paused || player == null || (Blessings.Held.Count == 0 && !mutator.HasValue)) {
             return;
         }
         float scale = Screen.width / 1920f;
