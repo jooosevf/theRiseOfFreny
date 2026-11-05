@@ -11,7 +11,7 @@ public class GameMenus : MonoBehaviour {
     public const string MainMenuScene = "UI - Main Menu";
     public const string ArenaScene = "ZE Arena";
     // shown in the top right corner on every screen, to know which build is running
-    public const string Version = "Alpha 0.1.1";
+    public const string Version = "Alpha 0.1.2";
     private const float AutosaveSeconds = 60f;
 
     public static GameMenus Instance { get; private set; }
