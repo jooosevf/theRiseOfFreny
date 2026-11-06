@@ -189,9 +189,12 @@ IDLE = frame('Player idle', 0)
 ARMS = take(IDLE, lambda x, y: (x <= 20 or x >= 29) and 28 <= y <= 38)
 ARM_ROWS = (28, 38)
 # the gun in the idle frame's space: the drawing moved so the stock's butt meets the left hand
-# (19-20, 37-38) and the fore-end lies under the right (30-31, 37-38), the barrel across his
-# belt, over the trousers' plum so its grey reads, the muzzle clear of the right arm
-GUN_AT = (15, 25)
+# and the fore-end lies under the right, the barrel across his belly (José: a bit higher than
+# the belt), the muzzle clear of the right arm
+GUN_AT = (15, 22)
+# the arms bent up to it: the idle sleeves' top 6 rows with the hands right under them
+LIFT = 3
+HELD_ARMS = {**take(ARMS, lambda x, y: y <= 33), **moved(take(ARMS, lambda x, y: y >= 37), 0, -LIFT)}
 # each shot frame's body offset from the idle frame (its shoulder row), standing and in the air
 SHOT_FRAMES = {('Player ranged', i): o for i, o in enumerate([(-1, 1), (-1, 1), (0, 1), (0, 1), (0, 1)])}
 SHOT_FRAMES.update({('Player jump ranged', i): o for i, o in enumerate([(-1, 0), (-1, 0), (0, 0), (0, 0), (0, 0)])})
@@ -269,15 +272,13 @@ def shotgun_frame(sheet, i):
     at = (GUN_AT[0] + ox, GUN_AT[1] + oy + DROP[i])
     tip = gun_tip(at)
     shift = (round(tip[0] - (PISTOL_TIP[0] + fo[0])), round(tip[1] - (PISTOL_TIP[1] + fo[1])))
-    return held(body, moved(ARMS, ox, oy), at, muzzle_fx(pix, *fo, shift))
+    return held(body, moved(HELD_ARMS, ox, oy), at, muzzle_fx(pix, *fo, shift))
 
 
-# crouched: the torso is 9 rows lower and shorter, so the arms are the idle sleeves' top 6 rows
-# with the hands right under them, and the gun sits on his lap at the hands
+# crouched: the torso is 9 rows lower and shorter; the same bent arms, the gun on his lap
 CROUCH_DY = 9
-CROUCH_ARMS = {**moved(take(ARMS, lambda x, y: y <= 33), 0, CROUCH_DY),
-               **moved(take(ARMS, lambda x, y: y >= 37), 0, CROUCH_DY - 3)}
-CROUCH_GUN_AT = (GUN_AT[0], GUN_AT[1] + CROUCH_DY - 3)
+CROUCH_ARMS = moved(HELD_ARMS, 0, CROUCH_DY)
+CROUCH_GUN_AT = (15, 31)
 
 
 def crouch_shotgun(i):
