@@ -20,6 +20,22 @@ public static class CoopWorld {
     public static void GrenadeThrown(Vector3 from, Vector2 velocity, float fuse) { }
     public static void PortalOpened(Vector3 position, float duration, Color color) { }
     public static void HexCast(Vector3 position, HexballEffect effect, CoopBody homingAt, bool homing) { }
+    public static int BossesShown { get; set; }
+    public static bool RemoteHit { get; set; }
+    public static bool IsPuppet(object thing) => false;
+    public static bool DamagePuppet(object thing, int damage) => false;
+    public static void SpiderBlast(Vector3 at, int damage) { }
+    public static void NetThrown(Vector3 from, Vector2 velocity, float facing, float feetY) { }
+    public static void NetOpened(Vector3 at) { }
+    public static void SpellCast(Vector3 from, Vector3 direction) { }
+    public static bool HitPuppetAt(Vector2 point, float radius, int damage) => false;
+    public static float ShieldedUntil { get; set; }
+    public static bool LocalShielded => false;
+    public static void BossWave(Vector3 feet, float dir) { }
+    public static void BossFlood(float fromX, float floorY, float xMin, float xMax, float seconds) { }
+    public static void BossBeamCharge(Vector3 eye, float seconds) { }
+    public static void BossBeam(Vector3 eye, Vector3 at, float seconds) { }
+    public static void MineThrown(Vector3 from, Vector2 velocity, float gravity, float size, float fuse) { }
 }
 
 public class CoopBody {
@@ -40,6 +56,10 @@ public static class CoopShared {
     public static bool AskToPick(Component pickup) => false;
     public static void Picked(Component pickup) { }
     public static void PowerUpTaken(ItemPickup.Kind kind) { }
+    public static void KeySpawned(BossKey key, Vector3 position, Vector2 toss) { }
+    public static void GoldenChestSpawned(GoldenChest chest, Vector3 floor) { }
+    public static bool AskToOpen(GoldenChest chest) => false;
+    public static void GoldenChestOpened(GoldenChest chest) { }
 }
 
 public static class CoopNet {

@@ -44,6 +44,8 @@ public class CoopArena : MonoBehaviour {
     private FieldInfo cyclopsField;
     private ComboManager combo;
     private ComboManager Combo => combo != null ? combo : (combo = FindAnyObjectByType<ComboManager>());
+    private ArenaDayNight dayNight;
+    private ArenaDayNight DayNight => dayNight != null ? dayNight : (dayNight = FindAnyObjectByType<ArenaDayNight>());
     private bool isHost;
     private float nextSend;
     private float startedAt;
@@ -62,6 +64,7 @@ public class CoopArena : MonoBehaviour {
         public readonly Track Track = new Track();
         public int State;
         public bool Dead;
+        public bool Shielded;   // picking a blessing: the enemies leave him alone
         public int Lives = StartingLives;
         public byte ReviveIn;
         public CoopBody Body;
@@ -87,11 +90,16 @@ public class CoopArena : MonoBehaviour {
     private int peerGrenades;
     private int peerPortals;
     private int peerSlashes;
+    private int bossAttacks;
     private static readonly int MeleeState = Animator.StringToHash("Base Layer.Melee Attack");
     private static bool testSpawned;
     private static bool testGift;
     private static bool testBoss;
     private static bool testGrenade;
+    private static bool testKey;
+    private static bool testChest;
+    private int peerSpells;
+    private int killsCredited;
     private float bothDownAt = -1f;
     private float reviveAt = -1f;
     private bool fallHandled;
@@ -162,6 +170,7 @@ public class CoopArena : MonoBehaviour {
         CoopWorld.Active = false;
         CoopWorld.GainLife = null;
         CoopWorld.DifficultyFactor = 1;
+        CoopWorld.BossesShown = 0;
         CoopWorld.Bodies.Clear();
     }
 
@@ -185,6 +194,9 @@ public class CoopArena : MonoBehaviour {
         Debug.Log($"[Coop] {(isHost ? "host" : "cliente")} nasceu em {player.transform.position}");
         FieldInfo chestField = typeof(ArenaDirector).GetField("chestPrefab", BindingFlags.NonPublic | BindingFlags.Instance);
         CoopShared.Begin(director != null ? (GameObject)chestField.GetValue(director) : null);
+        // the staff casts the sorcerers' ball, which it learns from a sorcerer coming in: the client
+        // never has a real one, and the host needs it to draw the others' spells before one comes
+        MageStaff.Remember(HexballPrefab());
         if (!isHost) {
             foreach (Enemy enemy in new List<Enemy>(Enemy.Active)) {
                 Destroy(enemy.gameObject);
@@ -264,6 +276,9 @@ public class CoopArena : MonoBehaviour {
             ShowLeave(!leaveOpen);
         }
         float now = Time.unscaledTime;
+        // before sending: in the frame he comes back the others must not read "dead, no lives, not
+        // coming back" (they would think he is out and give him their life)
+        WatchRevive(now);
         CoopWorld.Lives = lives;
         if (now >= nextSend && player != null) {
             nextSend = now + SendInterval;
@@ -274,7 +289,6 @@ public class CoopArena : MonoBehaviour {
         }
         DrawGhosts(now);
         DrawPuppets(now);
-        WatchRevive(now);
         WatchRunEnd(now);
         if (now - rateStart >= 1f) {
             receivedRate = received;
@@ -283,7 +297,7 @@ public class CoopArena : MonoBehaviour {
         }
         if (now >= nextLog) {
             nextLog = now + 5f;
-            Debug.Log($"[Coop] {(isHost ? "host" : "cliente")} RTT {CoopNet.RttSummary()} | parceiros {peers.Count}, dificuldade {CoopWorld.DifficultyFactor}x, inimigos {(isHost ? Enemy.Active.Count : puppets.Count)}, vidas {lives} | {receivedRate} msg/s recebidas | {CoopNet.BytesPerSecond} B/s enviados | {puppets.Count} bonecos | golpes do cliente {remoteHits}, mortes {remoteKills} | golpes recebidos {hurtsTaken}, feitiços {hexesSeen} | visando o outro {TargetingPeer()} | {CoopShared.Counts()} | ganhou {CoopShared.CoinsGranted} moedas, {CoopShared.ItemsGranted} itens, quebrou {CoopShared.PropsBrokenByAsk} a pedido | dos outros: {peerShots} tiros, {peerGrenades} granadas, {peerPortals} portais, {peerSlashes} espadadas | escopeta {(player != null && player.ShotgunOwned)} | power-ups {ArenaPowerUps.InstaKillOn}");
+            Debug.Log($"[Coop] {(isHost ? "host" : "cliente")} RTT {CoopNet.RttSummary()} | parceiros {peers.Count}, dificuldade {CoopWorld.DifficultyFactor}x, inimigos {(isHost ? Enemy.Active.Count : puppets.Count)}, vidas {lives} | {receivedRate} msg/s recebidas | {CoopNet.BytesPerSecond} B/s enviados | {puppets.Count} bonecos | golpes do cliente {remoteHits}, mortes {remoteKills} | golpes recebidos {hurtsTaken}, feitiços {hexesSeen} | visando o outro {TargetingPeer()} | {CoopShared.Counts()} | ganhou {CoopShared.CoinsGranted} moedas, {CoopShared.ItemsGranted} itens, quebrou {CoopShared.PropsBrokenByAsk} a pedido | dos outros: {peerShots} tiros, {peerGrenades} granadas, {peerPortals} portais, {peerSlashes} espadadas | escopeta {(player != null && player.ShotgunOwned)} | power-ups {ArenaPowerUps.InstaKillOn} | ataques do host copiados {bossAttacks}, Ciclopes {CoopWorld.BossesShown}, chaves {BossKey.Carried}, baús dourados {GoldenChest.Active.Count}, bênçãos {Blessings.Held.Count}{(ArenaRunVariety.PickerOpen ? " (escolhendo)" : "")}, cajado {(player != null && MageStaff.Held(player))}, feitiços dos outros {peerSpells} | mortes creditadas {killsCredited}, fúria {(player != null ? player.Rage : 0f):0.00}");
         }
         TestRunner(now);
     }
@@ -299,7 +313,7 @@ public class CoopArena : MonoBehaviour {
         writer.WriteValueSafe(state.fullPathHash);
         writer.WriteValueSafe(state.normalizedTime);
         writer.WriteValueSafe(CoopAnim.Bools(playerAnim));
-        writer.WriteValueSafe((byte)(player.IsDead ? 1 : 0));
+        writer.WriteValueSafe((byte)((player.IsDead ? 1 : 0) | (CoopWorld.LocalShielded ? 2 : 0)));   // 2: picking a blessing
         writer.WriteValueSafe((byte)Mathf.Max(0, player.Health));
         writer.WriteValueSafe((byte)Mathf.CeilToInt(ReviveLeft));
         writer.WriteValueSafe((byte)Mathf.Clamp(lives, 0, 255));
@@ -325,7 +339,8 @@ public class CoopArena : MonoBehaviour {
             peer = MakeGhost(owner);
         }
         peer.Track.Add(Time.unscaledTime, position);
-        peer.Dead = dead != 0;
+        peer.Dead = (dead & 1) != 0;
+        peer.Shielded = (dead & 2) != 0;
         peer.ReviveIn = reviveIn;
         peer.Lives = peerLives;
         if (peer.Body != null) {
@@ -356,7 +371,7 @@ public class CoopArena : MonoBehaviour {
             }
             peer.Ghost.position = peer.Track.At(now - RenderDelay);
             if (peer.Body != null) {
-                peer.Body.Alive = visible;
+                peer.Body.Alive = visible && !peer.Shielded;
             }
         }
         foreach (ulong id in left) {
@@ -416,6 +431,91 @@ public class CoopArena : MonoBehaviour {
                     }
                 }
                 break;
+            // the host's attacks: a copy here, which only hurts this side's Freny
+            case CoopWorld.Fx.Wave:
+                reader.ReadValueSafe(out float dir);
+                if (dir > 0f) {   // the smash sends two, one each way: the dust and the shake once
+                    Fx.Dust(position, 24);
+                    Sfx.Play("grenade_explode", position, 0.8f, 0.6f);
+                    ScreenKick.Kick(0.35f, 0.5f);
+                }
+                Shockwave.Launch(position, dir);
+                bossAttacks++;
+                break;
+            case CoopWorld.Fx.Flood:
+                reader.ReadValueSafe(out float xMin);
+                reader.ReadValueSafe(out float xMax);
+                reader.ReadValueSafe(out float seconds);
+                AcidPuddle.Flood(position.x, position.y, xMin, xMax, seconds);
+                bossAttacks++;
+                break;
+            case CoopWorld.Fx.BeamCharge:
+                reader.ReadValueSafe(out float charge);
+                StartCoroutine(BeamCharge(position, charge));
+                break;
+            case CoopWorld.Fx.Beam:
+                reader.ReadValueSafe(out Vector2 at);
+                reader.ReadValueSafe(out float beamSeconds);
+                BloodBeam.Fire(position, at, beamSeconds, player, null);
+                Sfx.Play("grenade_explode", position, 0.9f, 0.4f);
+                bossAttacks++;
+                break;
+            case CoopWorld.Fx.Net:
+                reader.ReadValueSafe(out Vector2 netVelocity);
+                reader.ReadValueSafe(out float netFacing);
+                reader.ReadValueSafe(out float netFeet);
+                NetProjectile.LaunchCopy(position, netVelocity, netFacing, netFeet);
+                break;
+            case CoopWorld.Fx.NetOpen:
+                if (isHost) {
+                    NetProjectile.CatchAt(position, false);   // the copy here already lies on the floor
+                }
+                break;
+            case CoopWorld.Fx.Kill:
+                // the host: one of this player's hits killed an enemy there (Fúria, Vampiro)
+                if (player != null) {
+                    player.CreditKill();
+                    ArenaRunVariety run = player.GetComponent<ArenaRunVariety>();
+                    if (run != null) {
+                        run.CreditKill();
+                    }
+                    killsCredited++;
+                    MultiKill.CreditedKill();   // the DOUBLE/TRIPLE KILL banners
+                }
+                break;
+            case CoopWorld.Fx.Spider:
+                reader.ReadValueSafe(out byte spiderDamage);
+                SpiderMine.BlastCopy(position, spiderDamage);
+                bossAttacks++;
+                break;
+            case CoopWorld.Fx.Spell:
+                reader.ReadValueSafe(out Vector2 spellDir);
+                MageStaff.CastCopy(position, spellDir);
+                peerSpells++;
+                break;
+            case CoopWorld.Fx.Mine:
+                reader.ReadValueSafe(out Vector2 mineVelocity);
+                reader.ReadValueSafe(out float gravity);
+                reader.ReadValueSafe(out float size);
+                reader.ReadValueSafe(out float mineFuse);
+                GolemMine.ThrowCopy(position, mineVelocity, gravity, size, mineFuse);
+                bossAttacks++;
+                break;
+        }
+    }
+
+    // the Ciclope's eye charging before the beam (Cyclops.Beam), so the warning shows here too
+    private IEnumerator BeamCharge(Vector3 eye, float seconds) {
+        SpriteRenderer glow = BloodBeam.Orb("Eye Glow", null);
+        const float beam = 0.8f;
+        for (float t = 0f; t < seconds + beam && glow != null; t += Time.deltaTime) {
+            float u = Mathf.Clamp01(t / seconds);
+            glow.transform.position = eye;
+            glow.transform.localScale = Vector3.one * (1.3f * (t < seconds ? 0.3f + 0.7f * u : 1.3f) * (1f + Mathf.Sin(Time.time * 40f) * 0.08f));
+            yield return null;
+        }
+        if (glow != null) {
+            Destroy(glow.gameObject);
         }
     }
 
@@ -621,6 +721,7 @@ public class CoopArena : MonoBehaviour {
         ComboManager comboNow = Combo;
         writer.WriteValueSafe(comboNow != null ? comboNow.GetCombo() : 1f);
         writer.WriteValueSafe(comboNow != null ? comboNow.TimeLeft : 0f);
+        writer.WriteValueSafe(DayNight != null ? DayNight.Elapsed : -1f);
         writer.WriteValueSafe((ushort)Mathf.Min(count, MaxSnapshotEnemies));
         int written = 0;
         foreach (Enemy enemy in alive) {
@@ -644,7 +745,9 @@ public class CoopArena : MonoBehaviour {
             writer.WriteValueSafe(state.fullPathHash);
             writer.WriteValueSafe(CoopAnim.Bools(anim));
             writer.WriteValueSafe(anim == null ? CoopAnim.FrameHash(sprite) : 0);
-            writer.WriteValueSafe((byte)Mathf.Clamp(enemy.Health, 0, 255));
+            // the Ciclope's life is more than a byte: its share of the whole goes, for the bar
+            int health = enemy is Cyclops cyclops ? Mathf.CeilToInt(cyclops.HealthFraction * 255f) : enemy.Health;
+            writer.WriteValueSafe((byte)Mathf.Clamp(health, 0, 255));
         }
         CoopNet.Send("coop.e", writer, NetworkDelivery.UnreliableSequenced);
     }
@@ -680,6 +783,10 @@ public class CoopArena : MonoBehaviour {
         reader.ReadValueSafe(out float comboLeft);
         if (Combo != null) {
             Combo.ShowFromHost(comboValue, comboLeft);   // and one combo
+        }
+        reader.ReadValueSafe(out float clock);
+        if (clock >= 0f && DayNight != null) {
+            DayNight.MatchClock(clock);   // and one sky: the Lua de Sangue comes at the same time
         }
         reader.ReadValueSafe(out ushort count);
         float now = Time.unscaledTime;
@@ -742,11 +849,23 @@ public class CoopArena : MonoBehaviour {
             body.transform.localScale = Vector3.one * Cyclops.Size;
             body.transform.localPosition = new Vector3(0f, CyclopsBodyLift * (Cyclops.Size - 1f), 0f);
         } else if (prefab.GetComponent<SpiderMine>() != null && body != null) {
+            // SpiderMine.Init: its art stands on the feet, a unit under the root; without this the
+            // client drew it a unit up, walking on the air over the platforms
             body.transform.localScale = Vector3.one;
+            body.transform.localPosition = new Vector3(0f, -1f, 0f);
         }
         copy.tag = "Untagged";
         CoopPuppet puppet = copy.AddComponent<CoopPuppet>();
         puppet.Init(this, id);
+        if (kind == CyclopsKind) {
+            int slot = 0;
+            foreach (CoopPuppet other in puppets.Values) {
+                if (other != null && other.IsBoss) {
+                    slot++;
+                }
+            }
+            puppet.MakeBossBar(slot);
+        }
         copy.transform.SetParent(null);
         SceneManager.MoveGameObjectToScene(copy, gameObject.scene);
         copy.SetActive(true);
@@ -754,11 +873,16 @@ public class CoopArena : MonoBehaviour {
     }
 
     private void DrawPuppets(float now) {
+        int bosses = 0;
         foreach (CoopPuppet puppet in puppets.Values) {
             if (puppet != null) {
                 puppet.Draw(now - RenderDelay);
+                if (puppet.IsBoss) {
+                    bosses++;
+                }
             }
         }
+        CoopWorld.BossesShown = bosses;   // the torches and the Ciclope's music (ArenaBossLoot.BossOut)
     }
 
     // a puppet was hit on this side: only the host can hurt the real one
@@ -773,10 +897,19 @@ public class CoopArena : MonoBehaviour {
         reader.ReadValueSafe(out ushort id);
         reader.ReadValueSafe(out byte amount);
         if (enemiesById.TryGetValue(id, out Enemy enemy) && enemy != null && !enemy.IsDead) {
-            enemy.Damage(amount);
+            CoopWorld.RemoteHit = true;   // a kill now is the client's: his Fúria fills, not the host's
+            try {
+                enemy.Damage(amount);
+            } finally {
+                CoopWorld.RemoteHit = false;
+            }
             remoteHits++;
             if (enemy.IsDead) {
                 remoteKills++;
+                using FastBufferWriter credit = new FastBufferWriter(16, Allocator.Temp);
+                credit.WriteValueSafe((byte)CoopWorld.Fx.Kill);
+                credit.WriteValueSafe((Vector2)enemy.transform.position);
+                CoopNet.SendTo(sender, "coop.fx", credit, NetworkDelivery.ReliableSequenced);
             }
         }
     }
@@ -802,7 +935,7 @@ public class CoopArena : MonoBehaviour {
             overlay = new GUIStyle(GUI.skin.box) { font = MenuKit.Font, fontSize = unit, alignment = TextAnchor.UpperLeft, wordWrap = true };
             overlay.normal.textColor = MenuKit.TextColor;
             nameTag = new GUIStyle(GUI.skin.label) { font = MenuKit.Font, fontSize = unit, alignment = TextAnchor.MiddleCenter, wordWrap = false };
-            reviveStyle = new GUIStyle(GUI.skin.label) { font = MenuKit.Font, fontSize = unit * 2, alignment = TextAnchor.MiddleCenter };
+            reviveStyle = new GUIStyle(GUI.skin.label) { font = MenuKit.Font, fontSize = unit * 2, alignment = TextAnchor.MiddleCenter, wordWrap = true };
             reviveStyle.normal.textColor = MenuKit.TitleColor;
         }
         foreach (Peer peer in peers.Values) {
@@ -827,9 +960,32 @@ public class CoopArena : MonoBehaviour {
         if (player != null && player.IsDead) {
             string wait = reviveAt >= 0f ? $"Você volta em {Mathf.CeilToInt(ReviveLeft)} s"
                 : AllPeersOut ? "Todos caíram"
-                : "Sem vidas. Uma vida pega por um parceiro traz você de volta";
-            GUI.Label(new Rect(0f, Screen.height * 0.4f, Screen.width, 40f), wait, reviveStyle);
+                : "Sem vidas\nUma vida pega por um parceiro traz você de volta";
+            DrawCentered(wait);
         }
+    }
+
+    // the fallen player's message: the first line big, the rest smaller, wrapped inside the screen
+    // (one long line at the big size ran off both edges), with a dark edge to read over the arena
+    private void DrawCentered(string text) {
+        string[] parts = text.Split('\n');
+        float width = Screen.width * 0.86f;
+        float x = (Screen.width - width) / 2f;
+        float y = Screen.height * 0.36f;
+        int big = reviveStyle.fontSize;
+        for (int i = 0; i < parts.Length; i++) {
+            reviveStyle.fontSize = i == 0 ? big : Mathf.Max(9, Mathf.RoundToInt(big * 0.55f));
+            float height = reviveStyle.CalcHeight(new GUIContent(parts[i]), width) + 8f;
+            Rect r = new Rect(x, y, width, height);
+            float o = Mathf.Max(1f, Screen.height / 540f);
+            reviveStyle.normal.textColor = Color.black;
+            GUI.Label(new Rect(r.x + o, r.y + o, r.width, r.height), parts[i], reviveStyle);
+            GUI.Label(new Rect(r.x - o, r.y + o, r.width, r.height), parts[i], reviveStyle);
+            reviveStyle.normal.textColor = i == 0 ? MenuKit.TitleColor : MenuKit.TextColor;
+            GUI.Label(r, parts[i], reviveStyle);
+            y += height + 6f;
+        }
+        reviveStyle.fontSize = big;
     }
 
     private void DrawName(Vector3 feetOrHead, string name, Color color) {
@@ -879,6 +1035,22 @@ public class CoopArena : MonoBehaviour {
             testBoss = true;
             director.StartCoroutine("SpawnBoss");
             Debug.Log("[Coop] teste: Ciclope chamado");
+        }
+        // test only: the Ciclope's key, a staff and then the golden chest on the client's Freny
+        if (CoopArgs.Has("-coopLootTest") && isHost && ghost != null) {
+            if (!testKey && elapsed >= 12f) {
+                testKey = true;
+                Vector3 at = ghost.position + Vector3.up * 0.5f;
+                CoopShared.KeySpawned(BossKey.Spawn(at, Vector2.zero), at, Vector2.zero);
+                MageStaff.Drop(ghost.position + Vector3.up);
+                Debug.Log("[Coop] teste: chave e cajado ao lado do cliente");
+            } else if (testKey && !testChest && elapsed >= 16f) {
+                testChest = true;
+                RaycastHit2D floor = Physics2D.Raycast(ghost.position, Vector2.down, 4f, player.whatIsGround);
+                Vector3 at = floor.collider != null ? (Vector3)floor.point : ghost.position;
+                CoopShared.GoldenChestSpawned(GoldenChest.Spawn(at, null), at);
+                Debug.Log($"[Coop] teste: baú dourado ao lado do cliente em {at}");
+            }
         }
         // test only: another player's grenade going off beside this Freny
         if (CoopArgs.Has("-coopAutopilot") && !isHost && !testGrenade && elapsed >= 15f && player != null && !player.IsDead) {
@@ -969,6 +1141,38 @@ public class CoopPuppet : MonoBehaviour, IDamageable {
     private int health = 1;
 
     public int Health { get => health; set => health = value; }
+
+    // the host's Ciclope: the boss bar at the bottom, from its share of life (0..255)
+    public bool IsBoss { get; private set; }
+    private GameObject bar;
+    private UnityEngine.UI.Slider barLife;
+    private UnityEngine.UI.Slider barTrail;
+
+    public void MakeBossBar(int slot) {
+        IsBoss = true;
+        health = 255;
+        bar = Cyclops.BuildBar(slot, slot > 0, out barLife, out barTrail);
+    }
+
+    private void Update() {
+        if (bar == null) {
+            return;
+        }
+        bar.SetActive(!GameMenus.Paused);
+        float value = Mathf.Clamp01(health / 255f);
+        if (barLife != null) {
+            barLife.value = value;
+        }
+        if (barTrail != null) {
+            barTrail.value = barTrail.value > value ? Mathf.MoveTowards(barTrail.value, value, 0.4f * Time.deltaTime) : value;
+        }
+    }
+
+    private void OnDestroy() {
+        if (bar != null) {
+            Destroy(bar);
+        }
+    }
 
     public void Init(CoopArena owner, ushort enemyId) {
         arena = owner;

@@ -54,6 +54,20 @@ public class GolemMine : MonoBehaviour, IDamageable {
 
     // size: the Ciclope's bomb is 4 times the red Golem's mine, and its blast reaches BigBlast farther
     public static void Throw(Enemy thrower, Vector3 from, Vector2 velocity, float gravityScale = Gravity, float size = 1f) {
+        float fuse = Fuse;
+        CoopWorld.MineThrown(from, velocity, gravityScale, size, fuse);   // co-op host: the others throw their own copy
+        Make(thrower, from, velocity, gravityScale, size, fuse, false);
+    }
+
+    // co-op client: the host's mine, flying here too; it only hurts this side's Freny, and the
+    // crates and vases are the host's to break
+    public static void ThrowCopy(Vector3 from, Vector2 velocity, float gravityScale, float size, float fuse) {
+        Make(null, from, velocity, gravityScale, size, fuse, true);
+    }
+
+    private bool copy;
+
+    private static void Make(Enemy thrower, Vector3 from, Vector2 velocity, float gravityScale, float size, float fuse, bool copy) {
         LoadFrames();
         GameObject mine = new GameObject("Golem Mine");
         mine.transform.position = from;
@@ -70,7 +84,8 @@ public class GolemMine : MonoBehaviour, IDamageable {
         m.thrower = thrower;
         m.sprite = renderer;
         m.body = body;
-        m.explodeAt = Time.time + Fuse;
+        m.explodeAt = Time.time + fuse;
+        m.copy = copy;
         m.blast = Grenade.BlastRadius * (size > 1f ? BigBlast : 1f);
         Sfx.Play("grenade_throw", from);
     }
@@ -156,6 +171,9 @@ public class GolemMine : MonoBehaviour, IDamageable {
             freny.Knockback(new Vector2(side * Grenade.SelfKnockback, Grenade.SelfKnockback * 0.6f));
         }
         foreach (Collider2D col in caught) {
+            if (copy) {
+                break;
+            }
             if (col.GetComponent<ArenaChest>() is ArenaChest chest) {
                 chest.Damage();
             } else if (col.GetComponent<ArenaVase>() is ArenaVase vase) {

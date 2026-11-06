@@ -15,7 +15,18 @@ public class NetProjectile : MonoBehaviour {
     private float dieAt;
     private float throwerFeet;   // one-way platforms above this are flown through both ways
 
+    private bool cosmetic;   // co-op: another player's net, drawn here; his side catches with it
+
     public static void Launch(Vector3 from, Vector2 velocity, float facing, float feetY) {
+        CoopWorld.NetThrown(from, velocity, facing, feetY);   // co-op: the others draw it
+        Make(from, velocity, facing, feetY, false);
+    }
+
+    public static void LaunchCopy(Vector3 from, Vector2 velocity, float facing, float feetY) {
+        Make(from, velocity, facing, feetY, true);
+    }
+
+    private static void Make(Vector3 from, Vector2 velocity, float facing, float feetY, bool cosmetic) {
         GameObject net = new GameObject("Net");
         net.transform.position = from;
         net.transform.localScale = Vector3.one * 0.8f;
@@ -33,6 +44,7 @@ public class NetProjectile : MonoBehaviour {
         projectile.body = body;
         projectile.throwerFeet = feetY;
         projectile.dieAt = Time.time + MaxLife;
+        projectile.cosmetic = cosmetic;
         Fx.Spray(from, velocity, RopeColor, 4, 2f, 0.4f);
         Sfx.Play("grenade_throw", from, 0.8f, 1.3f);
     }
@@ -48,8 +60,8 @@ public class NetProjectile : MonoBehaviour {
             return;
         }
         Enemy enemy = other.GetComponentInParent<Enemy>();
-        if (enemy != null && !enemy.IsDead) {
-            Open();
+        if ((enemy != null && !enemy.IsDead) || other.GetComponentInParent<CoopPuppet>() != null) {
+            Open();   // (a puppet: the co-op client's copy of the host's enemy)
         } else if (enemy == null && !other.isTrigger && body != null && body.Vel().y <= 0f) {
             // thrown from under a one-way platform the arc came down on top of it and missed the
             // enemy on Freny's floor: only his own floor or lower stops the net (an enemy up there
@@ -66,6 +78,22 @@ public class NetProjectile : MonoBehaviour {
         Vector3 at = transform.position;
         Fx.Burst(at, RopeColor, 18, 3f, 0.08f, 0.4f);
         Sfx.Play("weapon_switch", at, 1f, 0.7f);
+        if (cosmetic || CoopWorld.IsClient) {
+            // co-op: only the host has the real enemies; the client's own net asks it to catch them
+            if (!cosmetic) {
+                CoopWorld.NetOpened(at);
+            }
+            NetTrap.DropEmpty(at);
+            Destroy(gameObject);
+            return;
+        }
+        CatchAt(at);
+        Destroy(gameObject);
+    }
+
+    // every enemy within the net's reach of that point (also the co-op host, for a client's net);
+    // false: nobody was there
+    public static bool CatchAt(Vector3 at, bool dropOnMiss = true) {
         HashSet<Enemy> caught = new HashSet<Enemy>();
         foreach (Enemy enemy in Enemy.Active) {
             if (enemy == null || enemy.IsDead) {
@@ -78,9 +106,9 @@ public class NetProjectile : MonoBehaviour {
                 NetTrap.Catch(enemy);
             }
         }
-        if (caught.Count == 0) {
+        if (caught.Count == 0 && dropOnMiss) {
             NetTrap.DropEmpty(at);   // a miss: the net lies there a moment
         }
-        Destroy(gameObject);
+        return caught.Count > 0;
     }
 }

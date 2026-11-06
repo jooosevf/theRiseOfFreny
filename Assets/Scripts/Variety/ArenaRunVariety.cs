@@ -150,7 +150,15 @@ public class ArenaRunVariety : MonoBehaviour {
         }
     }
 
+    // co-op client: a kill of this player's on the host (for the Vampiro)
+    public void CreditKill() {
+        OnKilled(null);
+    }
+
     private void OnKilled(Enemy enemy) {
+        if (enemy != null && CoopWorld.RemoteHit) {
+            return;   // co-op host: another player's kill
+        }
         if (!Blessings.Has(Blessing.Vampire) || player == null || player.IsDead) {
             return;
         }
@@ -232,6 +240,10 @@ public class ArenaRunVariety : MonoBehaviour {
 
     // ==== the picker ==========================================================================
 
+    private const float CoopPickSeconds = 6f;   // co-op: time to pick before a card is taken for him
+    private const float CoopShieldAfter = 2f;   // and how long he stays safe after it (José, 2026-11-06)
+    private Text countdown;
+
     private void OpenPicker() {
         picking = true;
         PickerOpen = true;
@@ -260,6 +272,13 @@ public class ArenaRunVariety : MonoBehaviour {
         Text sub = MenuKit.MakeText(panel.transform, "Vale até o fim da corrida e soma com as outras.",
             MenuKit.SmallTextSize, MenuKit.DimTextColor, TextAnchor.MiddleCenter);
         Place(sub.rectTransform, new Vector2(0f, 122f), new Vector2(720f, 24f));
+        countdown = null;
+        if (CoopWorld.Active) {
+            // the room goes on behind the cards: a lighter shade, and the time left
+            shade.color = new Color(MenuKit.ShadeColor.r, MenuKit.ShadeColor.g, MenuKit.ShadeColor.b, MenuKit.ShadeColor.a * 0.4f);
+            countdown = MenuKit.MakeText(panel.transform, "", MenuKit.SmallTextSize, MenuKit.TitleColor, TextAnchor.MiddleCenter);
+            Place(countdown.rectTransform, new Vector2(0f, -178f), new Vector2(720f, 24f));
+        }
 
         cards = new Button[offered.Length];
         cardEdges.Clear();
@@ -373,7 +392,24 @@ public class ArenaRunVariety : MonoBehaviour {
         if (GameMenus.Paused) {
             return;
         }
-        Time.timeScale = 0f;
+        if (CoopWorld.Active) {
+            // José, 2026-11-06: a room never stops for one player. He picks quickly, can't be hit
+            // meanwhile and for CoopShieldAfter seconds after, the enemies leave him alone, and when
+            // time is up a card is taken for him
+            if (player != null) {
+                player.Shield(CoopShieldAfter);
+            }
+            CoopWorld.ShieldedUntil = Time.time + CoopShieldAfter;
+            float left = openedAt + CoopPickSeconds - Time.unscaledTime;
+            if (countdown != null) {
+                countdown.text = chosenIndex >= 0 ? "" : $"Escolha rápido: {Mathf.CeilToInt(Mathf.Max(0f, left))} s";
+            }
+            if (left <= 0f && chosenIndex < 0 && offered != null && offered.Length > 0) {
+                Pick(UnityEngine.Random.Range(0, offered.Length));
+            }
+        } else {
+            Time.timeScale = 0f;
+        }
         InputBindings.BlockGameplay(true);
         if (cards == null || chosenIndex >= 0) {
             return;

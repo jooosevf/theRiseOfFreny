@@ -87,10 +87,10 @@ public class MeleeAttack : MonoBehaviour
             if (owner && alive && enemy.IsDead) {
                 MultiKill.SwordKill(swing);
             }
-        } else {
+        } else if (!CoopWorld.DamagePuppet(hit, damage)) {   // co-op client: the host's enemy takes the Fúria's 2 too
             hit.Damage();
         }
-        if (owner && hit is Enemy) {
+        if (owner && (hit is Enemy || CoopWorld.IsPuppet(hit))) {   // (co-op client: the host's enemies are puppets)
             owner.OnMeleeHit();
         }
         FrenyHit?.Invoke(other.ClosestPoint(transform.position));

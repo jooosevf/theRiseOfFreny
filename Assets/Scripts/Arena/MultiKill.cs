@@ -88,6 +88,19 @@ public class MultiKill : MonoBehaviour {
         Show(++shotKills);
     }
 
+    // co-op client: the host confirmed a kill of this player's. The kills of one attack (a swing, a
+    // blast, a shot) come back close together, so the ones within CreditWindow count as one attack
+    private const float CreditWindow = 0.3f;
+    private static float lastCredit = -1f;
+    private static int creditKills;
+
+    public static void CreditedKill() {
+        float now = Time.unscaledTime;
+        creditKills = now - lastCredit <= CreditWindow ? creditKills + 1 : 1;
+        lastCredit = now;
+        Show(creditKills);
+    }
+
     private static void Show(int kills) {
         if (!Features.MultiKill || kills < 2) {
             return;

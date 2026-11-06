@@ -267,6 +267,16 @@ public class ArenaDayNight : MonoBehaviour {
         }
     }
 
+    // co-op: seconds into this run's day and night; the client follows the host's (a scene that
+    // loaded a moment later would see the Lua de Sangue late)
+    public float Elapsed => Time.time - startTime;
+
+    public void MatchClock(float hostElapsed) {
+        if (Mathf.Abs(Elapsed - hostElapsed) > 0.5f) {
+            startTime = Time.time - hostElapsed;
+        }
+    }
+
     // leaving the arena (campaign, menu) is always night for the hexballs
     private void OnDisable() {
         Daylight = 0f;

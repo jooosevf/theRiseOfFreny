@@ -59,6 +59,7 @@ public class AcidPuddle : MonoBehaviour {
     private static Material floodMaterial;
 
     public static AcidPuddle Flood(float fromX, float floorY, float xMin, float xMax, float seconds) {
+        CoopWorld.BossFlood(fromX, floorY, xMin, xMax, seconds);   // co-op host: the others run their own copy
         GameObject go = new GameObject("Vomit Flood");
         AcidPuddle puddle = go.AddComponent<AcidPuddle>();
         puddle.flood = true;

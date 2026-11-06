@@ -39,6 +39,10 @@ public static class CoopWorld {
     public static bool IsClient => Active && !CoopNet.IsHost;
 
     public static int Lives { get; set; }                  // this player's, for the HUD
+    // José, 2026-11-06: picking a blessing doesn't pause a room; until then the enemies leave this
+    // player alone (ArenaRunVariety sets it, Time.time)
+    public static float ShieldedUntil { get; set; }
+    public static bool LocalShielded => Active && Time.time < ShieldedUntil;
     public static int DifficultyFactor { get; set; } = 1;  // ArenaDirector: more enemies, sooner
 
     // on the host: the other players' bodies, and their life as they last reported it
@@ -47,7 +51,7 @@ public static class CoopWorld {
 
     // which Freny this enemy goes after: one of the others, or null for the host's own
     public static CoopBody PickTarget(Player local, Vector3 from, CoopBody current) {
-        bool localAlive = local != null && !local.IsDead;
+        bool localAlive = local != null && !local.IsDead && !LocalShielded;
         CoopBody best = null;
         float bestDistance = localAlive ? Vector2.Distance(from, local.transform.position) : float.MaxValue;
         if (localAlive && current == null) {
@@ -80,7 +84,154 @@ public static class CoopWorld {
     }
 
     // ---- what one side draws and the other has to draw too; the copies do no damage
-    public enum Fx : byte { Shot, Grenade, Portal, Slash }
+    // Wave, Flood, Beam and Mine are the host's attacks (the Ciclope's, the red Golem's mine): each
+    // client runs its own copy, which only hurts the Freny of the side it runs on
+    public enum Fx : byte { Shot, Grenade, Portal, Slash, Wave, Flood, Beam, Mine, BeamCharge, Spell, Spider, Net, NetOpen, Kill }
+
+    // this player threw the Rede: the others draw it
+    public static void NetThrown(Vector3 from, Vector2 velocity, float facing, float feetY) {
+        if (!Active) {
+            return;
+        }
+        using FastBufferWriter writer = new FastBufferWriter(32, Allocator.Temp);
+        writer.WriteValueSafe((byte)Fx.Net);
+        writer.WriteValueSafe((Vector2)from);
+        writer.WriteValueSafe(velocity);
+        writer.WriteValueSafe(facing);
+        writer.WriteValueSafe(feetY);
+        CoopNet.Send("coop.fx", writer, NetworkDelivery.ReliableSequenced);
+    }
+
+    // the client's net opened there: the host catches its real enemies
+    public static void NetOpened(Vector3 at) {
+        if (!IsClient) {
+            return;
+        }
+        using FastBufferWriter writer = new FastBufferWriter(16, Allocator.Temp);
+        writer.WriteValueSafe((byte)Fx.NetOpen);
+        writer.WriteValueSafe((Vector2)at);
+        CoopNet.Send("coop.fx", writer, NetworkDelivery.ReliableSequenced);
+    }
+
+    public static void SpiderBlast(Vector3 at, int damage) {
+        if (!HostActive) {
+            return;
+        }
+        using FastBufferWriter writer = new FastBufferWriter(24, Allocator.Temp);
+        writer.WriteValueSafe((byte)Fx.Spider);
+        writer.WriteValueSafe((Vector2)at);
+        writer.WriteValueSafe((byte)Mathf.Clamp(damage, 0, 255));
+        CoopNet.Send("coop.fx", writer, NetworkDelivery.ReliableSequenced);
+    }
+
+    // on the client: Ciclopes the host has out, so the torches and the music change here too
+    public static int BossesShown { get; set; }
+
+    // on the host, while a client's hit is applied: a kill then is his, not the host's (Fúria, Vampiro)
+    public static bool RemoteHit { get; set; }
+
+    public static bool IsPuppet(object thing) {
+        return thing is CoopPuppet || thing is CoopPuppetPart;
+    }
+
+    // a sword hit on a puppet with its real damage; false when it isn't one
+    public static bool DamagePuppet(object thing, int damage) {
+        CoopPuppet puppet = thing is CoopPuppet p ? p : thing is CoopPuppetPart part ? part.Owner : null;
+        if (puppet == null) {
+            return false;
+        }
+        puppet.DamageBy(damage);
+        return true;
+    }
+
+    // this player cast a ball with the Cajado do Mago: the others draw it
+    public static void SpellCast(Vector3 from, Vector3 direction) {
+        if (!Active) {
+            return;
+        }
+        using FastBufferWriter writer = new FastBufferWriter(32, Allocator.Temp);
+        writer.WriteValueSafe((byte)Fx.Spell);
+        writer.WriteValueSafe((Vector2)from);
+        writer.WriteValueSafe((Vector2)direction);
+        CoopNet.Send("coop.fx", writer, NetworkDelivery.ReliableSequenced);
+    }
+
+    // the client: something of his (a staff ball) touching a puppet there; damage 0 only tells
+    // whether one is there. True when one was
+    public static bool HitPuppetAt(Vector2 point, float radius, int damage) {
+        foreach (Collider2D col in Physics2D.OverlapCircleAll(point, radius)) {
+            CoopPuppet puppet = col.GetComponentInParent<CoopPuppet>();
+            if (puppet != null) {
+                if (damage > 0) {
+                    puppet.DamageBy(damage);
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static void BossWave(Vector3 feet, float dir) {
+        if (!HostActive) {
+            return;
+        }
+        using FastBufferWriter writer = new FastBufferWriter(32, Allocator.Temp);
+        writer.WriteValueSafe((byte)Fx.Wave);
+        writer.WriteValueSafe((Vector2)feet);
+        writer.WriteValueSafe(dir);
+        CoopNet.Send("coop.fx", writer, NetworkDelivery.ReliableSequenced);
+    }
+
+    public static void BossFlood(float fromX, float floorY, float xMin, float xMax, float seconds) {
+        if (!HostActive) {
+            return;
+        }
+        using FastBufferWriter writer = new FastBufferWriter(32, Allocator.Temp);
+        writer.WriteValueSafe((byte)Fx.Flood);
+        writer.WriteValueSafe(new Vector2(fromX, floorY));
+        writer.WriteValueSafe(xMin);
+        writer.WriteValueSafe(xMax);
+        writer.WriteValueSafe(seconds);
+        CoopNet.Send("coop.fx", writer, NetworkDelivery.ReliableSequenced);
+    }
+
+    // the eye starts to glow: the others see the warning too, not only the beam
+    public static void BossBeamCharge(Vector3 eye, float seconds) {
+        if (!HostActive) {
+            return;
+        }
+        using FastBufferWriter writer = new FastBufferWriter(32, Allocator.Temp);
+        writer.WriteValueSafe((byte)Fx.BeamCharge);
+        writer.WriteValueSafe((Vector2)eye);
+        writer.WriteValueSafe(seconds);
+        CoopNet.Send("coop.fx", writer, NetworkDelivery.ReliableSequenced);
+    }
+
+    public static void BossBeam(Vector3 eye, Vector3 at, float seconds) {
+        if (!HostActive) {
+            return;
+        }
+        using FastBufferWriter writer = new FastBufferWriter(32, Allocator.Temp);
+        writer.WriteValueSafe((byte)Fx.Beam);
+        writer.WriteValueSafe((Vector2)eye);
+        writer.WriteValueSafe((Vector2)at);
+        writer.WriteValueSafe(seconds);
+        CoopNet.Send("coop.fx", writer, NetworkDelivery.ReliableSequenced);
+    }
+
+    public static void MineThrown(Vector3 from, Vector2 velocity, float gravity, float size, float fuse) {
+        if (!HostActive) {
+            return;
+        }
+        using FastBufferWriter writer = new FastBufferWriter(40, Allocator.Temp);
+        writer.WriteValueSafe((byte)Fx.Mine);
+        writer.WriteValueSafe((Vector2)from);
+        writer.WriteValueSafe(velocity);
+        writer.WriteValueSafe(gravity);
+        writer.WriteValueSafe(size);
+        writer.WriteValueSafe(fuse);
+        CoopNet.Send("coop.fx", writer, NetworkDelivery.ReliableSequenced);
+    }
 
     // this player swung the sword: the others draw it on his Freny
     public static void Slashed(int step) {

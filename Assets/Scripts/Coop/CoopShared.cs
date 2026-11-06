@@ -9,8 +9,8 @@ using UnityEngine;
 // a coin or an item keeps it, and it is gone for the other. A power-up works for both.
 public static class CoopShared {
 
-    private enum Op : byte { Item, Coin, Vase, Chest, Broken, Regrown, Gone, Granted, PowerUp }
-    private enum Ask : byte { Break, Pick }
+    private enum Op : byte { Item, Coin, Vase, Chest, Broken, Regrown, Gone, Granted, PowerUp, Key, GoldChest, GoldOpened }
+    private enum Ask : byte { Break, Pick, Open }
 
     private const ushort FirstDynamicProp = 10000;
 
@@ -168,6 +168,54 @@ public static class CoopShared {
         CoopNet.Send("coop.w", writer, NetworkDelivery.ReliableSequenced);
     }
 
+    // the Ciclope's key: a pickup like the others, first come first served
+    public static void KeySpawned(BossKey key, Vector3 position, Vector2 toss) {
+        if (!CoopWorld.HostActive || key == null) {
+            return;
+        }
+        ushort id = nextPickup++;
+        RegisterPickup(id, key);
+        using FastBufferWriter writer = Writer(Op.Key);
+        writer.WriteValueSafe(id);
+        writer.WriteValueSafe((Vector2)position);
+        writer.WriteValueSafe(toss);
+        CoopNet.Send("coop.w", writer, NetworkDelivery.ReliableSequenced);
+    }
+
+    // the golden chest: a prop the host owns; whoever has a key opens it, and the treasure is his
+    public static void GoldenChestSpawned(GoldenChest chest, Vector3 floor) {
+        if (!CoopWorld.HostActive || chest == null) {
+            return;
+        }
+        ushort id = nextProp++;
+        RegisterProp(id, chest);
+        using FastBufferWriter writer = Writer(Op.GoldChest);
+        writer.WriteValueSafe(id);
+        writer.WriteValueSafe((Vector2)floor);
+        CoopNet.Send("coop.w", writer, NetworkDelivery.ReliableSequenced);
+    }
+
+    // true: the client asked the host to open it with his key
+    public static bool AskToOpen(GoldenChest chest) {
+        if (!CoopWorld.IsClient || !propIds.TryGetValue(chest, out ushort id)) {
+            return false;
+        }
+        if (asked.Add((ushort)(id | 0x8000))) {   // props and pickups count apart: one bit marks a prop
+            SendAsk(Ask.Open, id);
+        }
+        return true;
+    }
+
+    // the host's Freny opened it: the others see it open, with nothing in it for them
+    public static void GoldenChestOpened(GoldenChest chest) {
+        if (CoopWorld.HostActive && propIds.TryGetValue(chest, out ushort id)) {
+            using FastBufferWriter writer = Writer(Op.GoldOpened);
+            writer.WriteValueSafe(id);
+            writer.WriteValueSafe((byte)0);
+            CoopNet.Send("coop.w", writer, NetworkDelivery.ReliableSequenced);
+        }
+    }
+
     // true: the client's Freny touched it and asked; it only takes it if the host says so
     public static bool AskToPick(Component pickup) {
         if (!CoopWorld.IsClient || applying || !pickupIds.TryGetValue(pickup, out ushort id)) {
@@ -204,6 +252,20 @@ public static class CoopShared {
             if (props.TryGetValue(id, out Component prop) && prop != null && prop is IDamageable target) {
                 PropsBrokenByAsk++;
                 target.Damage();   // AskToBreak tells the client
+            }
+            return;
+        }
+        if ((Ask)ask == Ask.Open) {
+            if (props.TryGetValue(id, out Component box) && box is GoldenChest gold && gold != null && !gold.Opened) {
+                gold.OpenFor(null, false, true);   // the coins and diamonds fall here, shared as always
+                using FastBufferWriter mine = Writer(Op.GoldOpened);
+                mine.WriteValueSafe(id);
+                mine.WriteValueSafe((byte)1);
+                CoopNet.SendTo(sender, "coop.w", mine, NetworkDelivery.ReliableSequenced);
+                using FastBufferWriter rest = Writer(Op.GoldOpened);
+                rest.WriteValueSafe(id);
+                rest.WriteValueSafe((byte)0);
+                CoopNet.SendExcept(sender, "coop.w", rest, NetworkDelivery.ReliableSequenced);
             }
             return;
         }
@@ -307,6 +369,29 @@ public static class CoopShared {
                 ArenaPowerUps.ShowFromHost((ItemPickup.Kind)kind);
                 break;
             }
+            case Op.Key: {
+                reader.ReadValueSafe(out ushort id);
+                reader.ReadValueSafe(out Vector2 position);
+                reader.ReadValueSafe(out Vector2 toss);
+                RegisterPickup(id, BossKey.Spawn(position, toss));
+                break;
+            }
+            case Op.GoldChest: {
+                reader.ReadValueSafe(out ushort id);
+                reader.ReadValueSafe(out Vector2 floor);
+                RegisterProp(id, GoldenChest.Spawn(floor, coinPrefab));
+                ArenaBossLoot.Arrived(floor);
+                break;
+            }
+            case Op.GoldOpened: {
+                reader.ReadValueSafe(out ushort id);
+                reader.ReadValueSafe(out byte mine);
+                if (props.TryGetValue(id, out Component box) && box is GoldenChest gold && gold != null) {
+                    gold.OpenFor(player, mine != 0, false);   // the loot on the floor comes from the host
+                    Debug.Log($"[Coop] baú dourado aberto {(mine != 0 ? "por este jogador, tesouro aqui" : "por outro")}");
+                }
+                break;
+            }
         }
     }
 
@@ -320,6 +405,9 @@ public static class CoopShared {
             Object.Destroy(coin.gameObject);
         } else if (pickup is ItemPickup item) {
             item.GrantTo(player);
+            ItemsGranted++;
+        } else if (pickup is BossKey key) {
+            key.TakeBy(player);
             ItemsGranted++;
         }
     }

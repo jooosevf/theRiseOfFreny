@@ -193,7 +193,17 @@ public class SpiderMine : Enemy {
         if (lamp != null) {
             lamp.enabled = false;
         }
-        Vector3 at = Center;
+        CoopWorld.SpiderBlast(Center, frenyDamage);   // co-op host: the others blow up their own copy
+        Blow(Center, frenyDamage, this, false);
+    }
+
+    // co-op client: the host's spider mine went off; this side's Freny can be caught in it, the
+    // enemies and the crates are the host's
+    public static void BlastCopy(Vector3 at, int frenyDamage) {
+        Blow(at, frenyDamage, null, true);
+    }
+
+    private static void Blow(Vector3 at, int frenyDamage, SpiderMine self, bool copy) {
         Fx.Burst(at, new Color(1f, 0.95f, 0.85f), 20, 3f, 0.35f, 0.15f);
         Fx.Burst(at, FireColor, 70, Blast * 3.5f, 0.2f, 0.45f);
         Fx.Burst(at, BodyColor, 40, Blast * 2.2f, 0.16f, 0.6f);
@@ -209,8 +219,8 @@ public class SpiderMine : Enemy {
             if (freny == null && col.GetComponentInParent<Player>() is Player p) {
                 freny = p;
             }
-            Enemy enemy = col.GetComponentInParent<Enemy>();
-            if (enemy == null || enemy == this || enemy.IsDead || !hit.Add(enemy)) {
+            Enemy enemy = copy ? null : col.GetComponentInParent<Enemy>();
+            if (enemy == null || enemy == self || enemy.IsDead || !hit.Add(enemy)) {
                 continue;
             }
             enemy.HitBy(null, EnemyDamage);   // other spider mines go off in turn
@@ -224,6 +234,9 @@ public class SpiderMine : Enemy {
             freny.Knockback(new Vector2(side * Knock, Knock * 0.6f));
         }
         foreach (Collider2D col in caught) {
+            if (copy) {
+                break;
+            }
             if (col.GetComponent<ArenaChest>() is ArenaChest chest) {
                 chest.Damage();
             } else if (col.GetComponent<ArenaVase>() is ArenaVase vase) {
