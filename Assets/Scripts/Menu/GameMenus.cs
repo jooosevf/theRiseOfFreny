@@ -211,6 +211,17 @@ public class GameMenus : MonoBehaviour {
 
     // ---- pause ----
 
+    /// <summary>
+    /// Called by the web page (unityInstance.SendMessage) when the player presses Ctrl+W or closes the tab:
+    /// the game pauses while the browser asks "Sair do site?", so cancelling returns to a paused game.
+    /// Does nothing outside a stage or the arena, or in a co-op room.
+    /// </summary>
+    public void PauseFromBrowser() {
+        if (gameplayScene) {
+            Pause();
+        }
+    }
+
     public void Pause() {
         if (paused || CoopWorld.Active) {   // a room has no pause: the other player is still playing
             return;
