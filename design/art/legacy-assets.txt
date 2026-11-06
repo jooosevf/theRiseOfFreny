@@ -1,0 +1,297 @@
+Runner/Sprites/Characters/Bug/Bug attack 1.png
+Runner/Sprites/Characters/Bug/Bug death 1.png
+Runner/Sprites/Characters/Bug/Bug hit.png
+Runner/Sprites/Characters/Bug/Bug idle 1.png
+Runner/Sprites/Characters/Bug/Bug walk 1.png
+Runner/Sprites/Characters/Flying/Flying attack.png
+Runner/Sprites/Characters/Flying/Flying death.png
+Runner/Sprites/Characters/Flying/Flying hit.png
+Runner/Sprites/Characters/Flying/Flying walk.png
+Runner/Sprites/Characters/Golem/Golem attack.png
+Runner/Sprites/Characters/Golem/Golem death.png
+Runner/Sprites/Characters/Golem/Golem hit.png
+Runner/Sprites/Characters/Golem/Golem idle.png
+Runner/Sprites/Characters/Golem/Golem walk.png
+Runner/Sprites/Characters/Licker/Monster attack.png
+Runner/Sprites/Characters/Licker/Monster death.png
+Runner/Sprites/Characters/Licker/Monster hit.png
+Runner/Sprites/Characters/Licker/Monster idle.png
+Runner/Sprites/Characters/Licker/Monster walk.png
+Runner/Sprites/Characters/Merchant/Merchant idle.png
+Runner/Sprites/Characters/Merchant/Merchant shop 400x200.png
+Runner/Sprites/Characters/Merchant/Merchant walk.png
+Runner/Sprites/Characters/Player/Player Jetpack 200x200.png
+Runner/Sprites/Characters/Player/Player climb.png
+Runner/Sprites/Characters/Player/Player dash.png
+Runner/Sprites/Characters/Player/Player death 1.png
+Runner/Sprites/Characters/Player/Player death.png
+Runner/Sprites/Characters/Player/Player door.png
+Runner/Sprites/Characters/Player/Player get item.png
+Runner/Sprites/Characters/Player/Player hit 1.png
+Runner/Sprites/Characters/Player/Player hit.png
+Runner/Sprites/Characters/Player/Player idle 1.png
+Runner/Sprites/Characters/Player/Player idle.png
+Runner/Sprites/Characters/Player/Player jump 1.png
+Runner/Sprites/Characters/Player/Player jump melee 1.png
+Runner/Sprites/Characters/Player/Player jump melee.png
+Runner/Sprites/Characters/Player/Player jump ranged 1.png
+Runner/Sprites/Characters/Player/Player jump ranged.png
+Runner/Sprites/Characters/Player/Player jump.png
+Runner/Sprites/Characters/Player/Player melee 1.png
+Runner/Sprites/Characters/Player/Player melee.png
+Runner/Sprites/Characters/Player/Player ranged 1.png
+Runner/Sprites/Characters/Player/Player ranged.png
+Runner/Sprites/Characters/Player/Player run.png
+Runner/Sprites/Characters/Player/Player walk 1.png
+Runner/Sprites/Characters/Player/Player walk.png
+Runner/Sprites/Effects/Bullet 12x12.png
+Runner/Sprites/Effects/Heal 200x200.png
+Runner/Sprites/Effects/Hit 60x60.png
+Runner/Sprites/Environment/Brick 200x200.png
+Runner/Sprites/Environment/Brick.png
+Runner/Sprites/Environment/Crumbling block 100x100.png
+Runner/Sprites/Environment/Half blocks 1.png
+Runner/Sprites/Environment/Half blocks.png
+Runner/Sprites/Environment/Sky.png
+Runner/Sprites/Environment/Statue.png
+Runner/Sprites/Environment/Tileset 1.png
+Runner/Sprites/Environment/Tileset.png
+Runner/Sprites/Environment/runner sky.png
+Runner/Sprites/Items/Chest 100x100.png
+Runner/Sprites/Items/Coin 60x60.png
+Runner/Sprites/Items/Diamond 60x60.png
+Runner/Sprites/Items/Items 100x100.png
+Runner/Sprites/Items/Key 60x60.png
+Runner/Sprites/Items/Net 100x100.png
+Runner/Sprites/Items/Torch.png
+Runner/Sprites/Items/Vase 100x100.png
+Runner/Sprites/Liquids/Acid 100x100.png
+Runner/Sprites/Liquids/Water 100x100.png
+Sprites/Characters/Merchant/Merchant idle.png
+Sprites/Characters/Merchant/Merchant shop 400x200.png
+Sprites/Characters/Merchant/Merchant walk.png
+Sprites/Characters/Mobs/Bug/Bug Jump.png
+Sprites/Characters/Mobs/Bug/Bug attack 1.png
+Sprites/Characters/Mobs/Bug/Bug death 1.png
+Sprites/Characters/Mobs/Bug/Bug hit.png
+Sprites/Characters/Mobs/Bug/Bug idle 1.png
+Sprites/Characters/Mobs/Bug/Bug walk 1.png
+Sprites/Characters/Mobs/Crawler/Crawler Death.png
+Sprites/Characters/Mobs/Crawler/Crawler Walk.png
+Sprites/Characters/Mobs/Crawler/Resources/Crawler/Crawler Drop.png
+Sprites/Characters/Mobs/Crawler/Resources/Crawler/Crawler Walk.png
+Sprites/Characters/Mobs/Cyclops/Resources/Cyclops/Cyclops Death.png
+Sprites/Characters/Mobs/Cyclops/Resources/Cyclops/Cyclops Hit.png
+Sprites/Characters/Mobs/Cyclops/Resources/Cyclops/Cyclops Idle.png
+Sprites/Characters/Mobs/Cyclops/Resources/Cyclops/Cyclops Melee.png
+Sprites/Characters/Mobs/Cyclops/Resources/Cyclops/Cyclops Smash.png
+Sprites/Characters/Mobs/Cyclops/Resources/Cyclops/Cyclops Vomit.png
+Sprites/Characters/Mobs/Cyclops/Resources/Cyclops/Cyclops Walk.png
+Sprites/Characters/Mobs/Cyclops/Resources/Cyclops/Vomit Puddle_0.png
+Sprites/Characters/Mobs/Cyclops/Resources/Cyclops/Vomit Puddle_1.png
+Sprites/Characters/Mobs/Cyclops/Resources/Cyclops/Vomit Puddle_2.png
+Sprites/Characters/Mobs/Flying/Flying attack.png
+Sprites/Characters/Mobs/Flying/Flying death.png
+Sprites/Characters/Mobs/Flying/Flying hit.png
+Sprites/Characters/Mobs/Flying/Flying walk.png
+Sprites/Characters/Mobs/Golem/Golem Jump.png
+Sprites/Characters/Mobs/Golem/Golem Wake.png
+Sprites/Characters/Mobs/Golem/Golem attack.png
+Sprites/Characters/Mobs/Golem/Golem death.png
+Sprites/Characters/Mobs/Golem/Golem hit.png
+Sprites/Characters/Mobs/Golem/Golem idle.png
+Sprites/Characters/Mobs/Golem/Golem walk.png
+Sprites/Characters/Mobs/Golem/Resources/EnemySkins/GolemRed/Golem Jump.png
+Sprites/Characters/Mobs/Golem/Resources/EnemySkins/GolemRed/Golem Wake.png
+Sprites/Characters/Mobs/Golem/Resources/EnemySkins/GolemRed/Golem attack.png
+Sprites/Characters/Mobs/Golem/Resources/EnemySkins/GolemRed/Golem death.png
+Sprites/Characters/Mobs/Golem/Resources/EnemySkins/GolemRed/Golem hit.png
+Sprites/Characters/Mobs/Golem/Resources/EnemySkins/GolemRed/Golem idle.png
+Sprites/Characters/Mobs/Golem/Resources/EnemySkins/GolemRed/Golem walk.png
+Sprites/Characters/Mobs/Licker/Monster Jump.png
+Sprites/Characters/Mobs/Licker/Monster attack.png
+Sprites/Characters/Mobs/Licker/Monster death.png
+Sprites/Characters/Mobs/Licker/Monster hit.png
+Sprites/Characters/Mobs/Licker/Monster idle.png
+Sprites/Characters/Mobs/Licker/Monster walk.png
+Sprites/Characters/Mobs/Mine/Resources/Mine/Mine explode.png
+Sprites/Characters/Mobs/Mine/Resources/Mine/Mine idle.png
+Sprites/Characters/Mobs/Mine/Resources/Mine/Mine near.png
+Sprites/Characters/Mobs/Shielded/Resources/Shielded/Shielded Attack.png
+Sprites/Characters/Mobs/Shielded/Resources/Shielded/Shielded Block.png
+Sprites/Characters/Mobs/Shielded/Resources/Shielded/Shielded Death.png
+Sprites/Characters/Mobs/Shielded/Resources/Shielded/Shielded Hit.png
+Sprites/Characters/Mobs/Shielded/Resources/Shielded/Shielded Idle.png
+Sprites/Characters/Mobs/Shielded/Resources/Shielded/Shielded Jump.png
+Sprites/Characters/Mobs/Shielded/Resources/Shielded/Shielded Walk.png
+Sprites/Characters/Mobs/Sorcerer/Resources/EnemySkins/SorcererSupreme/Sorcerer Jump.png
+Sprites/Characters/Mobs/Sorcerer/Resources/EnemySkins/SorcererSupreme/Sorcerer attack.png
+Sprites/Characters/Mobs/Sorcerer/Resources/EnemySkins/SorcererSupreme/Sorcerer death.png
+Sprites/Characters/Mobs/Sorcerer/Resources/EnemySkins/SorcererSupreme/Sorcerer hit.png
+Sprites/Characters/Mobs/Sorcerer/Resources/EnemySkins/SorcererSupreme/Sorcerer idle.png
+Sprites/Characters/Mobs/Sorcerer/Sorcerer Jump.png
+Sprites/Characters/Mobs/Sorcerer/Sorcerer attack.png
+Sprites/Characters/Mobs/Sorcerer/Sorcerer death.png
+Sprites/Characters/Mobs/Sorcerer/Sorcerer hit.png
+Sprites/Characters/Mobs/Sorcerer/Sorcerer idle.png
+Sprites/Characters/Mobs/SpiderMine/Resources/SpiderMine/SpiderMine Arm.png
+Sprites/Characters/Mobs/SpiderMine/Resources/SpiderMine/SpiderMine Idle.png
+Sprites/Characters/Mobs/SpiderMine/Resources/SpiderMine/SpiderMine Lamp.png
+Sprites/Characters/Mobs/SpiderMine/Resources/SpiderMine/SpiderMine Walk.png
+Sprites/Characters/Mobs/Tentacle/Resources/Tentacle/Tentacle Attack.png
+Sprites/Characters/Mobs/Tentacle/Resources/Tentacle/Tentacle Hit.png
+Sprites/Characters/Mobs/Tentacle/Resources/Tentacle/Tentacle Idle.png
+Sprites/Characters/Mobs/Tentacle/Resources/Tentacle/Tentacle Projectile.png
+Sprites/Characters/Mobs/Tentacle/Resources/Tentacle/Tentacle Spawn.png
+Sprites/Characters/Player alt/Player climb.png
+Sprites/Characters/Player alt/Player crouch.png
+Sprites/Characters/Player alt/Player death.png
+Sprites/Characters/Player alt/Player get item.png
+Sprites/Characters/Player alt/Player hit.png
+Sprites/Characters/Player alt/Player idle.png
+Sprites/Characters/Player alt/Player jump melee long.png
+Sprites/Characters/Player alt/Player jump melee.png
+Sprites/Characters/Player alt/Player jump.png
+Sprites/Characters/Player alt/Player melee long.png
+Sprites/Characters/Player alt/Player melee.png
+Sprites/Characters/Player alt/Player ranged B.png
+Sprites/Characters/Player alt/Player ranged.png
+Sprites/Characters/Player alt/Player walk.png
+Sprites/Characters/Player/Player climb.png
+Sprites/Characters/Player/Player crouched.png
+Sprites/Characters/Player/Player dash.png
+Sprites/Characters/Player/Player death.png
+Sprites/Characters/Player/Player door.png
+Sprites/Characters/Player/Player get item.png
+Sprites/Characters/Player/Player hit.png
+Sprites/Characters/Player/Player idle.png
+Sprites/Characters/Player/Player jump kick.png
+Sprites/Characters/Player/Player jump melee long.png
+Sprites/Characters/Player/Player jump melee.png
+Sprites/Characters/Player/Player jump ranged B.png
+Sprites/Characters/Player/Player jump ranged.png
+Sprites/Characters/Player/Player jump.png
+Sprites/Characters/Player/Player kick.png
+Sprites/Characters/Player/Player melee long.png
+Sprites/Characters/Player/Player melee.png
+Sprites/Characters/Player/Player ranged B.png
+Sprites/Characters/Player/Player ranged.png
+Sprites/Characters/Player/Player run.png
+Sprites/Characters/Player/Player slash.png
+Sprites/Characters/Player/Player walk.png
+Sprites/Characters/Player/Resources/FrenyHeads/berserker.png
+Sprites/Characters/Player/Resources/FrenyHeads/berserker_broken.png
+Sprites/Characters/Player/Resources/FrenyHeads/berserker_broken_icon.png
+Sprites/Characters/Player/Resources/FrenyHeads/rage.png
+Sprites/Characters/Player/Resources/FrenyHeads/rage_berserker.png
+Sprites/Characters/Player/Resources/FrenyHeads/rage_berserker_icon.png
+Sprites/Characters/Player/Resources/FrenyLook/helmet_crown.png
+Sprites/Characters/Player/Resources/FrenyLook/helmet_cyclops.png
+Sprites/Characters/Player/Resources/FrenyLook/helmet_gold.png
+Sprites/Characters/Player/Resources/FrenyLook/helmet_ice.png
+Sprites/Characters/Player/Resources/FrenyLook/helmet_shadow.png
+Sprites/Characters/Player/Resources/FrenyLook/helmet_viking.png
+Sprites/Characters/Player/Resources/FrenyLook/shirt.png
+Sprites/Characters/Player/Resources/FrenyLook/traje.png
+Sprites/Characters/Player/Resources/FrenyPoses/blades.png
+Sprites/Characters/Player/Resources/FrenyPoses/poses.png
+Sprites/Characters/Player/Resources/FrenyPoses/swords.png
+Sprites/Characters/Player_Teste/Player death.png
+Sprites/Characters/Player_Teste/Player idle.png
+Sprites/Characters/Player_Teste/Player jump.png
+Sprites/Characters/Player_Teste/Player walk.png
+Sprites/Effects/Aggro State.png
+Sprites/Effects/Bullet 12x12.png
+Sprites/Effects/Heal 200x200.png
+Sprites/Effects/Hit 60x60.png
+Sprites/Effects/Monitor.png
+Sprites/Effects/Projectile.png
+Sprites/Effects/Scanlines.png
+Sprites/Environment/Boss Door.png
+Sprites/Environment/Brick Behind.png
+Sprites/Environment/Brick Details.png
+Sprites/Environment/Brick New.png
+Sprites/Environment/Brick.png
+Sprites/Environment/Door.png
+Sprites/Environment/Half blocks.png
+Sprites/Environment/Moving blocks.png
+Sprites/Environment/Raindrop.png
+Sprites/Environment/Resources/Traps/Crumbling block.png
+Sprites/Environment/Resources/Traps/Falling spike.png
+Sprites/Environment/Roof_left.png
+Sprites/Environment/Roof_right.png
+Sprites/Environment/Savepoint.png
+Sprites/Environment/Skinny blocks.png
+Sprites/Environment/Sky.png
+Sprites/Environment/Sky/Back mountains.png
+Sprites/Environment/Sky/Clouds.png
+Sprites/Environment/Sky/Floating Castle.png
+Sprites/Environment/Sky/Front mountains.png
+Sprites/Environment/Sky/Night sky Moon.png
+Sprites/Environment/Sky/Night sky.png
+Sprites/Environment/Sky/Resources/DayNight/Back mountains Day.png
+Sprites/Environment/Sky/Resources/DayNight/Clouds Day.png
+Sprites/Environment/Sky/Resources/DayNight/Floating Castle Day.png
+Sprites/Environment/Sky/Resources/DayNight/Front mountains Day.png
+Sprites/Environment/Sky/Resources/DayNight/Moon.png
+Sprites/Environment/Sky/Resources/DayNight/Standing Torch Blue.png
+Sprites/Environment/Sky/Resources/DayNight/Sun.png
+Sprites/Environment/Switch.png
+Sprites/Environment/Tileset.png
+Sprites/Interface/Back button.png
+Sprites/Interface/Cash.png
+Sprites/Interface/Head.png
+Sprites/Interface/HealthArmor.png
+Sprites/Interface/HealthEmpty.png
+Sprites/Interface/HealthFull.png
+Sprites/Interface/Interact.png
+Sprites/Interface/Loading Screen/Loading BG.png
+Sprites/Interface/Loading Screen/Loading Text.png
+Sprites/Interface/Main Menu/Menu player.png
+Sprites/Interface/Main Menu/Start options Quit.png
+Sprites/Interface/Main Menu/fundo.png
+Sprites/Interface/Main Menu/title.png
+Sprites/Interface/Merchant Face.png
+Sprites/Interface/Pause - Death Screen/Continue.png
+Sprites/Interface/Pause - Death Screen/Game Over.png
+Sprites/Interface/Pause - Death Screen/Options.png
+Sprites/Interface/Pause - Death Screen/Pause Overlay.png
+Sprites/Interface/Pause - Death Screen/Paused.png
+Sprites/Interface/Pause - Death Screen/Quit.png
+Sprites/Interface/Player Face.png
+Sprites/Interface/Resources/Achievements/backstab.png
+Sprites/Interface/Resources/Achievements/combo50.png
+Sprites/Interface/Resources/Achievements/cyclops.png
+Sprites/Interface/Resources/Achievements/cyclops3.png
+Sprites/Interface/Resources/Achievements/eye.png
+Sprites/Interface/Resources/Achievements/grenade5.png
+Sprites/Interface/Resources/Achievements/kills500.png
+Sprites/Interface/Resources/Achievements/marathon.png
+Sprites/Interface/Resources/Achievements/million.png
+Sprites/Interface/Resources/Achievements/oops.png
+Sprites/Interface/Resources/Achievements/shotgun3.png
+Sprites/Interface/Resources/Achievements/supreme.png
+Sprites/Interface/Resources/Achievements/survivor.png
+Sprites/Interface/Resources/Boss Health.png
+Sprites/Interface/Shop frame.png
+Sprites/Interface/Shop listing.png
+Sprites/Items/Chest 100x100.png
+Sprites/Items/Coin 60x60.png
+Sprites/Items/Diamond 60x60.png
+Sprites/Items/Items 100x100.png
+Sprites/Items/Key 60x60.png
+Sprites/Items/Net 100x100.png
+Sprites/Items/Resources/BossLoot/Boss Key.png
+Sprites/Items/Resources/BossLoot/Golden Chest.png
+Sprites/Items/Resources/BossLoot/Silver Chest.png
+Sprites/Items/Resources/Fase4/Mage Staff.png
+Sprites/Items/Resources/Fase4/Net Ball.png
+Sprites/Items/Resources/Fase4/Net Open.png
+Sprites/Items/Resources/PowerUps/Insta-kill.png
+Sprites/Items/Resources/PowerUps/Magnet.png
+Sprites/Items/Resources/PowerUps/Nuke.png
+Sprites/Items/Standing Torch.png
+Sprites/Items/Torch.png
+Sprites/Items/Vase 100x100.png
+Sprites/Liquids/Resources/Liquids/Acid 100x100.png
+Sprites/Liquids/Water 100x100.png

@@ -56,4 +56,4 @@ commands:
   # run: no standalone build; play in the Editor.
 
 modes:
-  rigor: minimal
+  rigor: standard
