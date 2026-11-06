@@ -16,6 +16,7 @@ public class HexballEffect : MonoBehaviour
     // cast by Freny with the Cajado do Mago (MageStaff): it hurts every enemy (the Ciclope too) as his
     // own hit, and never him; the autopilot doesn't dodge it
     [NonSerialized] public bool fromFreny;
+    [NonSerialized] public bool cosmetic;   // co-op: another player's staff ball, which hurts nothing here
     // a homing hexball (high scores) steers towards this one's head, a limited turn per second,
     // so a sidestep, a jump or ducking still beats it
     [NonSerialized] public Player homingTarget;
@@ -144,6 +145,14 @@ public class HexballEffect : MonoBehaviour
     private bool HitEnemy()
     {
         Vector2 p = transform.position;
+        // co-op client: Freny's ball hits the host's enemies' puppets (a copy of another player's
+        // ball only ends there)
+        if (fromFreny && CoopWorld.IsClient && CoopWorld.HitPuppetAt(p, EnemyHitRadius + 0.3f, cosmetic ? 0 : damage)) {
+            Fx.Burst(transform.position, MageStaff.BallTint, 12, 2.5f, 0.1f, 0.4f);
+            Sfx.Play("hexball_impact", transform.position);
+            Destroy(gameObject);
+            return true;
+        }
         for (int i = Enemy.Active.Count - 1; i >= 0; i--) {
             Enemy enemy = Enemy.Active[i];
             // the Ciclope's helpers' spells pass through it (José, 2026-10-29)
@@ -152,7 +161,9 @@ public class HexballEffect : MonoBehaviour
             }
             Vector2 c = enemy.Center;
             if (Mathf.Abs(p.x - c.x) <= enemy.HalfWidth + EnemyHitRadius && Mathf.Abs(p.y - c.y) <= enemy.HalfHeight + EnemyHitRadius) {
-                if (fromFreny) {
+                if (cosmetic) {
+                    // another player's ball, drawn here: it ends on the enemy, his side hurts it
+                } else if (fromFreny) {
                     Enemy.NextHitSource = PlayerStats.WeaponStaff;
                     enemy.Damage(damage, 1f, transform.position);   // his hit: score, XP and combo
                 } else {

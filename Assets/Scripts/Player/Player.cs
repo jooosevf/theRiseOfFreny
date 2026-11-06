@@ -1038,6 +1038,11 @@ public class Player : MonoBehaviour, IDamageable {
     }
 
     // co-op: back on his feet at that spot, with that much life and a moment nothing can hurt him
+    // no hits for a while (co-op: picking a blessing while the game goes on); he blinks meanwhile
+    public void Shield(float seconds) {
+        invulnerableUntil = Mathf.Max(invulnerableUntil, Time.time + seconds);
+    }
+
     public void Revive(Vector3 at, int health, float safeSeconds) {
         if (!isDead) {
             return;
@@ -1111,6 +1116,13 @@ public class Player : MonoBehaviour, IDamageable {
     }
 
     private void OnEnemyKilled(Enemy enemy) {
+        if (!CoopWorld.RemoteHit) {   // co-op host: another player's kill fills his meter, not this one
+            AddRage(RagePerKill);
+        }
+    }
+
+    // co-op client: the host says one of this player's hits killed an enemy there
+    public void CreditKill() {
         AddRage(RagePerKill);
     }
 

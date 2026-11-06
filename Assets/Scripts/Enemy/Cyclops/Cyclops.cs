@@ -167,12 +167,13 @@ public class Cyclops : Enemy {
         }
         punching = IsAttacking;
         TrackBloodMoon();
-        if (isDead || IsAttacking || player == null || player.Health <= 0 || Time.time < quietUntil) {
+        if (isDead || IsAttacking || player == null || TargetHealth <= 0 || Time.time < quietUntil) {
             return;
         }
         Vector3 feet = Feet;
-        float dx = Mathf.Abs(player.Feet.x - feet.x);
-        float dy = player.Feet.y - feet.y;
+        Vector3 target = TargetFeet;   // co-op: the nearer Freny, which can be the other player's
+        float dx = Mathf.Abs(target.x - feet.x);
+        float dy = target.y - feet.y;
         if (CanBeam) {
             StartCoroutine(Beam());   // the Lua de Sangue: a red beam out of its eye
         } else if (Time.time >= nextBomb && dx >= BombMinDistance && dx <= BombMaxDistance && Mathf.Abs(dy) < 6f) {
@@ -222,8 +223,19 @@ public class Cyclops : Enemy {
     }
 
     private void FacePlayer() {
-        transform.localScale = new Vector3(player.transform.position.x > transform.position.x ? -1 : 1, 1, 1);
+        transform.localScale = new Vector3(TargetFeet.x > transform.position.x ? -1 : 1, 1, 1);
     }
+
+    // where the Freny it goes after is: its own player, or in co-op the other player's body
+    // (player_t), with the same offsets as its own Freny's feet and middle
+    private Vector3 TargetPoint(Vector3 point) {
+        return player_t != null && player != null && player_t != player.transform ? player_t.position + (point - player.transform.position) : point;
+    }
+    private Vector3 TargetFeet => TargetPoint(player.Feet);
+    private Vector3 TargetBody => TargetPoint(player.BodyCenter);
+
+    // the life left, 0..1 (the co-op client draws the bar from it)
+    public float HealthFraction => Mathf.Clamp01((float)Health / Mathf.Max(1, maxHealth));
 
     private float Facing => FacingRight ? 1f : -1f;
 
@@ -276,7 +288,7 @@ public class Cyclops : Enemy {
         quietUntil = Time.time + 0.8f;
         frames.Play("attack", 0.4f);
         Vector3 from = Center + Vector3.up * (HalfHeight * 0.7f) + Vector3.right * (Facing * HalfWidth);
-        GolemMine.ThrowAt(this, from, player.transform.position, BombAngle, BombGravity, BombMaxSpeed, BombSize);
+        GolemMine.ThrowAt(this, from, TargetPoint(player.transform.position), BombAngle, BombGravity, BombMaxSpeed, BombSize);
         Laugh();
     }
 
@@ -404,6 +416,7 @@ public class Cyclops : Enemy {
         PlaySound("windup");
         Sfx.Play("supreme_laugh", Center, 0.8f, 0.5f);
         SpriteRenderer glow = BloodBeam.Orb("Eye Glow", sprite);
+        CoopWorld.BossBeamCharge(BeamEye, BeamCharge);
         for (float t = 0f; t < BeamCharge && !isDead; t += Time.deltaTime) {
             float u = t / BeamCharge;
             glow.transform.position = BeamEye;
@@ -414,7 +427,7 @@ public class Cyclops : Enemy {
             yield return null;
         }
         if (!isDead && player != null) {
-            BloodBeam.Fire(BeamEye, player.BodyCenter, BeamSeconds, player, sprite);
+            BloodBeam.Fire(BeamEye, TargetBody, BeamSeconds, player, sprite);
             Sfx.Play("grenade_explode", Eye, 0.9f, 0.4f);
             for (float t = 0f; t < BeamSeconds && !isDead; t += Time.deltaTime) {
                 glow.transform.position = BeamEye;
@@ -443,18 +456,25 @@ public class Cyclops : Enemy {
     private Slider trail;
 
     private void ShowBar(int slot) {
+        bar = BuildBar(slot, Paired, out life, out trail);
+    }
+
+    // also the co-op client's bar for the host's Ciclope (CoopArena), which has no Cyclops to run it
+    public static GameObject BuildBar(int slot, bool paired, out Slider life, out Slider trail) {
+        life = null;
+        trail = null;
         GameObject prefab = Resources.Load<GameObject>("BossHealth");
         Canvas canvas = null;
         if (UIManager.Instance != null && UIManager.Instance.healthBars != null && UIManager.Instance.healthBars.Length > 0 && UIManager.Instance.healthBars[0] != null) {
             canvas = UIManager.Instance.healthBars[0].canvas;
         }
         if (prefab == null || canvas == null) {
-            return;
+            return null;
         }
-        bar = Instantiate(prefab, canvas.rootCanvas.transform, false);
+        GameObject bar = Instantiate(prefab, canvas.rootCanvas.transform, false);
         bar.name = "BossHealth";
         RectTransform rect = bar.GetComponent<RectTransform>();
-        if (rect != null && Paired) {
+        if (rect != null && paired) {
             // two at once: their bars go down at the bottom, one on the left and one on the right,
             // so the top stays clear (José, 2026-10-29)
             float side = slot % 2 == 0 ? 0.25f : 0.75f;
@@ -485,6 +505,7 @@ public class Cyclops : Enemy {
             slider.interactable = false;
             slider.value = 1f;
         }
+        return bar;
     }
 
     private void UpdateBar() {

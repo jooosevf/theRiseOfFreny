@@ -90,6 +90,16 @@ public class MageStaff : MonoBehaviour {
 
     // Player.Shoot, instead of a bullet
     public void Cast(Vector3 from, Vector3 direction) {
+        CoopWorld.SpellCast(from, direction);   // co-op: the others draw it too
+        Spawn(from, direction, false);
+    }
+
+    // co-op: another player's spell, drawn here; it hits nothing (his side has the real one)
+    public static void CastCopy(Vector3 from, Vector3 direction) {
+        Spawn(from, direction, true);
+    }
+
+    private static void Spawn(Vector3 from, Vector3 direction, bool cosmetic) {
         GameObject prefab = hexPrefab;
         if (prefab == null) {
             return;
@@ -97,6 +107,7 @@ public class MageStaff : MonoBehaviour {
         GameObject ball = Instantiate(prefab, from, Quaternion.identity);
         HexballEffect effect = ball.GetComponent<HexballEffect>();
         if (effect != null) {
+            effect.cosmetic = cosmetic;
             effect.fromFreny = true;
             effect.caster = null;
             effect.damage = Damage;

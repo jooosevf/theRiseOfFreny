@@ -168,15 +168,34 @@ public class GoldenChest : MonoBehaviour, IDamageable {
             }
             return;
         }
-        BossKey.Carried--;
         ArenaBossLoot.Unsay(NeedsKey);
-        Open(player);
+        if (CoopShared.AskToOpen(this)) {
+            return;   // co-op client: the host opens it, and says whose treasure it is
+        }
+        BossKey.Carried--;
+        Open(player, true, true);
+        CoopShared.GoldenChestOpened(this);
     }
 
-    private void Open(Player player) {
+    // co-op: the host opened it for someone. On the host, loot is the coins and diamonds on the
+    // floor (shared like any others) and no treasure; on the side that asked, the treasure and the
+    // key spent; on the other sides only the opening
+    public void OpenFor(Player player, bool treasure, bool loot) {
+        if (Opened) {
+            return;
+        }
+        if (treasure) {
+            BossKey.Carried = Mathf.Max(0, BossKey.Carried - 1);
+        }
+        Open(player, treasure, loot);
+    }
+
+    private void Open(Player player, bool treasure, bool loot) {
         Opened = true;
         Health = 0;
-        StatsTracker.ChestOpened();
+        if (treasure) {
+            StatsTracker.ChestOpened();
+        }
         openedAt = Time.time;
         Vector3 center = transform.position;
         Fx.Burst(center, BossKey.Gold, 40, 5f, 0.12f, 1f);
@@ -192,16 +211,24 @@ public class GoldenChest : MonoBehaviour, IDamageable {
         ArenaBossLoot.Say("Tesouro do Ciclope!", center + Vector3.up * 1f, BossKey.Gold, 2.5f);
         ScreenKick.Kick(0.15f, 0.2f);
 
-        ScatterCoins();
-        for (int i = 0; i < DiamondsInside; i++) {
-            ItemPickup.Spawn(ItemPickup.Kind.Diamond, 1, center + Vector3.up * 0.3f, new Vector2(i == 0 ? -0.9f : 0.9f, 6.5f));
+        if (loot) {
+            ScatterCoins();
+            for (int i = 0; i < DiamondsInside; i++) {
+                ItemPickup.Spawn(ItemPickup.Kind.Diamond, 1, center + Vector3.up * 0.3f, new Vector2(i == 0 ? -0.9f : 0.9f, 6.5f));
+            }
         }
-        Reward(player);
-        ExclusiveLook(center);
-        // José, 2026-11-02: and a blessing, one of three, on top of those he already has
-        ArenaRunVariety run = player != null ? player.GetComponent<ArenaRunVariety>() : null;
-        if (run != null) {
-            run.OfferBlessing();
+        if (treasure) {
+            Reward(player);
+            ExclusiveLook(center);
+        }
+        // José, 2026-11-02: and a blessing, one of three, on top of those he already has; in co-op
+        // every player gets one, whoever opened it (José, 2026-11-06)
+        if (treasure || CoopWorld.Active) {
+            Player local = player != null ? player : FindPlayer();
+            ArenaRunVariety run = local != null ? local.GetComponent<ArenaRunVariety>() : null;
+            if (run != null) {
+                run.OfferBlessing();
+            }
         }
     }
 

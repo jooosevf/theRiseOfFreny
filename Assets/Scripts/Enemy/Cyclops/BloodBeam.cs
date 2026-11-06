@@ -24,6 +24,7 @@ public class BloodBeam : MonoBehaviour {
     private readonly HashSet<Enemy> burned = new HashSet<Enemy>();
 
     public static BloodBeam Fire(Vector3 eye, Vector3 at, float seconds, Player player, SpriteRenderer over) {
+        CoopWorld.BossBeam(eye, at, seconds);   // co-op host: the others run their own copy
         GameObject go = new GameObject("Blood Beam");
         BloodBeam beam = go.AddComponent<BloodBeam>();
         beam.from = eye;

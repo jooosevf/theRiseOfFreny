@@ -170,16 +170,24 @@ public class BossKey : MonoBehaviour {
             return;
         }
         Player player = other.GetComponent<Player>();
-        if (player == null || player.IsDead) {
-            return;
+        if (player == null || player.IsDead || CoopShared.AskToPick(this)) {
+            return;   // co-op client: the host decides who got there first
         }
+        TakeBy(player);
+        CoopShared.Picked(this);
+    }
+
+    // into this Freny's pocket (also CoopShared, when the host gave it to this side)
+    public void TakeBy(Player player) {
         Carried++;
         Fx.Burst(transform.position, Gold, 18, 2.5f, 0.08f, 0.5f);
         Sfx.Play("upgrade", transform.position, 1f, 1.15f);
         Sfx.Play("door", transform.position, 0.6f, 1.6f);   // the click of a key
         // the damage numbers' box is made for "-2": a phrase wrapped and got cut, so it goes in the
         // chest's wide floating text
-        ArenaBossLoot.Say("Chave do Ciclope!", player.HeadPoint + Vector3.up * 0.6f, Gold, 1.6f);
+        if (player != null) {
+            ArenaBossLoot.Say("Chave do Ciclope!", player.HeadPoint + Vector3.up * 0.6f, Gold, 1.6f);
+        }
         Destroy(gameObject);
     }
 }

@@ -62,7 +62,7 @@ public class ArenaBossLoot : MonoBehaviour {
                     return true;
                 }
             }
-            return false;
+            return CoopWorld.BossesShown > 0;   // the co-op client has only the host's, as puppets
         }
     }
 
@@ -96,7 +96,9 @@ public class ArenaBossLoot : MonoBehaviour {
     // can call this for a test without fighting a Ciclope (a GameObject coin prefab may be null)
     private void DropKey(Vector3 from, GameObject coinPrefab) {
         float toward = ArenaBounds.Active ? Mathf.Sign((ArenaBounds.Left + ArenaBounds.Right) * 0.5f - from.x) : 1f;
-        BossKey.Spawn(from + Vector3.up * 0.5f, new Vector2(toward * Random.Range(0.5f, 1.5f), 6f));
+        Vector3 at = from + Vector3.up * 0.5f;
+        Vector2 toss = new Vector2(toward * Random.Range(0.5f, 1.5f), 6f);
+        CoopShared.KeySpawned(BossKey.Spawn(at, toss), at, toss);   // co-op: on every side, for whoever gets there first
         StartCoroutine(SpawnChest(coinPrefab));
     }
 
@@ -108,7 +110,12 @@ public class ArenaBossLoot : MonoBehaviour {
         Fx.Portal(floor + Vector3.up * 0.6f, PortalSeconds, ChestPortalColor);
         Sfx.Play("portal", floor, 1f, 1.4f);
         yield return new WaitForSeconds(PortalSeconds);
-        GoldenChest.Spawn(floor, coinPrefab);
+        CoopShared.GoldenChestSpawned(GoldenChest.Spawn(floor, coinPrefab), floor);   // co-op: on every side
+        Arrived(floor);
+    }
+
+    // the chest is out (CoopShared calls it on the co-op client too)
+    public static void Arrived(Vector3 floor) {
         Fx.Burst(floor + Vector3.up * 0.5f, BossKey.Gold, 30, 3.5f, 0.1f, 0.8f);
         Sfx.Play("stage_clear", floor, 0.7f, 1.2f);
         Say("Baú dourado!", floor + Vector3.up * 1.4f, BossKey.Gold, 2f);

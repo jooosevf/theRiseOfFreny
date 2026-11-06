@@ -30,6 +30,7 @@ public class Shockwave : MonoBehaviour {
     }
 
     public static void Launch(Vector3 feet, float dir) {
+        CoopWorld.BossWave(feet, dir);   // co-op host: the others run their own copy
         Shockwave wave = new GameObject("Shockwave").AddComponent<Shockwave>();
         wave.transform.position = feet;
         wave.dir = dir;

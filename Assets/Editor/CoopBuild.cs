@@ -25,7 +25,9 @@ public static class CoopBuild {
             // itch.io doesn't send Content-Encoding, so the loader decompresses the Gzip itself
             PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
             PlayerSettings.WebGL.decompressionFallback = true;
-            PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly;
+            // a null reference must not take the whole page down mid-run (José, 2026-11-06: "null
+            // function" on the host): caught, logged, and the game goes on
+            PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.FullWithoutStacktrace;
             PlayerSettings.defaultWebScreenWidth = 1280;
             PlayerSettings.defaultWebScreenHeight = 720;
             font = (TrueTypeFontImporter)AssetImporter.GetAtPath(MenuFont);
@@ -41,6 +43,7 @@ public static class CoopBuild {
                 locationPathName = location,
                 target = target,
                 options = BuildOptions.None,
+                extraScriptingDefines = new[] { "FRENY_COOP_BUILD" },   // Features.Coop on here, whatever the release has
             });
         } finally {
             if (font != null) {
