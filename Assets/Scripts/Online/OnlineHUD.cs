@@ -32,7 +32,7 @@ namespace Online {
             SceneManager.sceneLoaded += OnSceneLoaded;
 
             Canvas canvas = MenuKit.CreateCanvas("Online Hint", 50, transform);
-            _hint = MenuKit.MakeText(canvas.transform, "[Tab] Ranking", MenuKit.SmallTextSize, MenuKit.DimTextColor, TextAnchor.LowerRight);
+            _hint = MenuKit.MakeCombatText(canvas.transform, "[Tab] Ranking", MenuKit.SmallTextSize, MenuKit.DimTextColor, TextAnchor.LowerRight);
             _hint.raycastTarget = false;
             _hint.horizontalOverflow = HorizontalWrapMode.Overflow;
             RectTransform rect = _hint.rectTransform;

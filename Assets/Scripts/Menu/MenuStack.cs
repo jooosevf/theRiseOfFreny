@@ -71,7 +71,7 @@ public class MenuPage {
         MenuKit.Size(button, -1f, 64f);
         Text text = button.GetComponentInChildren<Text>();
         text.supportRichText = true;
-        text.text = label + "\n<size=" + MenuKit.SmallTextSize + ">" + detail + "</size>";
+        text.text = label + "\n<size=" + MenuKit.MenuSize(MenuKit.SmallTextSize) + ">" + detail + "</size>";
         button.interactable = interactable;
         if (interactable) {
             rows.Add(new Selectable[] { button });

@@ -171,7 +171,7 @@ public class TouchControls : MonoBehaviour {
         rect.sizeDelta = size;
         rect.anchorMin = rect.anchorMax = new Vector2(1f, 0f);
         rect.anchoredPosition = fromBottomRight;
-        Text text = MenuKit.MakeText(rect, label, MenuKit.SmallTextSize, MenuKit.TextColor, TextAnchor.MiddleCenter);
+        Text text = MenuKit.MakeCombatText(rect, label, MenuKit.SmallTextSize, MenuKit.TextColor, TextAnchor.MiddleCenter);
         MenuKit.Stretch(text.rectTransform);
         text.raycastTarget = false;
         return new Pad { action = action, rect = rect, image = rect.GetComponent<Image>(), color = color };

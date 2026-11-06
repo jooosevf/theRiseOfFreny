@@ -75,7 +75,7 @@ public static class AchievementsScreen {
         Text text = MenuKit.MakeText(row.transform, "", MenuKit.SmallTextSize - 2, MenuKit.DimTextColor, TextAnchor.MiddleLeft);
         text.supportRichText = true;
         text.lineSpacing = 1.25f;
-        text.text = "<size=" + MenuKit.SmallTextSize + "><color=#" +
+        text.text = "<size=" + MenuKit.MenuSize(MenuKit.SmallTextSize) + "><color=#" +
                     ColorUtility.ToHtmlStringRGB(has ? Earned : MenuKit.TitleColor) + ">" + info.name + "</color></size>\n" +
                     info.how + status;
         MenuKit.Size(text, -1f, -1f).flexibleWidth = 1f;

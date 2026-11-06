@@ -107,7 +107,7 @@ public class ArenaRunManager : MonoBehaviour {
             Outline edge = panel.gameObject.AddComponent<Outline>();
             edge.effectColor = MenuKit.ButtonColor;
             edge.effectDistance = new Vector2(3f, -3f);
-            banner = MenuKit.MakeText(panel.transform, "", MenuKit.TextSize, MenuKit.TextColor, TextAnchor.MiddleCenter);
+            banner = MenuKit.MakeCombatText(panel.transform, "", MenuKit.TextSize, MenuKit.TextColor, TextAnchor.MiddleCenter);
             banner.raycastTarget = false;
             banner.supportRichText = true;
             banner.lineSpacing = AutoRun || hasRecord ? 1.3f : 1.6f;

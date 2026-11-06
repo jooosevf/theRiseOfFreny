@@ -225,7 +225,7 @@ public static class InventoryScreens {
     private static Text ShelfButton(MenuPage page, string title, Sprite icon, Action onClick, Action onFocus) {
         Text right = ItemButton(page, "", icon, onClick, out Text name, out Button button, ShelfRow);
         name.text = title;
-        name.fontSize = MenuKit.TextSize;
+        name.fontSize = MenuKit.MenuSize(MenuKit.TextSize);
         Hover(button, onFocus);
         return right;
     }
@@ -361,7 +361,7 @@ public static class InventoryScreens {
         button = page.Button(label, onClick, true, height);
         name = button.GetComponentInChildren<Text>();
         name.alignment = TextAnchor.MiddleLeft;
-        name.fontSize = MenuKit.SmallTextSize;
+        name.fontSize = MenuKit.MenuSize(MenuKit.SmallTextSize);
         name.rectTransform.offsetMin = new Vector2(IconBox + 18f, 0f);
         name.rectTransform.offsetMax = new Vector2(-PriceWidth, 0f);   // the price has its own room
         if (icon != null) {
