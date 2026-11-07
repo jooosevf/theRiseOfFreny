@@ -74,12 +74,14 @@ public static class CoopWorld {
     }
 
     // an enemy's swing reached another Freny: only his owner can take the hit
-    public static void HitPeer(ulong owner, int amount, Vector2 knockback, bool heavy, string source) {
+    // `from`: the enemy whose swing it was, so the client can check it against what he sees
+    public static void HitPeer(ulong owner, int amount, Vector2 knockback, bool heavy, string source, Enemy from = null) {
         using FastBufferWriter writer = new FastBufferWriter(64, Allocator.Temp);
         writer.WriteValueSafe((byte)Mathf.Clamp(amount, 0, 255));
         writer.WriteValueSafe(knockback);
         writer.WriteValueSafe((byte)(heavy ? 1 : 0));
         writer.WriteValueSafe(new FixedString32Bytes(source ?? ""));
+        writer.WriteValueSafe(from != null && EnemyId != null ? EnemyId(from) : (ushort)0);
         CoopNet.SendTo(owner, "coop.hurt", writer, NetworkDelivery.ReliableSequenced);
     }
 
@@ -126,6 +128,9 @@ public static class CoopWorld {
 
     // on the client: Ciclopes the host has out, so the torches and the music change here too
     public static int BossesShown { get; set; }
+
+    // on the host: an enemy's number in the snapshots (CoopArena), 0 for none
+    public static System.Func<Enemy, ushort> EnemyId { get; set; }
 
     // on the host, while a client's hit is applied: a kill then is his, not the host's (Fúria, Vampiro)
     public static bool RemoteHit { get; set; }

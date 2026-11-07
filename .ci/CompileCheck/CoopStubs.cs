@@ -14,7 +14,7 @@ public static class CoopWorld {
     public static int DifficultyFactor { get; set; } = 1;
     public static Collider2D LocalBody { get; set; }
     public static CoopBody PickTarget(Player local, Vector3 from, CoopBody current) => null;
-    public static void HitPeer(ulong owner, int amount, Vector2 knockback, bool heavy, string source) { }
+    public static void HitPeer(ulong owner, int amount, Vector2 knockback, bool heavy, string source, Enemy from = null) { }
     public static void ShotFired(Vector3 from, Vector3 direction, bool shotgun) { }
     public static void Slashed(int step) { }
     public static void GrenadeThrown(Vector3 from, Vector2 velocity, float fuse) { }
