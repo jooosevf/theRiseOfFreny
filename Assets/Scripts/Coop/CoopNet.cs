@@ -19,7 +19,7 @@ using UnityEngine.SceneManagement;
 public static class CoopNet {
 
     public const string ArenaScene = "ZE Arena";
-    private const ushort ProtocolVersion = 11;
+    private const ushort ProtocolVersion = 12;
     public const int MinRoomSize = 2;
     public const int MaxRoomSize = 4;
     private const float PingInterval = 0.5f;

@@ -18,8 +18,13 @@ using UnityEngine.SceneManagement;
 // player's helmet and looks don't show.
 public class CoopArena : MonoBehaviour {
 
-    private const float SendInterval = 0.05f;        // 20 messages a second per stream
-    private const float RenderDelay = 0.1f;          // how far in the past the other side is drawn
+    // José, 2026-11-07: 40 ms of ping felt bad for the guest. Each Freny goes out 30 times a second
+    // (a small message) and the enemies 20; the others are drawn this far in the past, a little
+    // over one message apart, and Track guesses ahead when one is late
+    private const float SendInterval = 1f / 30f;     // Freny's state
+    private const float EnemyInterval = 0.05f;       // the host's enemies
+    private const float RenderDelay = 0.06f;         // the other Frenys
+    private const float PuppetDelay = 0.075f;        // the host's enemies
     private const float HitFlashSeconds = 0.12f;
     private const int MaxEnemyBytes = 1200;
     private const float NameTagHeight = 0.9f;
@@ -48,6 +53,9 @@ public class CoopArena : MonoBehaviour {
     private ArenaDayNight DayNight => dayNight != null ? dayNight : (dayNight = FindAnyObjectByType<ArenaDayNight>());
     private bool isHost;
     private float nextSend;
+    private float nextEnemySend;
+    private const float ForgiveGap = 0.8f;   // units between the enemy and Freny on the client's screen
+    private int hitsForgiven;
     private float startedAt;
     private float nextLog;
     private int nextShot;
@@ -153,6 +161,7 @@ public class CoopArena : MonoBehaviour {
         CoopWorld.DifficultyFactor = CoopNet.Difficulty;
         CoopWorld.Bodies.Clear();
         CoopWorld.GainLife = OnLifeGained;
+        CoopWorld.EnemyId = enemy => enemyIds.TryGetValue(enemy, out ushort known) ? known : (ushort)0;
         GameCursor.ShowWhile(this, () => leaveOpen);
         puppetHolder = new GameObject("Coop Puppets (inactive)");
         puppetHolder.SetActive(false);
@@ -169,6 +178,7 @@ public class CoopArena : MonoBehaviour {
         CoopNet.LifeGift -= OnLifeGift;
         CoopWorld.Active = false;
         CoopWorld.GainLife = null;
+        CoopWorld.EnemyId = null;
         CoopWorld.DifficultyFactor = 1;
         CoopWorld.BossesShown = 0;
         CoopWorld.Bodies.Clear();
@@ -283,9 +293,10 @@ public class CoopArena : MonoBehaviour {
         if (now >= nextSend && player != null) {
             nextSend = now + SendInterval;
             SendPlayer();
-            if (isHost) {
-                SendEnemies();
-            }
+        }
+        if (isHost && now >= nextEnemySend && player != null) {
+            nextEnemySend = now + EnemyInterval;
+            SendEnemies();
         }
         DrawGhosts(now);
         DrawPuppets(now);
@@ -297,7 +308,7 @@ public class CoopArena : MonoBehaviour {
         }
         if (now >= nextLog) {
             nextLog = now + 5f;
-            Debug.Log($"[Coop] {(isHost ? "host" : "cliente")} RTT {CoopNet.RttSummary()} | parceiros {peers.Count}, dificuldade {CoopWorld.DifficultyFactor}x, inimigos {(isHost ? Enemy.Active.Count : puppets.Count)}, vidas {lives} | {receivedRate} msg/s recebidas | {CoopNet.BytesPerSecond} B/s enviados | {puppets.Count} bonecos | golpes do cliente {remoteHits}, mortes {remoteKills} | golpes recebidos {hurtsTaken}, feitiços {hexesSeen} | visando o outro {TargetingPeer()} | {CoopShared.Counts()} | ganhou {CoopShared.CoinsGranted} moedas, {CoopShared.ItemsGranted} itens, quebrou {CoopShared.PropsBrokenByAsk} a pedido | dos outros: {peerShots} tiros, {peerGrenades} granadas, {peerPortals} portais, {peerSlashes} espadadas | escopeta {(player != null && player.ShotgunOwned)} | power-ups {ArenaPowerUps.InstaKillOn} | ataques do host copiados {bossAttacks}, Ciclopes {CoopWorld.BossesShown}, chaves {BossKey.Carried}, baús dourados {GoldenChest.Active.Count}, bênçãos {Blessings.Held.Count}{(ArenaRunVariety.PickerOpen ? " (escolhendo)" : "")}, cajado {(player != null && MageStaff.Held(player))}, feitiços dos outros {peerSpells} | mortes creditadas {killsCredited}, fúria {(player != null ? player.Rage : 0f):0.00}");
+            Debug.Log($"[Coop] {(isHost ? "host" : "cliente")} RTT {CoopNet.RttSummary()} | parceiros {peers.Count}, dificuldade {CoopWorld.DifficultyFactor}x, inimigos {(isHost ? Enemy.Active.Count : puppets.Count)}, vidas {lives} | {receivedRate} msg/s recebidas | {CoopNet.BytesPerSecond} B/s enviados | {puppets.Count} bonecos | golpes do cliente {remoteHits}, mortes {remoteKills} | golpes recebidos {hurtsTaken}, feitiços {hexesSeen} | visando o outro {TargetingPeer()} | {CoopShared.Counts()} | ganhou {CoopShared.CoinsGranted} moedas, {CoopShared.ItemsGranted} itens, quebrou {CoopShared.PropsBrokenByAsk} a pedido | dos outros: {peerShots} tiros, {peerGrenades} granadas, {peerPortals} portais, {peerSlashes} espadadas | escopeta {(player != null && player.ShotgunOwned)} | power-ups {ArenaPowerUps.InstaKillOn} | ataques do host copiados {bossAttacks}, Ciclopes {CoopWorld.BossesShown}, chaves {BossKey.Carried}, baús dourados {GoldenChest.Active.Count}, bênçãos {Blessings.Held.Count}{(ArenaRunVariety.PickerOpen ? " (escolhendo)" : "")}, cajado {(player != null && MageStaff.Held(player))}, feitiços dos outros {peerSpells} | golpes perdoados {hitsForgiven}, barras de vida {CoopPuppet.BarsMade}, mortes adiantadas {CoopPuppet.KillsGuessed} | mortes creditadas {killsCredited}, fúria {(player != null ? player.Rage : 0f):0.00}");
         }
         TestRunner(now);
     }
@@ -662,7 +673,16 @@ public class CoopArena : MonoBehaviour {
         reader.ReadValueSafe(out Vector2 push);
         reader.ReadValueSafe(out byte heavy);
         reader.ReadValueSafe(out FixedString32Bytes source);
+        reader.ReadValueSafe(out ushort fromEnemy);
         if (player == null) {
+            return;
+        }
+        // José, 2026-11-07: the host's enemy swung at where this Freny was a moment ago. If on this
+        // screen it is already dead, or clearly not touching him, the hit is forgiven: what he sees
+        // is what counts for him
+        if (fromEnemy != 0 && puppets.TryGetValue(fromEnemy, out CoopPuppet attacker) && attacker != null
+            && (attacker.ShownDead || attacker.GapTo(playerCol) > ForgiveGap)) {
+            hitsForgiven++;
             return;
         }
         Player.NextDamageSource = source.ToString();
@@ -823,7 +843,9 @@ public class CoopArena : MonoBehaviour {
         }
         foreach (ushort id in gone) {
             if (puppets[id] != null) {
-                Fx.Burst(puppets[id].transform.position, new Color(0.7f, 0.1f, 0.1f), 10, 2f, 0.08f, 0.35f);
+                if (!puppets[id].ShownDead) {   // a kill guessed here already burst
+                    Fx.Burst(puppets[id].transform.position, new Color(0.7f, 0.1f, 0.1f), 10, 2f, 0.08f, 0.35f);
+                }
                 Destroy(puppets[id].gameObject);
             }
             puppets.Remove(id);
@@ -862,6 +884,7 @@ public class CoopArena : MonoBehaviour {
         copy.tag = "Untagged";
         CoopPuppet puppet = copy.AddComponent<CoopPuppet>();
         puppet.Init(this, id);
+        puppet.Predicts = prefab.GetComponent<Shielded>() == null;   // its shield changes how much a hit takes
         if (kind == CyclopsKind) {
             int slot = 0;
             foreach (CoopPuppet other in puppets.Values) {
@@ -881,7 +904,7 @@ public class CoopArena : MonoBehaviour {
         int bosses = 0;
         foreach (CoopPuppet puppet in puppets.Values) {
             if (puppet != null) {
-                puppet.Draw(now - RenderDelay);
+                puppet.Draw(now - PuppetDelay);
                 if (puppet.IsBoss) {
                     bosses++;
                 }
@@ -1096,6 +1119,7 @@ public class CoopArena : MonoBehaviour {
 public class Track {
     private const int Size = 12;
     private const float JumpDistance = 4f;   // farther than this between two messages: he crossed the wrap, not the map
+    private const float MaxExtrapolate = 0.08f;
     private readonly float[] times = new float[Size];
     private readonly Vector2[] points = new Vector2[Size];
     private int count;
@@ -1114,6 +1138,16 @@ public class Track {
         int newest = (head - 1 + Size) % Size;
         Vector2 result = points[newest];
         if (time >= times[newest]) {
+            // the next message is late: it keeps going the way it went, for a moment, instead of
+            // stopping dead and then jumping (a short delay can then be used)
+            if (count >= 2) {
+                int before = (newest - 1 + Size) % Size;
+                float span = times[newest] - times[before];
+                Vector2 step = points[newest] - points[before];
+                if (span > 0.001f && step.sqrMagnitude < JumpDistance * JumpDistance) {
+                    return result + step / span * Mathf.Min(time - times[newest], MaxExtrapolate);
+                }
+            }
             return result;
         }
         for (int i = 1; i < count; i++) {
@@ -1159,7 +1193,29 @@ public class CoopPuppet : MonoBehaviour, IDamageable {
         bar = Cyclops.BuildBar(slot, slot > 0, out barLife, out barTrail);
     }
 
+    // ---- what hides the lag on the client (José, 2026-11-07)
+    // A kill shows at once: this side counts the damage it sent (pending), and when the host's life
+    // minus it reaches zero the enemy bursts and vanishes here without waiting for the host. If the
+    // host still has it alive a moment later (a shield took the hit, another player healed it...),
+    // it comes back. The Ciclope and the Escudeiro (its shield changes the damage) don't guess.
+    private const float PendingFor = 0.5f;      // damage sent and not yet seen in the host's life
+    private const float WrongGuessAfter = 0.6f; // vanished here, still alive there this long after: back
+    public bool Predicts { get; set; } = true;
+    public bool ShownDead { get; private set; }
+    public static int BarsMade { get; private set; }     // for the test log
+    public static int KillsGuessed { get; private set; }
+    private int pending;
+    private float pendingUntil;
+    private float shownDeadAt;
+    private int maxHealth;
+
+    // the small life bar over its head, like EnemyHealthBar on the host's real ones
+    private Transform lifeBar;
+    private Transform lifeFill;
+    private SpriteRenderer lifeFillRenderer;
+
     private void Update() {
+        UpdateLifeBar();
         if (bar == null) {
             return;
         }
@@ -1176,6 +1232,90 @@ public class CoopPuppet : MonoBehaviour, IDamageable {
     private void OnDestroy() {
         if (bar != null) {
             Destroy(bar);
+        }
+        if (lifeBar != null) {
+            Destroy(lifeBar.gameObject);
+        }
+    }
+
+    private const float LifeWidth = 0.6f;
+    private const float LifeHeight = 0.07f;
+    private const float LifeGap = 0.18f;
+    private static readonly Color LifeBack = new Color(0.05f, 0.02f, 0.08f, 0.85f);
+    private static readonly Color LifeFull = new Color(0.55f, 0.95f, 0.35f, 1f);
+    private static readonly Color LifeLow = new Color(1f, 0.25f, 0.2f, 1f);
+    private static Sprite pixel;
+
+    private void UpdateLifeBar() {
+        int shown = health - (Time.unscaledTime < pendingUntil ? pending : 0);
+        bool show = !IsBoss && !ShownDead && maxHealth > 1 && shown > 0 && shown < maxHealth && body != null;
+        if (!show) {
+            if (lifeBar != null && lifeBar.gameObject.activeSelf) {
+                lifeBar.gameObject.SetActive(false);
+            }
+            return;
+        }
+        if (lifeBar == null) {
+            lifeBar = new GameObject("Puppet Life").transform;
+            BarsMade++;
+            LifePiece("Back", LifeBack, 45, new Vector2(LifeWidth + 0.04f, LifeHeight + 0.04f));
+            lifeFillRenderer = LifePiece("Fill", LifeFull, 46, new Vector2(LifeWidth, LifeHeight));
+            lifeFill = lifeFillRenderer.transform;
+        }
+        lifeBar.gameObject.SetActive(true);
+        Bounds b = body.bounds;
+        lifeBar.position = new Vector3(b.center.x, b.max.y + LifeGap, 0f);
+        float t = Mathf.Clamp01((float)shown / maxHealth);
+        lifeFill.localScale = new Vector3(LifeWidth * t, LifeHeight, 1f);
+        lifeFill.localPosition = new Vector3(-LifeWidth * (1f - t) * 0.5f, 0f, 0f);
+        lifeFillRenderer.color = Color.Lerp(LifeLow, LifeFull, t);
+    }
+
+    private SpriteRenderer LifePiece(string name, Color color, int order, Vector2 size) {
+        if (pixel == null) {
+            Texture2D texture = new Texture2D(1, 1, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point };
+            texture.SetPixel(0, 0, Color.white);
+            texture.Apply();
+            pixel = Sprite.Create(texture, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f), 1f);
+        }
+        GameObject piece = new GameObject(name);
+        piece.transform.SetParent(lifeBar, false);
+        piece.transform.localScale = new Vector3(size.x, size.y, 1f);
+        SpriteRenderer renderer = piece.AddComponent<SpriteRenderer>();
+        renderer.sprite = pixel;
+        renderer.color = color;
+        renderer.sortingOrder = order;
+        if (ItemPickup.UnlitMaterial != null) {
+            renderer.sharedMaterial = ItemPickup.UnlitMaterial;
+        }
+        return renderer;
+    }
+
+    // how far its drawn body is from that collider (0 when they touch)
+    public float GapTo(Collider2D other) {
+        if (other == null || body == null) {
+            return 0f;
+        }
+        Bounds a = body.bounds, b = other.bounds;
+        float dx = Mathf.Max(0f, Mathf.Abs(a.center.x - b.center.x) - a.extents.x - b.extents.x);
+        float dy = Mathf.Max(0f, Mathf.Abs(a.center.y - b.center.y) - a.extents.y - b.extents.y);
+        return Mathf.Sqrt(dx * dx + dy * dy);
+    }
+
+    // gone here at once: the burst the host's death would bring, and nothing left to hit
+    private void ShowDead(bool dead) {
+        ShownDead = dead;
+        shownDeadAt = Time.unscaledTime;
+        if (dead && body != null) {
+            Fx.Burst(body.bounds.center, new Color(0.7f, 0.1f, 0.1f), 14, 2.5f, 0.09f, 0.4f);
+        }
+        foreach (SpriteRenderer sprite in sprites) {
+            if (sprite != null) {
+                sprite.enabled = !dead;
+            }
+        }
+        foreach (Collider2D col in GetComponentsInChildren<Collider2D>(true)) {
+            col.enabled = !dead;
         }
     }
 
@@ -1204,9 +1344,17 @@ public class CoopPuppet : MonoBehaviour, IDamageable {
     public void Receive(float time, Vector2 position, sbyte facing, int state, byte bools, int frame, byte newHealth) {
         track.Add(time, position);
         if (newHealth < health) {
+            if (!IsBoss) {
+                pending = Mathf.Max(0, pending - (health - newHealth));   // the host has applied that much
+            }
             flashUntil = Time.unscaledTime + CoopArena.FlashSeconds;
         }
         health = newHealth;
+        maxHealth = Mathf.Max(maxHealth, newHealth);
+        if (ShownDead && newHealth > 0 && Time.unscaledTime - shownDeadAt > WrongGuessAfter) {
+            pending = 0;
+            ShowDead(false);   // the guess was wrong: it is still alive on the host
+        }
         Vector3 scale = transform.localScale;
         scale.x = Mathf.Abs(scale.x) * facing;
         transform.localScale = scale;
@@ -1237,8 +1385,23 @@ public class CoopPuppet : MonoBehaviour, IDamageable {
     }
 
     public void DamageBy(int amount) {
+        if (ShownDead) {
+            return;
+        }
         flashUntil = Time.unscaledTime + CoopArena.FlashSeconds;
         arena.RequestHit(id, amount);
+        if (IsBoss) {
+            return;
+        }
+        if (Time.unscaledTime >= pendingUntil) {
+            pending = 0;
+        }
+        pending += amount;
+        pendingUntil = Time.unscaledTime + PendingFor;
+        if (Predicts && health - pending <= 0) {
+            KillsGuessed++;
+            ShowDead(true);
+        }
     }
 }
 

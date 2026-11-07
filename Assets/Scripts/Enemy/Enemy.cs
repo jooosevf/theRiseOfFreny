@@ -1138,7 +1138,7 @@ public abstract class Enemy : MonoBehaviour, IDamageable
         Vector2 push = heavy
             ? new Vector2(side * knockback, knockback * KnockbackLift)
             : new Vector2(side * LightKnockback, LightKnockback * 0.4f);
-        CoopWorld.HitPeer(peerTarget.Owner, HitDamage + BloodDamage + RunModifiers.SlainDamage, push, heavy, Online.RunLog.PrefabName(gameObject.name));
+        CoopWorld.HitPeer(peerTarget.Owner, HitDamage + BloodDamage + RunModifiers.SlainDamage, push, heavy, Online.RunLog.PrefabName(gameObject.name), this);
     }
 
     protected void HitPlayer() {
