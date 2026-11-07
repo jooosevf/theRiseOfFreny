@@ -395,9 +395,14 @@ public class CoopArena : MonoBehaviour {
             case CoopWorld.Fx.Shot:
                 reader.ReadValueSafe(out Vector2 direction);
                 reader.ReadValueSafe(out byte shotgun);
+                reader.ReadValueSafe(out ulong shooter);
                 if (player != null) {
                     player.DrawPeerShot(position, direction, shotgun != 0);
                     peerShots++;
+                }
+                // his copy draws the gun he fired: the Ranged frames alone show the pistol
+                if (peers.TryGetValue(shooter, out Peer gunner) && gunner.Motion != null) {
+                    gunner.Motion.Shot(shotgun != 0);
                 }
                 break;
             case CoopWorld.Fx.Grenade:

@@ -51,9 +51,10 @@ public class PlayerAnimation : MonoBehaviour {
         _motion.Slash(step);
     }
 
-    public void Ranged() {
+    // shotgun: the Ranged frames draw the pistol, so FrenyMotion swaps in the shotgun poses
+    public void Ranged(bool shotgun = false) {
         Fire("Ranged");
-        _motion.Shot();
+        _motion.Shot(shotgun);
     }
 
     public void Dash() {

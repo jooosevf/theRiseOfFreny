@@ -142,23 +142,30 @@ def main():
             if alt_cell is not None and alt_cell.size != cell.size:
                 alt_cell = None
             tiles.append((name, dressed(cell, alt_cell), pivot))
-    # the frames stay whole cells: the death's Ragdoll slices them by fractions of the cell
-    size, x, y, placed = 2048, 0, 0, []
+    # the frames stay whole cells: the death's Ragdoll slices them by fractions of the cell.
+    # A full 2048 sheet goes on in traje2.png (the shotgun poses, 2026-11-05); FrenyLook reads both
+    size, x, y, page, pages = 2048, 0, 0, [], []
     for name, tile, pivot in tiles:
         if x + tile.width > size:
             x, y = 0, y + 200
-        placed.append((name, tile, x, y, pivot))
+        if y + 200 > size:
+            pages.append(page)
+            x, y, page = 0, 0, []
+        page.append((name, tile, x, y, pivot))
         x += tile.width
-    assert y + 200 <= size, 'the sheet needs another row'
-    atlas = Image.new('RGBA', (size, size))
-    sprites = []
-    for name, tile, px, py, pivot in placed:
-        atlas.paste(tile, (px, py))
-        sprites.append((name, px, size - py - tile.height, tile.width, tile.height, pivot))
-    atlas.save(OUT)
-    random.seed(2026)
-    write_meta(ROOT, OUT + '.meta', sprites)
-    print(len(sprites), 'frames')
+    pages.append(page)
+    for n, placed in enumerate(pages):
+        out = OUT if n == 0 else OUT.replace('traje.png', 'traje%d.png' % (n + 1))
+        height = size if n == 0 else max(py for _, _, _, py, _ in placed) + 200
+        atlas = Image.new('RGBA', (size, height))
+        sprites = []
+        for name, tile, px, py, pivot in placed:
+            atlas.paste(tile, (px, py))
+            sprites.append((name, px, height - py - tile.height, tile.width, tile.height, pivot))
+        atlas.save(out)
+        random.seed(2026 + n)
+        write_meta(ROOT, out + '.meta', sprites)
+        print(os.path.basename(out), len(sprites), 'frames')
 
 
 main()

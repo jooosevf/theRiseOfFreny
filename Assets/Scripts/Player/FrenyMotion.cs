@@ -272,8 +272,24 @@ public class FrenyMotion : MonoBehaviour {
         }
     }
 
-    public void Shot() {
+    // shotgun: the last shot was the shotgun's (a co-op partner's copy hears it from CoopArena)
+    public void Shot(bool shotgun = false) {
         shotStart = Time.time;
+        shotgunShot = shotgun;
+    }
+
+    private bool shotgunShot;
+
+    // the Animator's shot frames draw the pistol: after a shotgun shot each one becomes the same
+    // frame of the shotgun poses (Tools/ArtGen/freny_poses.py), held at the hip, at belly height
+    private static string ShotgunPose(string frame) {
+        if (frame.StartsWith("Player ranged_")) {
+            return "Freny shotgun_" + frame.Substring("Player ranged_".Length);
+        }
+        if (frame.StartsWith("Player jump ranged_")) {
+            return "Freny air shotgun_" + frame.Substring("Player jump ranged_".Length);
+        }
+        return null;
     }
 
     public void DashStart() {
@@ -501,12 +517,15 @@ public class FrenyMotion : MonoBehaviour {
             climbed += Mathf.Abs(vy) * dt;
             pose = "Freny climb_" + (int)(climbed / ClimbStride) % 2;
         } else if (crouching) {
-            pose = sinceSlash >= CrouchCut && sinceShot < 0.3f ? "Freny crouch ranged_" + Mathf.Min(2, (int)(sinceShot * 10f))
+            pose = sinceSlash >= CrouchCut && sinceShot < 0.3f
+                ? (shotgunShot ? "Freny crouch shotgun_" : "Freny crouch ranged_") + Mathf.Min(2, (int)(sinceShot * 10f))
                 : "Freny crouch_0";
         } else if (cutFrame) {
             pose = "Freny swing_" + Snap(swingArm, SwingMin, SwingMax);
         } else if (!grounded && sinceShot < 0.33f) {
-            pose = "Freny air ranged_" + Mathf.Min(4, (int)(sinceShot * 15f));
+            pose = (shotgunShot ? "Freny air shotgun_" : "Freny air ranged_") + Mathf.Min(4, (int)(sinceShot * 15f));
+        } else if (shotgunShot && body.sprite != null) {
+            pose = ShotgunPose(body.sprite.name);
         }
         if (pose != null && poses.TryGetValue(pose, out Sprite sprite)) {
             body.sprite = sprite;
